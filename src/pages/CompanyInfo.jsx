@@ -129,8 +129,9 @@ export default function CompanyInfo() {
   };
 
   const handleDustbinAdded = () => {
-    fetchCompanyDetails()
-    setIsDustbinDialogOpen(false)
+    setIsDustbinDialogOpen(false);
+    fetchCompanyDetails();
+    
   }
 
   const confirmDeleteAddress = async () => {
@@ -269,7 +270,7 @@ export default function CompanyInfo() {
           {/* ******************************************Users Section************************** */}
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Users</h2>
+              <h2 className="text-lg font-semibold">Associated users</h2>
               <Button
                 variant="outline"
                 onClick={() => setIsUserDialogOpen(true)}
@@ -322,15 +323,16 @@ export default function CompanyInfo() {
 
             {/* ************************Dustbin section starts********************************************* */}
             
-            <div>
+            {/* Dustbins Section */}
+          <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Dustbins</h2>
+              <h2 className="text-lg font-semibold">Associated bins</h2>
               <Button
                 variant="outline"
                 onClick={() => setIsDustbinDialogOpen(true)}
                 className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white hover:text-white"
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Dustbin
+                <Plus className="mr-2 h-4 w-4" /> Add bins
               </Button>
             </div>
             {company.branchAddresses && company.branchAddresses.length === 0 ? (
@@ -343,25 +345,39 @@ export default function CompanyInfo() {
                   <TableHeader className="bg-[#f8f8f8] transition-colors">
                     <TableRow>
                       <TableHead>Branch Address</TableHead>
-                      <TableHead>Dustbin Type</TableHead>
+                      <TableHead>Bin Type</TableHead>
                       <TableHead>Capacity</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {company.branchAddresses.map((branch) => (
+                    {company.branchAddresses
+                    .filter(branch => !branch.isdeleted)
+                    .map((branch) => (
                       <React.Fragment key={branch._id}>
-                        {(branch.dustbins || []).map((dustbin, index) => (
-                          <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
-                            {index === 0 && (
-                              <TableCell rowSpan={(branch.dustbins || []).length} className="font-medium align-top">
-                                {branch.branchName}<br />
-                                {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
-                              </TableCell>
-                            )}
-                            <TableCell>{dustbin.dustbinType}</TableCell>
-                            <TableCell>{dustbin.binCapacity}L</TableCell>
+                        {(branch.dustbins || []).length > 0 ? (
+                          branch.dustbins.map((dustbin, index) => (
+                            <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
+                              {index === 0 && (
+                                <TableCell rowSpan={(branch.dustbins || []).length} className="font-medium align-top">
+                                  {branch.branchName}<br />
+                                  {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
+                                </TableCell>
+                              )}
+                              <TableCell>{dustbin.dustbinType}</TableCell>
+                              <TableCell>{dustbin.binCapacity}L</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell className="font-medium align-top">
+                              {branch.branchName}<br />
+                              {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
+                            </TableCell>
+                            <TableCell colSpan={2} className="text-center text-gray-500 italic">
+                              No bins available for this branch
+                            </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </React.Fragment>
                     ))}
                   </TableBody>
@@ -396,7 +412,7 @@ export default function CompanyInfo() {
         <Dialog open={isDustbinDialogOpen} onOpenChange={setIsDustbinDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Dustbin</DialogTitle>
+                <DialogTitle>Add bins</DialogTitle>
                 <DialogDescription>
                   <span className="text-red-600 text-xs font-semibold italic">Note: Adding dustbin will automatically add 4 types of dustbins (Landfill, Recycling, Paper, Organic) for each branch.</span>
                 </DialogDescription>

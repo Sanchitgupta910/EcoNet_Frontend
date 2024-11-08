@@ -1,94 +1,84 @@
-import React, { useState, useEffect } from 'react'
-import { Button } from "./button"
-import { Input } from "./input"
-import { Label } from "./label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import React, { useState } from 'react';
+import axios from 'axios';
+import { Button } from './button';
+import { Input } from './input';
+import { Label } from './label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
-
-export function DustbinForm({ branches = [], onDustbinAdded  }) {
+export function DustbinForm({ branches = [], onDustbinAdded }) {
   const [formData, setFormData] = useState({
     capacity: '',
     branchName: '',
     branchId: ''
-  })
-
-  useEffect(() => {
-    if (formData.branchName) {
-      const selectedBranch = branches.find(branch => branch.name === formData.branchName)
-      setFormData(prev => ({
-        ...prev,
-        branchId: selectedBranch ? selectedBranch.id : ''
-      }))
-    }
-  }, [formData.branchName, branches])
+  });
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    setLoading(true);
     try {
-        await axios.post('/api/v1/dustbin/addDustbin', {
-            binCapacity: formData.capacity,
-            branchAddress: formData.branchId
-        })
-
-        onDustbinAdded();
+      await axios.post('/api/v1/dustbin/adddustbin', {
+        binCapacity: formData.capacity,
+        branchAddress: formData.branchId
+      });
+      setLoading(false);
+      onDustbinAdded(); // Call the callback to close the form and refresh data
     } catch (error) {
-        console.log("Error adding dustbins due to the following error: ",error)
+      console.error('Error adding dustbin:', error);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="capacity">Dustbin Capacity</Label>
-            <Select
-              value={formData.capacity}
-              onValueChange={(value) => setFormData({ ...formData, capacity: value })}
-            >
-              <SelectTrigger id="capacity" className="w-full">
-                <SelectValue placeholder="Select capacity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="25">25L</SelectItem>
-                <SelectItem value="50">50L</SelectItem>
-                <SelectItem value="75">75L</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="capacity">Dustbin Capacity</Label>
+        <Select
+          value={formData.capacity}
+          onValueChange={(value) => setFormData({ ...formData, capacity: value })}
+        >
+          <SelectTrigger id="capacity" className="w-full">
+            <SelectValue placeholder="Select capacity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="25">25L</SelectItem>
+            <SelectItem value="50">50L</SelectItem>
+            <SelectItem value="75">75L</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="branch">Branch</Label>
-            <Select
-              value={formData.branchName}
-              onValueChange={(value) => setFormData({ ...formData, branchName: value })}
-            >
-              <SelectTrigger id="branch" className="w-full">
-                <SelectValue placeholder="Select branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.name}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="branch">Branch</Label>
+        <Select
+          value={formData.branchName}
+          onValueChange={(value) => {
+            const selectedBranch = branches.find(branch => branch.name === value);
+            setFormData({
+              ...formData,
+              branchName: value,
+              branchId: selectedBranch ? selectedBranch.id : ''
+            });
+          }}
+        >
+          <SelectTrigger id="branch" className="w-full">
+            <SelectValue placeholder="Select branch" />
+          </SelectTrigger>
+          <SelectContent>
+            {branches
+            .filter(branch => !branch.isdeleted) // Exclude deleted branches
+            .map((branch) => (
+              <SelectItem key={branch.id} value={branch.name}>
+                {branch.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="branchId">Branch ID</Label>
-            <Input
-              id="branchId"
-              value={formData.branchId}
-              disabled
-              className="w-full bg-gray-100"
-            />
-          </div>
-
-          <Button type="submit" className="w-full">
-            Add Dustbin
-          </Button>
-        </form>
-      
-  )
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? 'Adding...' : 'Add Dustbin'}
+      </Button>
+    </form>
+  );
 }
