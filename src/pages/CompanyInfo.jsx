@@ -19,6 +19,7 @@ import { Plus, Trash2, MoreVertical, ArrowLeft } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 import { AddressForm } from '../components/ui/AddressForm';
 import { UserForm } from '../components/ui/UserForm';
+import { DustbinForm } from '../components/ui/DustbinForm';
 
 export default function CompanyInfo() {
   const { id } = useParams();
@@ -27,9 +28,10 @@ export default function CompanyInfo() {
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDustbinDialogOpen, setIsDustbinDialogOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-
+  const dustbinTypes = ['Landfill','Recycling','Paper','Organic'];
   useEffect(() => {
     const fetchCompanyDetails = async () => {
       try {
@@ -125,6 +127,11 @@ export default function CompanyInfo() {
     setSelectedAddress(address);
     setIsAddressDialogOpen(true);
   };
+
+  const handleDustbinAdded = () => {
+    fetchCompanyDetails()
+    setIsDustbinDialogOpen(false)
+  }
 
   const confirmDeleteAddress = async () => {
     try {
@@ -259,7 +266,7 @@ export default function CompanyInfo() {
             )}
           </div>
 
-          {/* Users Section */}
+          {/* ******************************************Users Section************************** */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Users</h2>
@@ -311,8 +318,62 @@ export default function CompanyInfo() {
               </div>
             )}
           </div>
+
+
+            {/* ************************Dustbin section starts********************************************* */}
+            
+            <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Dustbins</h2>
+              <Button
+                variant="outline"
+                onClick={() => setIsDustbinDialogOpen(true)}
+                className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white hover:text-white"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Dustbin
+              </Button>
+            </div>
+            {company.branchAddresses && company.branchAddresses.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg">
+                <p className="text-gray-500 mb-4">No branches or dustbins added yet.</p>
+              </div>
+            ) : (
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader className="bg-[#f8f8f8] transition-colors">
+                    <TableRow>
+                      <TableHead>Branch Address</TableHead>
+                      <TableHead>Dustbin Type</TableHead>
+                      <TableHead>Capacity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {company.branchAddresses.map((branch) => (
+                      <React.Fragment key={branch._id}>
+                        {(branch.dustbins || []).map((dustbin, index) => (
+                          <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
+                            {index === 0 && (
+                              <TableCell rowSpan={(branch.dustbins || []).length} className="font-medium align-top">
+                                {branch.branchName}<br />
+                                {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
+                              </TableCell>
+                            )}
+                            <TableCell>{dustbin.dustbinType}</TableCell>
+                            <TableCell>{dustbin.binCapacity}L</TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+          {/* **********************************dustbin section ends here************************ */}
+
         </div>
 
+            {/* ***********************************add user form************** */}
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -328,7 +389,32 @@ export default function CompanyInfo() {
             />
           </DialogContent>
         </Dialog>
+        {/* ***********************************add user form ends here************** */}
 
+        {/* ***********************************add dustbin form************** */}
+
+        <Dialog open={isDustbinDialogOpen} onOpenChange={setIsDustbinDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Dustbin</DialogTitle>
+                <DialogDescription>
+                  <span className="text-red-600 text-xs font-semibold italic">Note: Adding dustbin will automatically add 4 types of dustbins (Landfill, Recycling, Paper, Organic) for each branch.</span>
+                </DialogDescription>
+              </DialogHeader>
+              <DustbinForm
+                branches={company.branchAddresses.map((a) => ({ id: a._id, name: a.branchName }))}
+                onDustbinAdded={handleDustbinAdded}
+              />
+            </DialogContent>
+          </Dialog>
+
+
+
+
+        {/* ***********************************add dustbin form ends here************** */}
+        
+
+        {/* ***********************************delete dialog************** */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -354,6 +440,10 @@ export default function CompanyInfo() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+
+            
+
       </div>
     </div>
   );

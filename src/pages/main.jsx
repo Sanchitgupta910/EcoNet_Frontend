@@ -28,7 +28,7 @@ import store from '../app/store.js'; // Import the Redux store
 import Login from './login.jsx';
 import Company from './companies.jsx';
 import CompanyInfo from './CompanyInfo.jsx'; // Import CompanyInfo component
-import ProtectedRoute from '../lib/protectedRoute.js';
+import ProtectedRoute from '../lib/protectedRoute.jsx';
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
