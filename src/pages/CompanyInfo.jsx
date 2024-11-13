@@ -213,7 +213,7 @@ export default function CompanyInfo() {
             ) : (
               <div className="border rounded-lg">
                 <Table>
-                  <TableHeader className="bg-[#f8f8f8] transition-colors">
+                  <TableHeader className="bg-[#f8f8f8] ">
                     <TableRow>
                       <TableHead>Branch Name</TableHead>
                       <TableHead>Address</TableHead>
