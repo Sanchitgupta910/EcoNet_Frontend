@@ -414,7 +414,7 @@ export default function CompanyInfo() {
               <DialogHeader>
                 <DialogTitle>Add bins</DialogTitle>
                 <DialogDescription>
-                  <span className="text-red-600 text-xs font-semibold italic">Note: Adding dustbin will automatically add 4 types of dustbins (Landfill, Recycling, Paper, Organic) for each branch.</span>
+                  <span className="text-red-600 text-xs font-semibold italic">Note: Adding bins will automatically add 4 types of bins (Landfill, Recycling, Paper, Organic) to the branch.</span>
                 </DialogDescription>
               </DialogHeader>
               <DustbinForm
