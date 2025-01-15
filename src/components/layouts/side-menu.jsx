@@ -1,43 +1,37 @@
-// src/components/layouts/side-menu.jsx
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { clearUser } from '../../app/userSlice'; // Import clearUser action
+import { clearUser } from '../../app/userSlice';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom'; // Import useLocation from React Router
+import { useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
-  ChevronLeft,
-  ChevronRight,
   LayoutDashboard,
   Users,
   Settings,
-  Menu,
   LogOut,
+  Menu,
 } from 'lucide-react';
 
-export default function SideMenu() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const dispatch = useDispatch(); // Get the dispatch function from Redux
-  const user = useSelector((state) => state.user.user); // Get the user from Redux state
-  const location = useLocation(); // Get the current location
+export default function SideMenu({ logoMargin = 'm-2' }) {
+  const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed state
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.user);
+  const location = useLocation();
 
-  // Function to handle logout
+  // Handle logout
   const handleLogout = async () => {
     try {
       await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
-      dispatch(clearUser()); // Clear the user from Redux state
+      dispatch(clearUser());
       window.location.href = '/login';
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
+  // Menu items
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/admin-dashboard' },
     { icon: Users, label: 'Companies', href: '/companies' },
@@ -45,26 +39,58 @@ export default function SideMenu() {
   ];
 
   return (
-    <div className={`relative h-screen bg-background border-r transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <div
+      className={`relative h-screen bg-background border-r transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+      onMouseEnter={() => setIsCollapsed(false)} // Expand on hover
+      onMouseLeave={() => setIsCollapsed(true)}  // Collapse on hover
+    >
       <ScrollArea className="h-full">
-        <div className="flex flex-col h-full p-4">
+        <div className="flex flex-col h-full p-4 relative z-10">
           {/* Logo and Collapse Toggle */}
-          <div className="flex items-center justify-between mb-6">
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'w-8' : 'w-full'}`}>
-              <div className="text-2xl font-bold text-primary">Logo</div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-              onClick={toggleCollapse}
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <div
+              className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                isCollapsed ? 'w-12' : 'w-full'
+              }`}
             >
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
+              <div className="flex items-center relative z-20">
+                
+                <img
+                  src="src/assets/NetNada_logo_icon.png"
+                  alt="Logo Icon"
+                  className={`h-8 ${isCollapsed ? 'block' : 'hidden'} ${logoMargin} transition-all`}
+                  style={{
+                    zIndex: 999, // Ensure logo stays on top
+                    position: 'relative',
+                  }}
+                />
+                
+                <div
+                  className={`text-2xl font-bold text-primary ${isCollapsed ? 'hidden' : 'flex'} ${logoMargin}`}
+                  style={{
+                    zIndex: 999, // Ensure full logo stays on top
+                    position: 'relative',
+                  }}
+                >
+                  <img
+                    src="src/assets/NetNada_logo.png"
+                    alt="Full Logo"
+                    className="h-12 mr-2" // Adjust size as needed
+                  />
+                  
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* User Greeting */}
-          <div className={`mb-6 overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'}`}>
+          <div
+            className={`mb-6 overflow-hidden transition-all duration-700 ease-in-out ${
+              isCollapsed ? 'h-0 opacity-0' : 'h-auto opacity-100'
+            }`}
+          >
             <div className="flex items-center space-x-4">
               <Avatar>
                 <AvatarImage src="https://cdn.jsdelivr.net/gh/alohe/avatars/png/upstream_17.png" />
@@ -72,8 +98,9 @@ export default function SideMenu() {
               </Avatar>
               <div className="space-y-1">
                 <h2 className="text-sm font-semibold">Welcome,</h2>
-                {/* Display user's full name or 'Admin' as a fallback */}
-                <p className="text-xs text-muted-foreground">{user ? user.fullName : 'Admin'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {user ? user.fullName : 'Admin'}
+                </p>
               </div>
             </div>
           </div>
@@ -81,15 +108,15 @@ export default function SideMenu() {
           {/* Menu Items */}
           <nav className="flex-1 space-y-2">
             {menuItems.map((item, index) => {
-              // Check if the current path matches the item's href
               const isActive = location.pathname === item.href;
 
               return (
                 <a
                   key={index}
                   href={item.href}
-                  className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'justify-start'} 
-                  ${isActive ? 'font-bold text-lg text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                    isCollapsed ? 'justify-center' : 'justify-start'
+                  } ${isActive ? 'font-bold text-lg text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   {!isCollapsed && <span className="ml-3 text-sm">{item.label}</span>}
@@ -115,7 +142,7 @@ export default function SideMenu() {
         variant="outline"
         size="icon"
         className="fixed top-4 left-4 z-50 md:hidden"
-        onClick={toggleCollapse}
+        onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <Menu className="h-4 w-4" />
       </Button>

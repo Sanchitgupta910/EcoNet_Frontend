@@ -25,7 +25,7 @@ export default function LoginPage() {
       if (response.data.data.user) {
         
         // Dispatch the user data to the Redux store
-        dispatch(setUser(response.data.data.user ));
+        dispatch(setUser(response.data.data.user));
         console.log('User set in Redux:', response.data.data.user);
 
         // Redirect to the companies page
@@ -40,13 +40,24 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-sky-50">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        {/* Logo Section */}
+        <div className="flex justify-center">
+          <img
+            src="src/assets/NetNada_logo.png" 
+            alt="Logo"
+            className="h-16" // Adjust height as needed
+          />
+        </div>
+        
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold text-gray-900">Account Login</h1>
           <p className="text-gray-500">Welcome back! Please enter your details.</p>
         </div>
+        
         <form className="space-y-4" onSubmit={handleLogin}>
           <div className="space-y-2">
             <label htmlFor="email" className="text-gray-700">Email</label>
