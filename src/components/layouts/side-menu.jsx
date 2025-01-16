@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect  } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearUser } from '../../app/userSlice';
 import axios from 'axios';
@@ -6,6 +6,9 @@ import { useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import logoIcon from '../../../src/assets/NetNada_logo_icon.png';
+import logoFull from '../../../src/assets/NetNada_logo.png';
+
 import {
   LayoutDashboard,
   Users,
@@ -30,6 +33,11 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
       console.error('Error logging out:', error);
     }
   };
+
+    // Reset isCollapsed state on route change
+    useEffect(() => {
+      setIsCollapsed(true); // Collapse sidebar by default on route change
+    }, [location.pathname]); // Effect runs whenever route changes
 
   // Menu items
   const menuItems = [
@@ -58,7 +66,7 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
               <div className="flex items-center relative z-20">
                 
                 <img
-                  src="src/assets/NetNada_logo_icon.png"
+                  src={logoIcon}
                   alt="Logo Icon"
                   className={`h-8 ${isCollapsed ? 'block' : 'hidden'} ${logoMargin} transition-all`}
                   style={{
@@ -76,7 +84,7 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
                 >
                   <img
                     src="src/assets/NetNada_logo.png"
-                    alt="Full Logo"
+                    alt={logoFull}
                     className="h-12 mr-2" // Adjust size as needed
                   />
                   
