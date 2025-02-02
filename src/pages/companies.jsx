@@ -63,10 +63,13 @@ export default function Company() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get("/api/v1/company/getCompany");
+        const response = await axios.get("/api/v1/company/getCompany", {withCredentials: true});
         setCompanies(response.data.data);
       } catch (error) {
         console.error("Error fetching companies!!!", error);
+        if (error.response && error.response.status === 401){
+          navigate("/login")
+        }
       }
     };
     

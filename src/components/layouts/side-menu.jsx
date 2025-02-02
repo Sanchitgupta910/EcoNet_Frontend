@@ -83,8 +83,8 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
                   }}
                 >
                   <img
-                    src="src/assets/NetNada_logo.png"
-                    alt={logoFull}
+                    src={logoFull}
+                    alt= "NetNada Logo"
                     className="h-12 mr-2" // Adjust size as needed
                   />
                   

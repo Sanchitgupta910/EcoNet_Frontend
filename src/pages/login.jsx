@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useDispatch } from 'react-redux';
@@ -8,9 +8,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false); // remember user state
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch(); // Get the dispatch function from Redux
+
+  //Auto login on page load is rememberMe is true
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      //fetch user detail and set in redux
+      axios
+      .get('/api/v1/users/me', {withCredentials: true})
+      .then((response) => {
+        dispatch(setUser(response.data.data.user));
+        window.location.href = '/companies';
+      })
+      .catch((err) => {
+        console.error('Auto-login failed: ', err);
+        localStorage.removeItem('accessToken');
+        sessionStorage.removeItem('accessToken');
+      });
+    }
+  },[dispatch]);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -101,6 +124,8 @@ export default function LoginPage() {
             <label className="flex items-center">
               <input
                 type="checkbox"
+                checked = {rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="form-checkbox h-4 w-4 text-primary transition duration-150 ease-in-out"
               />
               <span className="ml-2 text-sm text-gray-600">Remember me</span>
