@@ -41,7 +41,7 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
 
   // Menu items
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin-dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/DashboardPage' },
     { icon: Users, label: 'Companies', href: '/companies' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];

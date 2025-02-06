@@ -7,7 +7,7 @@ import { setUser } from '../app/userSlice';
  * AppLoader is a top-level component responsible for loading
  * essential data (like the current user) before the rest of the application renders.
  *
- * It calls the backend endpoint `/api/v1/users/current` (with credentials)
+ * It calls the backend endpoint `/api/v1/users/me` (with credentials)
  * to check if the user is authenticated. If so, it dispatches the user data
  * to the Redux store so that all components can access the user details.
  */

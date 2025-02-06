@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useDispatch } from 'react-redux';
@@ -8,51 +8,74 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false); // remember user state
+  const [rememberMe, setRememberMe] = useState(false); // Remember user state
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch(); // Get the dispatch function from Redux
 
-  //Auto login on page load is rememberMe is true
+  /**
+   * Auto login on page load if a token is found.
+   * This effect checks for a token stored in localStorage or sessionStorage.
+   * If found, it sets the default authorization header, fetches the user details,
+   * updates the Redux store, and then redirects based on the user role.
+   */
   useEffect(() => {
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      //fetch user detail and set in redux
+      // Fetch user details from the backend
       axios
-      .get('/api/v1/users/me', {withCredentials: true})
-      .then((response) => {
-        dispatch(setUser(response.data.data.user));
-        window.location.href = '/companies';
-      })
-      .catch((err) => {
-        console.error('Auto-login failed: ', err);
-        localStorage.removeItem('accessToken');
-        sessionStorage.removeItem('accessToken');
-      });
+        .get('/api/v1/users/me', { withCredentials: true })
+        .then((response) => {
+          const user = response.data.data.user;
+          // Dispatch the user data to Redux
+          dispatch(setUser(user));
+          // Redirect based on role
+          if (user.role === "SuperAdmin") {
+            window.location.href = '/companies';
+          } else {
+            window.location.href = '/DashboardPage';
+          }
+        })
+        .catch((err) => {
+          console.error('Auto-login failed: ', err);
+          localStorage.removeItem('accessToken');
+          sessionStorage.removeItem('accessToken');
+        });
     }
-  },[dispatch]);
+  }, [dispatch]);
 
-
+  /**
+   * handleLogin:
+   * - Prevents the default form submission.
+   * - Sends a login request to the backend with email, password, and rememberMe.
+   * - If successful, dispatches the user data to Redux.
+   * - Redirects the user based on their role: SuperAdmin goes to /companies,
+   *   while normal Admin goes to /dashboard.
+   */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Make a login request to the backend
-      const response = await axios.post('/api/v1/users/login', { email, password }, { withCredentials: true });
+      // Make a login request to the backend; include rememberMe if needed by your backend
+      const response = await axios.post('/api/v1/users/login', { email, password, rememberMe }, { withCredentials: true });
 
-      // Check if the response has the user data
+      // Check if the response contains the user data
       if (response.data.data.user) {
-        
-        // Dispatch the user data to the Redux store
-        dispatch(setUser(response.data.data.user));
-        console.log('User set in Redux:', response.data.data.user);
+        const user = response.data.data.user;
+        // Dispatch the user data to Redux
+        dispatch(setUser(user));
+        console.log('User set in Redux:', user);
 
-        // Redirect to the companies page
-        window.location.href = '/companies';
+        // Role-based redirection
+        if (user.role === "SuperAdmin") {
+          window.location.href = '/companies';
+        } else {
+          window.location.href = '/DashboardPage';
+        }
       } else {
         setError("Failed to retrieve user information. Please try again.");
       }
@@ -124,7 +147,7 @@ export default function LoginPage() {
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked = {rememberMe}
+                checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="form-checkbox h-4 w-4 text-primary transition duration-150 ease-in-out"
               />
