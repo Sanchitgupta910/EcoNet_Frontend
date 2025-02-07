@@ -53,7 +53,7 @@ export default function DashboardHeader({
     branches && branches.length > 0 ? branches[0]._id : ''
   );
   // State for date filter (default: "last-week")
-  const [dateFilter, setDateFilter] = useState('last-week');
+  const [dateFilter, setDateFilter] = useState('today');
   // State to determine whether to show hourly data (false means "Daily" is active)
   const [isHourlyData, setIsHourlyData] = useState(false);
 
