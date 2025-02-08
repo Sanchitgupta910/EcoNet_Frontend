@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import DashboardHeader from './dashboardHeader';
 import NetNada_logo from '../assets/NetNada_logo.png';
+import SideMenu from '../components/layouts/side-menu';
 
 /**
  * DashboardPage uses the current user data from Redux to build the props
@@ -42,15 +43,24 @@ export default function DashboardPage() {
     branches: defaultBranch ? [defaultBranch, ...remainingBranches] : allBranches,
     userEmail: user.email,
     otherEmails: user.otherEmails || [],
-    isAdmin: user.role === "Admin", // or however you determine admin type
+    isAdmin: user.role === "Admin", // isAdmin is true if the user is a normal admin.
   };
 
   return (
-    <div>
-      <DashboardHeader {...companyData} />
-      {/* Rest of your dashboard content */}
-      <div>
-        {/* <h1>Dashboard Content</h1> */}
+    <div className="flex h-screen">
+      {/* If the user is a SuperAdmin, render the side menu */}
+      {user.role === "SuperAdmin" && <SideMenu />}
+      
+      {/* Main dashboard area */}
+      <div className="flex-1">
+        {/* Render the dashboard header with company and branch information */}
+        <DashboardHeader {...companyData} />
+        
+        {/* Additional dashboard content can be added here */}
+        <div className="p-4">
+          {/* Dashboard content goes here */}
+          {/* For example: charts, tables, etc. */}
+        </div>
       </div>
     </div>
   );
