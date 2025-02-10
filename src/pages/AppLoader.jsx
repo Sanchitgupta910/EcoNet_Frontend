@@ -16,22 +16,23 @@ const AppLoader = ({ children }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Call the backend to get current user details.
-    axios
-      .get('/api/v1/users/me', { withCredentials: true })
-      .then((response) => {
+    // Delay the API call by 1 second to allow cookies/session storage to update
+    const timer = setTimeout(() => {
+      axios
+        .get('/api/v1/users/me', { withCredentials: true })
+        .then((response) => {
+          console.log("User data fetched:", response.data);
+          dispatch(setUser(response.data.data));
+        })
+        .catch((err) => {
+          console.error('Failed to fetch current user:', err);
+          // Optionally handle the error (e.g., clear session storage or redirect to login)
+        });
+    }, 100);
 
-        console.log('User data fetched:', response.data); // Debug log
-        // If the request is successful, update the Redux store with the user data.
-        dispatch(setUser(response.data.data));
-      })
-      .catch((error) => {
-        // If the request fails (e.g., unauthorized), log the error.
-        console.error('Failed to fetch current user:', error);
-      });
+    return () => clearTimeout(timer);
   }, [dispatch]);
 
-  // Render the child components (i.e., the rest of the app)
   return children;
 };
 

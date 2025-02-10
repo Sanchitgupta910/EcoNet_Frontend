@@ -9,6 +9,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        netnada_blue:
+        "border border-[#2C7BE5] text-[#2C7BE5] hover:bg-[#2C7BE5] hover:text-white",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
