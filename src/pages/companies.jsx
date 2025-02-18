@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+// import socket from "@/lib/socket";
 
 // Importing custom UI components
 import SideMenu from "../components/layouts/side-menu";
@@ -122,6 +123,22 @@ export default function Company() {
       setNewCompany({ CompanyName: "", domain: "", noofEmployees: "" });
     }
   }, [isAddDialogOpen]);
+
+  //-----------------------Socket Connection for testing and future refernce should be commented in this code file----------------------//
+
+  // Listen for the "newCompany" event from Socket.io.
+  // useEffect(() => {
+  //   socket.on("newCompany", (newCompany) => {
+  //     console.log("Received new company event:", newCompany);
+  //     // Update companies state by prepending the new company.
+  //     setCompanies((prevCompanies) => [newCompany, ...prevCompanies]);
+  //   });
+
+  //   return () => {
+  //     socket.off("newCompany");
+  //   };
+  // }, []);
+
 
   // ---------------------- Data Filtering & Pagination (Using useMemo) ---------------------- //
 

@@ -58,8 +58,9 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
    */
   const menuItems = useMemo(
     () => [
-      { icon: LayoutDashboard, label: 'Dashboard', href: '/DashboardPage' },
+      
       { icon: Users, label: 'Companies', href: '/companies' },
+      { icon: LayoutDashboard, label: 'Dashboard', href: '/DashboardPage' },
       { icon: Settings, label: 'Settings', href: '/settings' },
     ],
     []
