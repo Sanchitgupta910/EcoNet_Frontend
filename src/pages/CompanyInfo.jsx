@@ -44,7 +44,7 @@ export default function CompanyInfo() {
   const [selectedUser, setSelectedUser] = useState(null);
 
   // List of dustbin types (for reference in the UI or forms)
-  const dustbinTypes = ['Landfill', 'Recycling', 'Paper', 'Organic'];
+  const dustbinTypes = ['General Waste', 'Commingled', 'Organics', 'Paper & Cardboard'];
 
   // ---------------------- Data Fetching Function ---------------------- //
 
