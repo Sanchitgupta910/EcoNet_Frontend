@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "../components/ui/button.jsx";
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs.jsx";
 import {
   format,
@@ -210,20 +211,30 @@ export default function DashboardHeader({
             </div>
           )}
         </div>
-        {/* Right Section: display user email with logout (Admin) or impersonation options (SuperAdmin) */}
+        {/* Right Section: Avatar dropdown with logout (Admin) or impersonation options (SuperAdmin) */}
         <div className="w-1/3 flex justify-end items-center space-x-2">
           {isAdmin ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2">
+                {/* <Button variant="ghost" className="flex items-center space-x-2">
                   <span>{userEmail}</span>
                   <ChevronDown size={16} />
-                </Button>
+                </Button> */}
+                <Avatar className="cursor-pointer w-8 h-8">
+                  <AvatarImage
+                    src="https://cdn.jsdelivr.net/gh/alohe/avatars/png/upstream_17.png"
+                    alt="User Avatar"
+                  />
+                  <AvatarFallback>U</AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 {otherEmails && otherEmails.map((email) => (
                   <DropdownMenuItem key={email}>{email}</DropdownMenuItem>
                 ))}
+                <DropdownMenuItem disabled className="text-gray-800">
+                  {userEmail}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
@@ -264,8 +275,11 @@ export default function DashboardHeader({
       </div>
 
       {/* render filter controls for date range and view type (daily/hourly)
-          when either an Admin or impersonation is active */}
-      {(isAdmin || (impersonatedData && !isAdmin)) && (
+          when only SuperAdmin or impersonation is active */}
+
+
+      {(!isAdmin || impersonatedData) && (
+      
         <div className="flex justify-center items-center py-4 space-x-4">
           <Popover>
             <PopoverTrigger asChild>

@@ -12,7 +12,7 @@ import PaperCardboardIcon from '../../assets/paper_waste_icon.svg';
 const iconMap = {
   "General Waste": GeneralWasteIcon,
   "Commingled": CommingledIcon,
-  "Organics": OrganicsIcon,
+  "Organic": OrganicsIcon,
   "Paper & Cardboard": PaperCardboardIcon,
 };
 
@@ -23,7 +23,7 @@ const iconMap = {
 const iconBgColorMap = {
   "General Waste": "bg-[#FDA4AF]",
   "Commingled": "bg-[#F59E0B]",
-  "Organics": "bg-[#34D399]",
+  "Organic": "bg-[#34D399]",
   "Paper & Cardboard": "bg-[#60A5FA]",
 };
 
@@ -120,7 +120,7 @@ const BinCards = ({ binData, isLoading, error, onRefresh }) => {
 
   return (
     <div className="px-20 py-4">
-      {/* We no longer show a manual refresh button or socket status */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {binData.map((bin) => (
           <StatCard
