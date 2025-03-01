@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "../components/ui/button.jsx";
-import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
-import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs.jsx";
+import { Button } from "../ui/button.jsx";
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar.jsx';
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs.jsx";
 import {
   format,
   startOfWeek,
@@ -16,24 +16,24 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "../components/ui/select.jsx";
+  SelectValue,
+} from "../ui/select.jsx";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "../components/ui/popover.jsx";
+} from "../ui/popover.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
-} from "../components/ui/dropdown-menu.jsx";
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu.jsx";
 import { ChevronDown, LogOut, CalendarIcon } from 'lucide-react';
-import { Calendar } from "../components/ui/calendar.jsx";
+import { Calendar } from "../ui/calendar.jsx";
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-import { clearUser } from '../app/userSlice.js';
+import { clearUser } from '../../app/userSlice.js';
 
 export default function DashboardHeader({
   companyName,
@@ -43,25 +43,23 @@ export default function DashboardHeader({
   otherEmails,
   isAdmin
 }) {
-  // initialize the selected branch using the first branch available (if any)
+  // Initialize the selected branch (if available)
   const [selectedBranch, setSelectedBranch] = useState(
     branches && branches.length > 0 ? branches[0]._id : ''
   );
 
-  // store the date range state for filtering, defaulting both from and to to today
+  // State for date range filtering (for SuperAdmin or impersonation)
   const [dateRange, setDateRange] = useState({ from: new Date(), to: new Date() });
   const [dateFilter, setDateFilter] = useState('today');
   const [isHourlyData, setIsHourlyData] = useState(false);
 
-  // update the date range automatically based on the selected filter.
-  // For a custom range, I let the user pick without overriding the current selection.
+  // Update date range automatically when the filter changes.
   useEffect(() => {
     updateDateRange(dateFilter);
   }, [dateFilter]);
 
   const updateDateRange = (filter) => {
-    if (filter === 'custom') return; // I allow manual selection for custom range
-
+    if (filter === 'custom') return; // Allow manual selection for custom range
     const today = new Date();
     let from, to;
     switch (filter) {
@@ -92,7 +90,7 @@ export default function DashboardHeader({
     setDateRange({ from, to });
   };
 
-  // format the date range for display. If both dates are the same, I show one date.
+  // Format date range display
   const formatDateRange = (from, to) => {
     if (from.toDateString() === to.toDateString()) {
       return format(from, 'dd MMM yy');
@@ -100,15 +98,13 @@ export default function DashboardHeader({
     return `${format(from, 'dd MMM yy')} - ${format(to, 'dd MMM yy')}`;
   };
 
-  // store impersonation data when a SuperAdmin chooses to impersonate a user.
+  // For SuperAdmin impersonation
   const [impersonatedData, setImpersonatedData] = useState(null);
-
-  // maintain impersonable emails for SuperAdmin impersonation.
   const [impersonableEmails, setImpersonableEmails] = useState(otherEmails || []);
 
   const dispatch = useDispatch();
 
-  // handle logout by sending a logout request, clearing Redux state, and redirecting to the login page.
+  // Logout handler: calls API, clears Redux state, and redirects
   const handleLogout = async () => {
     try {
       await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
@@ -119,19 +115,15 @@ export default function DashboardHeader({
     }
   };
 
-  // manage impersonation actions. If the email equals "exit_impersonation",
-  // reset impersonation; otherwise, I fetch and store the impersonated user's data.
+  // Handle impersonation: either fetch user data or exit impersonation mode
   const handleImpersonation = async (email) => {
     try {
       if (email === 'exit_impersonation') {
-        console.log("Exiting impersonation.");
         setImpersonatedData(null);
         return;
       }
-      console.log("Impersonating user with email:", email);
       const response = await axios.get(`/api/v1/users/byEmail?email=${email}`, { withCredentials: true });
       const impersonatedUser = response.data.data;
-      console.log("Impersonated user data:", impersonatedUser);
       setImpersonatedData({
         companyName: impersonatedUser.company?.CompanyName || "No Company",
         companyLogo: impersonatedUser.company?.logo || "/placeholder.svg",
@@ -143,25 +135,24 @@ export default function DashboardHeader({
     }
   };
 
-  // compute header values based on my role or any active impersonation
+  // Compute header values based on role or active impersonation.
   const headerCompanyName = isAdmin ? companyName : (impersonatedData ? impersonatedData.companyName : "");
   const headerBranches = isAdmin ? branches : (impersonatedData ? impersonatedData.branches : []);
 
-  // update the default selected branch when headerBranches changes.
+  // Update the selected branch when branch list changes.
   useEffect(() => {
     if (headerBranches && headerBranches.length > 0) {
       setSelectedBranch(headerBranches[0]._id);
     }
   }, [headerBranches]);
 
-  // fetch impersonable emails for SuperAdmin if none are provided.
+  // For SuperAdmin, fetch impersonable emails if not provided.
   useEffect(() => {
     if (!isAdmin && impersonableEmails.length === 0) {
       axios.get('/api/v1/users/all-users', { withCredentials: true })
         .then(response => {
           const emails = response.data.data.map(user => user.email);
           const filteredEmails = emails.filter(email => email !== userEmail);
-          console.log("Fetched impersonable emails:", filteredEmails);
           setImpersonableEmails(filteredEmails);
         })
         .catch(error => {
@@ -172,12 +163,9 @@ export default function DashboardHeader({
 
   return (
     <div className="w-full">
-      {/* render the top header with three sections:
-          - Left: Company logo (for Admin)
-          - Center: Company name and branch selector (if applicable)
-          - Right: User info (or impersonation options for SuperAdmin) */}
+      {/* Top Header: Three sections (Left, Center, Right) */}
       <div className="flex justify-between items-center p-2 bg-white shadow-sm">
-        {/* Left Section: I display the company logo for Admin users */}
+        {/* Left: Display company logo only for Admin (not for Office Admin, as per requirement) */}
         <div className="w-1/3">
           {isAdmin && (
             <img
@@ -187,14 +175,14 @@ export default function DashboardHeader({
             />
           )}
         </div>
-        {/* Center Section: show the company name and branch selector when available */}
+        {/* Center: Company name and branch selector */}
         <div className="w-1/3 flex flex-col items-center">
           {(isAdmin || (!isAdmin && impersonatedData)) && (
             <div className="flex items-center space-x-2">
               <span className="font-semibold text-md">
                 {headerCompanyName} {headerCompanyName && " | Branch"}
               </span>
-              <div className="flex items-center text-gray-600 hover:text-gray-900 transition-colors font-semibold text-lg">
+              <div className="flex items-center text-gray-600 transition-colors font-semibold text-lg">
                 <Select value={selectedBranch} onValueChange={setSelectedBranch}>
                   <SelectTrigger className="border-none shadow-none bg-transparent p-0 font-semibold">
                     <SelectValue placeholder="Select Branch" />
@@ -211,15 +199,13 @@ export default function DashboardHeader({
             </div>
           )}
         </div>
-        {/* Right Section: Avatar dropdown with logout (Admin) or impersonation options (SuperAdmin) */}
-        <div className="w-1/3 flex justify-end items-center space-x-2">
+        {/* Right: Display Avatar with dropdown for logout.
+            The dropdown shows the user's email (as a disabled item) and a Logout option.
+        */}
+        <div className="w-1/3 flex justify-end items-center">
           {isAdmin ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                {/* <Button variant="ghost" className="flex items-center space-x-2">
-                  <span>{userEmail}</span>
-                  <ChevronDown size={16} />
-                </Button> */}
                 <Avatar className="cursor-pointer w-8 h-8">
                   <AvatarImage
                     src="https://cdn.jsdelivr.net/gh/alohe/avatars/png/upstream_17.png"
@@ -229,9 +215,7 @@ export default function DashboardHeader({
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                {otherEmails && otherEmails.map((email) => (
-                  <DropdownMenuItem key={email}>{email}</DropdownMenuItem>
-                ))}
+                {/* Show user email inside dropdown (disabled item) */}
                 <DropdownMenuItem disabled className="text-gray-800">
                   {userEmail}
                 </DropdownMenuItem>
@@ -274,12 +258,8 @@ export default function DashboardHeader({
         </div>
       </div>
 
-      {/* render filter controls for date range and view type (daily/hourly)
-          when only SuperAdmin or impersonation is active */}
-
-
+      {/* Optional filter controls for date range and view type are rendered only for SuperAdmin or when impersonation is active */}
       {(!isAdmin || impersonatedData) && (
-      
         <div className="flex justify-center items-center py-4 space-x-4">
           <Popover>
             <PopoverTrigger asChild>

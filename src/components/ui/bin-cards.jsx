@@ -52,26 +52,26 @@ const StatCard = React.memo(({ binName, latestWeight, binCapacity }) => {
 
   return (
     <div
-      className={`bg-white rounded-[30px] border p-6 shadow-sm relative transition-transform duration-300 ${
-        animate ? 'scale-105' : ''
+      className={`bg-white rounded-[10px] border p-6 relative transition-transform duration-300 ${
+        animate ? 'scale-75' : ''
       }`}
     >
       {/* Icon container with dynamic background color */}
       <div
-        className={`absolute top-4 right-4 w-10 h-10 ${iconBgColor} rounded-full flex items-center justify-center`}
+        className={`absolute top-4 right-4 w-14 h-14 ${iconBgColor} rounded-full flex items-center justify-center`}
       >
         {IconComponent && <IconComponent className="w-6 h-6" />}
       </div>
       <div className="flex flex-col">
         {/* Bin title */}
-        <h3 className="text-gray-600 font-medium">{binName}</h3>
+        <h2 className="text-gray-700 font-medium text-[22px] text-bold">{binName}</h2>
         {/* Bin capacity */}
-        <p className="text-sm text-gray-400">Bin Capacity {binCapacity}L</p>
+        <p className="text-md text-gray-500">Bin Capacity: <span className="font-bold">{binCapacity}L</span></p>
         {/* Latest weight display with animation */}
         <div className="mt-4">
           <div className="flex items-baseline">
-            <span className="text-6xl font-bold text-gray-600">{latestWeight}</span>
-            <span className="ml-1 text-xl text-gray-600">Kgs</span>
+            <span className="text-8xl font-bold text-gray-600">{latestWeight}</span>
+            <span className="ml-1 text-xl text-gray-700">Kgs</span>
           </div>
           <p className="text-sm text-gray-500 mt-1">Current Weight</p>
         </div>
@@ -91,7 +91,7 @@ const StatCard = React.memo(({ binName, latestWeight, binCapacity }) => {
 const BinCards = ({ binData, isLoading, error, onRefresh }) => {
   // Log the received bin data for debugging (optional).
   useEffect(() => {
-    console.log("BinCards received binData:", binData);
+    // console.log("BinCards received binData:", binData);
   }, [binData]);
 
   if (isLoading) {
@@ -119,7 +119,7 @@ const BinCards = ({ binData, isLoading, error, onRefresh }) => {
   }
 
   return (
-    <div className="px-20 py-4">
+    <div className="px-4 py-4">
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {binData.map((bin) => (
