@@ -1,35 +1,44 @@
-import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+"use client"
 
-export default function DualLineAreaChart({ title, branchId, filter, rateKey, targetKey }) {
-  const [chartData, setChartData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+import { useState, useEffect, useCallback } from "react"
+import axios from "axios"
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from "recharts"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart"
+
+export default function DualLineAreaChart({ title, description, branchId, filter, rateKey, targetKey }) {
+  const [chartData, setChartData] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [hiddenSeries, setHiddenSeries] = useState({})
 
   const fetchChartData = useCallback(async () => {
-    if (!branchId) return;
-    setIsLoading(true);
-    setError(null);
+    if (!branchId) return
+    setIsLoading(true)
+    setError(null)
     try {
       const response = await axios.get(
         `/api/v1/analytics/dailyDiversionRecycling?branchId=${branchId}&filter=${filter}`,
-        { withCredentials: true }
-      );
-      setChartData(response.data.data);
+        { withCredentials: true },
+      )
+      setChartData(response.data.data)
     } catch (err) {
-      console.error("Error fetching chart data:", err);
-      setError("Failed to fetch chart data");
+      console.error("Error fetching chart data:", err)
+      setError("Failed to fetch chart data")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [branchId, filter]);
+  }, [branchId, filter])
 
   useEffect(() => {
-    fetchChartData();
-  }, [fetchChartData]);
+    fetchChartData()
+  }, [fetchChartData])
 
   const config = {
     [rateKey]: {
@@ -40,12 +49,20 @@ export default function DualLineAreaChart({ title, branchId, filter, rateKey, ta
       label: "Target Rate",
       color: "hsl(var(--chart-2))",
     },
-  };
+  }
+
+  const handleLegendClick = (dataKey) => {
+    setHiddenSeries((prev) => ({
+      ...prev,
+      [dataKey]: !prev[dataKey],
+    }))
+  }
 
   return (
-    <Card className="h-[400px]">
+    <Card className="h-[450px]">
       <CardHeader>
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -54,34 +71,63 @@ export default function DualLineAreaChart({ title, branchId, filter, rateKey, ta
           <div className="text-red-500">{error}</div>
         ) : (
           <ChartContainer config={config} className="h-[300px]">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
-                
                   <linearGradient id={`gradient-${rateKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.9}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.9} />
+                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
                   </linearGradient>
                   {/* <linearGradient id={`gradient-${targetKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.9} />
+                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.2} />
                   </linearGradient> */}
-                  
                 </defs>
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(date) => new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  tickFormatter={(date) =>
+                    new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  }
                 />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ChartLegend content={<ChartLegendContent />} />
-                <Area type="monotone" dataKey={rateKey} stroke="hsl(var(--chart-1))" fillOpacity={1} fill={`url(#gradient-${rateKey})`} />
-                <Area type="monotone" dataKey={targetKey} stroke="hsl(var(--chart-2))" fillOpacity={1} fill={`url(#gradient-${targetKey})`} />
+                {!hiddenSeries[rateKey] && (
+                  <Area
+                    type="monotone"
+                    dataKey={rateKey}
+                    stroke="hsl(var(--chart-1))"
+                    fillOpacity={1}
+                    fill={`url(#gradient-${rateKey})`}
+                  />
+                )}
+                {!hiddenSeries[targetKey] && (
+                  <Area
+                    type="monotone"
+                    dataKey={targetKey}
+                    stroke="hsl(var(--chart-2))"
+                    fillOpacity={1}
+                    fill={`url(#gradient-${targetKey})`}
+                  />
+                )}
               </AreaChart>
             </ResponsiveContainer>
+            <div className="mt-4">
+              <ChartLegend
+                content={
+                  <ChartLegendContent
+                    payload={[
+                      { value: config[rateKey].label, color: config[rateKey].color, dataKey: rateKey },
+                      { value: config[targetKey].label, color: config[targetKey].color, dataKey: targetKey },
+                    ]}
+                    onLegendClick={handleLegendClick}
+                  />
+                }
+              />
+            </div>
           </ChartContainer>
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
+
