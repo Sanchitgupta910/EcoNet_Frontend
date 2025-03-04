@@ -13,21 +13,21 @@ export function UserForm({ onSubmit, branches, companyId }) {
     password: '',
     phone: '',
     countryCode: '',
-    branchName: '',
+    officeName: '',
     associatedCompany: companyId,
     branchAddress: '' 
   });
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (user.branchName) {
-      const selectedBranch = branches.find(branch => branch.name === user.branchName);
+    if (user.officeName) {
+      const selectedBranch = branches.find(branch => branch.name === user.officeName);
       setUser(prevUser => ({
         ...prevUser,
         branchAddress: selectedBranch ? selectedBranch.id : ''
       }));
     }
-  }, [user.branchName, branches]);
+  }, [user.officeName, branches]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -158,17 +158,22 @@ export function UserForm({ onSubmit, branches, companyId }) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="SuperAdmin">SuperAdmin</SelectItem>
-            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
+            <SelectItem value="CountryAdmin">Country Admin</SelectItem>
+            <SelectItem value="CityAdmin">City Admin</SelectItem>
+            <SelectItem value="OfficeAdmin">Office Admin</SelectItem>
+            <SelectItem value="EmployeeDashboardUser">Employee Dashboard User</SelectItem>
+            <SelectItem value="BinDisplayUser">Bin Display User</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="branchName">Branch</Label>
+        <Label htmlFor="officeName">Branch</Label>
         <Select 
-          name="branchName" 
-          value={user.branchName} 
-          onValueChange={(value) => handleChange({ target: { name: 'branchName', value } })}
+          name="officeName" 
+          value={user.officeName} 
+          onValueChange={(value) => handleChange({ target: { name: 'officeName', value } })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a branch" />
