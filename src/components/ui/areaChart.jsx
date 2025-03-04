@@ -75,13 +75,13 @@ export default function DualLineAreaChart({ title, description, branchId, filter
               <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id={`gradient-${rateKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.9} />
-                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
+                    <stop offset="5%" stopColor={config[rateKey].color} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={config[rateKey].color} stopOpacity={0.1} />
                   </linearGradient>
-                  {/* <linearGradient id={`gradient-${targetKey}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.9} />
-                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.2} />
-                  </linearGradient> */}
+                  <linearGradient id={`gradient-${targetKey}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={config[targetKey].color} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={config[targetKey].color} stopOpacity={0.1} />
+                  </linearGradient>
                 </defs>
                 <XAxis
                   dataKey="date"
@@ -93,20 +93,22 @@ export default function DualLineAreaChart({ title, description, branchId, filter
                 <ChartTooltip content={<ChartTooltipContent />} />
                 {!hiddenSeries[rateKey] && (
                   <Area
-                    type="monotone"
+                    type="natural"
                     dataKey={rateKey}
-                    stroke="hsl(var(--chart-1))"
+                    stroke={config[rateKey].color}
                     fillOpacity={1}
                     fill={`url(#gradient-${rateKey})`}
+                    stackId="a"
                   />
                 )}
                 {!hiddenSeries[targetKey] && (
                   <Area
-                    type="monotone"
+                    type="natural"
                     dataKey={targetKey}
-                    stroke="hsl(var(--chart-2))"
+                    stroke={config[targetKey].color}
                     fillOpacity={1}
                     fill={`url(#gradient-${targetKey})`}
+                    stackId="a"
                   />
                 )}
               </AreaChart>
@@ -130,4 +132,3 @@ export default function DualLineAreaChart({ title, description, branchId, filter
     </Card>
   )
 }
-

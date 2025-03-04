@@ -5,10 +5,10 @@ import { Label } from "./label";
 
 export function AddressForm({ onSubmit, initialData = {}, companyId }) {
   const [address, setAddress] = useState({
-    branchName: '',
+    officeName: '',
     address: '',
     city: '',
-    state: '',
+    region: '',
     postalCode: '',
     country: '',
     ...initialData // Ensure initialData is safely spread
@@ -34,7 +34,7 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="associatedCompany">Associated Company</Label>
+        <Label htmlFor="associatedCompany">Organization ID</Label>
         <Input
           id="associatedCompany"
           name="associatedCompany"
@@ -44,12 +44,12 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="branchName">Branch Name</Label>
+        <Label htmlFor="officeName">Office</Label>
         <Input
           placeholder="Company Name_region, e.g. NetNada_sydney"
-          id="branchName"
-          name="branchName"
-          value={address.branchName}
+          id="officeName"
+          name="officeName"
+          value={address.officeName}
           onChange={handleChange}
           required
         />
@@ -76,11 +76,11 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="state">State</Label>
+          <Label htmlFor="state">Region</Label>
           <Input
-            id="state"
-            name="state"
-            value={address.state}
+            id="region"
+            name="region"
+            value={address.region}
             onChange={handleChange}
             required
           />

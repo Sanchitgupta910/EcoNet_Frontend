@@ -74,23 +74,23 @@ export default function CompanyInfo() {
   const branchOptions = useMemo(() => {
     return company?.branchAddresses?.map((branch) => ({
       id: branch._id,
-      name: branch.branchName,
+      name: branch.officeName,
     })) || [];
   }, [company]);
 
   // ---------------------- Helper: Get User Branch Name ---------------------- //
   /**
    * Returns the branch name for a user.
-   * If the user.branchAddress is an object with a branchName, that is used.
+   * If the user.branchAddress is an object with a officeName, that is used.
    * Otherwise, if it is an ID, the branchOptions list is searched for a matching branch.
    * @param {Object} user - The user object.
    * @returns {string} - The branch name or "N/A" if not found.
    */
-  const getUserBranchName = (user) => {
+  const getUserOfficeName = (user) => {
     if (!user.branchAddress) return "N/A";
-    // If branchAddress is an object with a branchName property, use it
-    if (typeof user.branchAddress === 'object' && user.branchAddress.branchName) {
-      return user.branchAddress.branchName;
+    // If branchAddress is an object with a officeName property, use it
+    if (typeof user.branchAddress === 'object' && user.branchAddress.officeName) {
+      return user.branchAddress.officeName;
     }
     // Otherwise, assume branchAddress is an ID and search in branchOptions
     const branch = branchOptions.find((branch) => branch.id === user.branchAddress);
@@ -101,15 +101,15 @@ export default function CompanyInfo() {
 
   /**
    * Add a new address or update an existing address.
-   * If an address is selected (and has a branchName), update it; otherwise, add a new address.
+   * If an address is selected (and has a officeName), update it; otherwise, add a new address.
    * @param {Object} addressData - The form data for the address.
    */
   const addOrUpdateAddress = async (addressData) => {
     try {
-      if (selectedAddress && selectedAddress.branchName) {
+      if (selectedAddress && selectedAddress.officeName) {
         // Update existing address
         await axios.post('/api/v1/address/updateCompanyAddress', {
-          branchName: selectedAddress.branchName,
+          officeName: selectedAddress.officeName,
           ...addressData,
           addressId: selectedAddress._id,
         });
@@ -117,7 +117,7 @@ export default function CompanyInfo() {
         setCompany((prev) => ({
           ...prev,
           branchAddresses: prev.branchAddresses.map((addr) =>
-            addr.branchName === selectedAddress.branchName ? { ...addr, ...addressData } : addr
+            addr.officeName === selectedAddress.officeName ? { ...addr, ...addressData } : addr
           ),
         }));
       } else {
@@ -165,10 +165,10 @@ export default function CompanyInfo() {
    */
   const confirmDeleteAddress = async () => {
     try {
-      await axios.post(`/api/v1/address/deleteCompanyAddress`, { branchName: selectedAddress.branchName });
+      await axios.post(`/api/v1/address/deleteCompanyAddress`, { officeName: selectedAddress.officeName });
       setCompany((prev) => ({
         ...prev,
-        branchAddresses: prev.branchAddresses.filter((a) => a.branchName !== selectedAddress.branchName),
+        branchAddresses: prev.branchAddresses.filter((a) => a.officeName !== selectedAddress.officeName),
       }));
       setSelectedAddress(null);
     } catch (error) {
@@ -322,7 +322,7 @@ export default function CompanyInfo() {
                       <TableHead>Branch Name</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>City</TableHead>
-                      <TableHead>State</TableHead>
+                      <TableHead>Region</TableHead>
                       <TableHead>Postal Code</TableHead>
                       <TableHead>Country</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -333,10 +333,10 @@ export default function CompanyInfo() {
                       .filter((address) => !address.isdeleted)
                       .map((address) => (
                         <TableRow key={address._id}>
-                          <TableCell className="font-medium">{address.branchName}</TableCell>
+                          <TableCell className="font-medium">{address.officeName}</TableCell>
                           <TableCell>{address.address}</TableCell>
                           <TableCell>{address.city}</TableCell>
-                          <TableCell>{address.state}</TableCell>
+                          <TableCell>{address.region}</TableCell>
                           <TableCell>{address.postalCode}</TableCell>
                           <TableCell>{address.country}</TableCell>
                           <TableCell className="text-right">
@@ -407,7 +407,7 @@ export default function CompanyInfo() {
                           <TableCell className="font-medium">{user.fullName}</TableCell>
                           <TableCell>{user.email}</TableCell>
                           {/* Use helper function to display the correct branch name */}
-                          <TableCell>{getUserBranchName(user)}</TableCell>
+                          <TableCell>{getUserOfficeName(user)}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -462,9 +462,9 @@ export default function CompanyInfo() {
                               <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
                                 {index === 0 && (
                                   <TableCell rowSpan={branch.dustbins.length} className="font-medium align-top">
-                                    {branch.branchName}
+                                    {branch.officeName}
                                     <br />
-                                    {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
+                                    {branch.address}, {branch.city}, {branch.region} {branch.postalCode}
                                   </TableCell>
                                 )}
                                 <TableCell>{dustbin.dustbinType}</TableCell>
@@ -474,9 +474,9 @@ export default function CompanyInfo() {
                           ) : (
                             <TableRow>
                               <TableCell className="font-medium align-top">
-                                {branch.branchName}
+                                {branch.officeName}
                                 <br />
-                                {branch.address}, {branch.city}, {branch.state} {branch.postalCode}
+                                {branch.address}, {branch.city}, {branch.region} {branch.postalCode}
                               </TableCell>
                               <TableCell colSpan={2} className="text-center text-gray-500 italic">
                                 No bins available for this branch
@@ -535,7 +535,7 @@ export default function CompanyInfo() {
               <DialogDescription>
                 Are you sure you want to delete{' '}
                 <span className="text-red-600 text-md font-semibold">
-                  {selectedAddress ? selectedAddress.branchName : selectedUser?.fullName}
+                  {selectedAddress ? selectedAddress.officeName : selectedUser?.fullName}
                 </span>{' '}
                 {selectedAddress ? 'branch' : 'user'}? This action cannot be undone.
               </DialogDescription>
