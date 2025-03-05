@@ -1,46 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
-import { Eye, EyeOff } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
+import { Eye, EyeOff } from "lucide-react";
 import { countryCodes } from "./countrycodes";
 
 export function UserForm({ onSubmit, branches, companyId }) {
   const [user, setUser] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    phone: '',
-    countryCode: '',
-    officeName: '',
+    fullName: "",
+    email: "",
+    password: "",
+    phone: "",
+    countryCode: "",
+    officeName: "",
     associatedCompany: companyId,
-    branchAddress: '' 
+    branchAddress: "",
   });
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (user.officeName) {
-      const selectedBranch = branches.find(branch => branch.name === user.officeName);
-      setUser(prevUser => ({
+      const selectedBranch = branches.find(
+        (branch) => branch.name === user.officeName
+      );
+      setUser((prevUser) => ({
         ...prevUser,
-        branchAddress: selectedBranch ? selectedBranch.id : ''
+        branchAddress: selectedBranch ? selectedBranch.id : "",
       }));
     }
   }, [user.officeName, branches]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser(prevUser => ({
+    setUser((prevUser) => ({
       ...prevUser,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleCountryCodeChange = (value) => {
-    setUser(prevUser => ({
+    setUser((prevUser) => ({
       ...prevUser,
-      countryCode: value
+      countryCode: value,
     }));
   };
 
@@ -49,7 +57,7 @@ export function UserForm({ onSubmit, branches, companyId }) {
     const { countryCode, phone, ...restUser } = user;
     const userWithPhone = {
       ...restUser,
-      phone: `${countryCode}${phone}`
+      phone: `${countryCode}${phone}`,
     };
     onSubmit(userWithPhone);
   };
@@ -109,19 +117,20 @@ export function UserForm({ onSubmit, branches, companyId }) {
             className="absolute right-2 top-1/2 -translate-y-1/2"
             onClick={togglePasswordVisibility}
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
-      
+
       {/* Country Code and Phone Number */}
       <div className="space-y-2">
         <Label>Mobile Number</Label>
         <div className="flex space-x-2">
-          <Select 
-            name="countryCode"
-            onValueChange={handleCountryCodeChange}
-          >
+          <Select name="countryCode" onValueChange={handleCountryCodeChange}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Code" />
             </SelectTrigger>
@@ -148,10 +157,13 @@ export function UserForm({ onSubmit, branches, companyId }) {
       {/* Role Selection */}
       <div className="space-y-2">
         <Label htmlFor="role">Role</Label>
-        <Select 
-          name="role" 
-          value={user.role} 
-          onValueChange={(value) => handleChange({ target: { name: 'role', value } })}
+        <Select
+          name="role"
+          value={user.role}
+          onValueChange={(value) =>
+            handleChange({ target: { name: "role", value } })
+          }
+          required
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a role" />
@@ -162,7 +174,9 @@ export function UserForm({ onSubmit, branches, companyId }) {
             <SelectItem value="CountryAdmin">Country Admin</SelectItem>
             <SelectItem value="CityAdmin">City Admin</SelectItem>
             <SelectItem value="OfficeAdmin">Office Admin</SelectItem>
-            <SelectItem value="EmployeeDashboardUser">Employee Dashboard User</SelectItem>
+            <SelectItem value="EmployeeDashboardUser">
+              Employee Dashboard User
+            </SelectItem>
             <SelectItem value="BinDisplayUser">Bin Display User</SelectItem>
           </SelectContent>
         </Select>
@@ -170,10 +184,12 @@ export function UserForm({ onSubmit, branches, companyId }) {
 
       <div className="space-y-2">
         <Label htmlFor="officeName">Branch</Label>
-        <Select 
-          name="officeName" 
-          value={user.officeName} 
-          onValueChange={(value) => handleChange({ target: { name: 'officeName', value } })}
+        <Select
+          name="officeName"
+          value={user.officeName}
+          onValueChange={(value) =>
+            handleChange({ target: { name: "officeName", value } })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a branch" />
@@ -187,20 +203,20 @@ export function UserForm({ onSubmit, branches, companyId }) {
           </SelectContent>
         </Select>
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="branchAddress">Branch ID</Label>
         <Input
           id="branchAddress"
           name="branchAddress"
-          value={user.branchAddress} 
+          value={user.branchAddress}
           disabled
           className="bg-gray-100"
         />
       </div>
-      
+
       <Button type="submit" className="w-full">
-        Add User
+        Add Admin User
       </Button>
     </form>
   );

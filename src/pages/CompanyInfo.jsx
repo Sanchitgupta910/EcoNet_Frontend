@@ -121,7 +121,7 @@ export default function CompanyInfo() {
       return user.branchAddress.officeName;
     }
     const branch = branchOptions.find(
-      (branch) => branch.id === user.branchAddress,
+      (branch) => branch.id === user.branchAddress
     );
     return branch ? branch.name : "N/A";
   };
@@ -168,7 +168,7 @@ export default function CompanyInfo() {
           branchAddresses: prev.branchAddresses.map((addr) =>
             addr.officeName === selectedAddress.officeName
               ? { ...addr, ...addressData }
-              : addr,
+              : addr
           ),
         }));
       } else {
@@ -206,7 +206,7 @@ export default function CompanyInfo() {
       setCompany((prev) => ({
         ...prev,
         branchAddresses: prev.branchAddresses.filter(
-          (a) => a.officeName !== selectedAddress.officeName,
+          (a) => a.officeName !== selectedAddress.officeName
         ),
       }));
       setSelectedAddress(null);
@@ -344,7 +344,7 @@ export default function CompanyInfo() {
                 open={isAddressDialogOpen}
                 onOpenChange={setIsAddressDialogOpen}
               >
-                <DialogTrigger asChild>
+                <DialogTrigger>
                   <Button
                     onClick={handleAddAddress}
                     variant="outline"
@@ -394,7 +394,7 @@ export default function CompanyInfo() {
                         City
                       </TableHead>
                       <TableHead className="font-medium text-slate-700">
-                        Region
+                        Subdivison
                       </TableHead>
                       <TableHead className="font-medium text-slate-700">
                         Postal Code
@@ -420,7 +420,12 @@ export default function CompanyInfo() {
                           </TableCell>
                           <TableCell>{address.address}</TableCell>
                           <TableCell>{address.city}</TableCell>
-                          <TableCell>{address.region}</TableCell>
+                          <TableCell>
+                            <span className="font-bold text-slate-500">
+                              {address.subdivisionType}:
+                            </span>{" "}
+                            {address.subdivision}
+                          </TableCell>
                           <TableCell>{address.postalCode}</TableCell>
                           <TableCell>{address.country}</TableCell>
                           <TableCell className="text-right">
@@ -473,14 +478,14 @@ export default function CompanyInfo() {
                     <Button
                       variant="outline"
                       onClick={() => setIsUserDialogOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
+                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-full px-4 shadow-sm transition-all"
                       // disable the button if branch is empty
                       disabled={
                         !company.branchAddresses ||
                         company.branchAddresses.length === 0
                       }
                     >
-                      <Plus className="mr-2 h-4 w-4" /> Add User
+                      <Plus className="mr-2 h-4 w-4" /> Add Admin User
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -559,7 +564,7 @@ export default function CompanyInfo() {
                     <Button
                       variant="outline"
                       onClick={() => setIsDustbinDialogOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
+                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-full px-4 shadow-sm transition-all"
                       disabled={
                         !company.branchAddresses ||
                         company.branchAddresses.length === 0
@@ -651,7 +656,7 @@ export default function CompanyInfo() {
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
           <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>Add New Admin User</DialogTitle>
               <DialogDescription>
                 Enter the details for the new user.
               </DialogDescription>

@@ -1,35 +1,188 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 
-export function AddressForm({ onSubmit, initialData = {}, companyId }) {
+// Country subdivision mapping for USA, UK, AUS, NZ
+const countrySubdivisionMapping = {
+  USA: {
+    name: "United States",
+    label: "State",
+    options: [
+      "Alabama",
+      "Alaska",
+      "Arizona",
+      "Arkansas",
+      "California",
+      "Colorado",
+      "Connecticut",
+      "Delaware",
+      "Florida",
+      "Georgia",
+      "Hawaii",
+      "Idaho",
+      "Illinois",
+      "Indiana",
+      "Iowa",
+      "Kansas",
+      "Kentucky",
+      "Louisiana",
+      "Maine",
+      "Maryland",
+      "Massachusetts",
+      "Michigan",
+      "Minnesota",
+      "Mississippi",
+      "Missouri",
+      "Montana",
+      "Nebraska",
+      "Nevada",
+      "New Hampshire",
+      "New Jersey",
+      "New Mexico",
+      "New York",
+      "North Carolina",
+      "North Dakota",
+      "Ohio",
+      "Oklahoma",
+      "Oregon",
+      "Pennsylvania",
+      "Rhode Island",
+      "South Carolina",
+      "South Dakota",
+      "Tennessee",
+      "Texas",
+      "Utah",
+      "Vermont",
+      "Virginia",
+      "Washington",
+      "West Virginia",
+      "Wisconsin",
+      "Wyoming",
+    ],
+  },
+  UK: {
+    name: "United Kingdom",
+    label: "Region",
+    options: ["England", "Northern Ireland", "Scotland", "Wales"],
+  },
+  AUS: {
+    name: "Australia",
+    label: "State/Territory",
+    options: [
+      "New South Wales",
+      "Victoria",
+      "Queensland",
+      "South Australia",
+      "Western Australia",
+      "Tasmania",
+      "Northern Territory",
+      "Australian Capital Territory",
+    ],
+  },
+  NZ: {
+    name: "New Zealand",
+    label: "Region",
+    options: [
+      "Auckland",
+      "Bay of Plenty",
+      "Canterbury",
+      "Gisborne",
+      "Hawke's Bay",
+      "Manawatu-Whanganui",
+      "Marlborough",
+      "Nelson",
+      "Otago",
+      "Southland",
+      "Taranaki",
+      "Tasman",
+      "Waikato",
+      "Wellington",
+      "West Coast",
+    ],
+  },
+};
+
+const countryCodes = Object.keys(countrySubdivisionMapping);
+const DEFAULT_SUBDIVISION_LABEL = "Region/Province";
+
+export function AddressForm({ onSubmit, initialData, companyId }) {
+  // Ensure initialData is an object
+  const safeInitialData = initialData || {};
   const [address, setAddress] = useState({
-    officeName: '',
-    address: '',
-    city: '',
-    region: '',
-    postalCode: '',
-    country: '',
-    ...initialData // Ensure initialData is safely spread
+    officeName: "",
+    address: "",
+    city: "",
+    subdivision: "",
+    postalCode: "",
+    country: "",
+    ...safeInitialData,
   });
 
+  // Convert full country name to country code if needed
   useEffect(() => {
-    // Update address state when initialData changes, e.g., when editing an existing address
-    setAddress((prevAddress) => ({
-      ...prevAddress,
-      ...initialData
-    }));
-  }, [initialData]);
+    if (safeInitialData.country) {
+      const countryEntry = Object.entries(countrySubdivisionMapping).find(
+        ([, data]) => data.name === safeInitialData.country
+      );
+      if (countryEntry) {
+        setAddress((prev) => ({ ...prev, country: countryEntry[0] }));
+      }
+    }
+  }, [safeInitialData]);
 
   const handleChange = (e) => {
     setAddress({ ...address, [e.target.name]: e.target.value });
   };
 
+  const handleCountryChange = (value) => {
+    // Reset subdivision when country changes
+    setAddress({ ...address, country: value, subdivision: "" });
+  };
+
+  const handleSubdivisionChange = (value) => {
+    setAddress({ ...address, subdivision: value });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ ...address, associatedCompany: companyId });
+    // Convert country code to full name before submitting
+    const countryName =
+      address.country && countrySubdivisionMapping[address.country]
+        ? countrySubdivisionMapping[address.country].name
+        : address.country;
+
+    // Attach subdivisionType using the mapping label
+    onSubmit({
+      ...address,
+      country: countryName,
+      subdivisionType:
+        address.country && countrySubdivisionMapping[address.country]
+          ? countrySubdivisionMapping[address.country].label
+          : DEFAULT_SUBDIVISION_LABEL,
+      associatedCompany: companyId,
+    });
   };
+
+  // Dynamic label for the subdivision field
+  const getSubdivisionLabel = () => {
+    return address.country && countrySubdivisionMapping[address.country]
+      ? countrySubdivisionMapping[address.country].label
+      : DEFAULT_SUBDIVISION_LABEL;
+  };
+
+  // Check if the selected country has predefined subdivision options
+  const hasSubdivisionOptions =
+    address.country && countrySubdivisionMapping[address.country];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -38,15 +191,16 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
         <Input
           id="associatedCompany"
           name="associatedCompany"
-          value={companyId || ''}
+          value={companyId || ""}
           disabled
           className="bg-gray-100"
         />
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="officeName">Office</Label>
+        <Label htmlFor="officeName">Office Name</Label>
         <Input
-          placeholder="Company Name_region, e.g. NetNada_sydney"
+          placeholder="e.g. NetNada HQ"
           id="officeName"
           name="officeName"
           value={address.officeName}
@@ -54,6 +208,71 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
           required
         />
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="country">Country</Label>
+        <Select
+          value={address.country}
+          onValueChange={handleCountryChange}
+          required
+        >
+          <SelectTrigger id="country">
+            <SelectValue placeholder="Select a country" />
+          </SelectTrigger>
+          <SelectContent>
+            {countryCodes.map((code) => (
+              <SelectItem key={code} value={code}>
+                {countrySubdivisionMapping[code].name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="subdivision">{getSubdivisionLabel()}</Label>
+        {hasSubdivisionOptions ? (
+          <Select
+            value={address.subdivision}
+            onValueChange={handleSubdivisionChange}
+            required
+          >
+            <SelectTrigger id="subdivision">
+              <SelectValue placeholder={`Select ${getSubdivisionLabel()}`} />
+            </SelectTrigger>
+            <SelectContent className="max-h-56 overflow-y-auto">
+              {countrySubdivisionMapping[address.country].options.map(
+                (option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            id="subdivision"
+            name="subdivision"
+            placeholder={`Enter ${getSubdivisionLabel().toLowerCase()}`}
+            value={address.subdivision}
+            onChange={handleChange}
+            required
+          />
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="city">City</Label>
+        <Input
+          id="city"
+          name="city"
+          value={address.city}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="address">Address</Label>
         <Input
@@ -64,52 +283,22 @@ export function AddressForm({ onSubmit, initialData = {}, companyId }) {
           required
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            name="city"
-            value={address.city}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="state">Region</Label>
-          <Input
-            id="region"
-            name="region"
-            value={address.region}
-            onChange={handleChange}
-            required
-          />
-        </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="postalCode">Postal Code</Label>
+        <Input
+          id="postalCode"
+          name="postalCode"
+          value={address.postalCode}
+          onChange={handleChange}
+          required
+        />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="postalCode">Postal Code</Label>
-          <Input
-            id="postalCode"
-            name="postalCode"
-            value={address.postalCode}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="country">Country</Label>
-          <Input
-            id="country"
-            name="country"
-            value={address.country}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      </div>
-      <Button type="submit" className="w-full">
-        {initialData && initialData._id ? 'Update Address' : 'Add Address'}
+
+      <Button type="submit" className="w-full mt-6">
+        {safeInitialData && safeInitialData._id
+          ? "Update Address"
+          : "Add Address"}
       </Button>
     </form>
   );
