@@ -216,14 +216,14 @@
 
 import React, { useState, useEffect, useReducer, useCallback } from "react";
 import { useSelector } from "react-redux";
-import DashboardHeader from "../components/layouts/dashboardHeader";
+import DashboardHeader from "../components/layouts/DashboardHeader";
 import NetNada_logo from "../assets/NetNada_logo.png";
-import SideMenu from "../components/layouts/side-menu";
+import SideMenu from "../components/layouts/SideMenu";
 import BinCards from "../components/ui/BinCards";
 import DonutChart from "../components/ui/DonutChart";
 import DualLineAreaChart from "../components/ui/AreaChart";
 import axios from "axios";
-import { useSocket } from "../lib/socket";
+import { useSocket } from "../lib/Socket";
 import {
   Select,
   SelectContent,

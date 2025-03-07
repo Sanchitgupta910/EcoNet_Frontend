@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle, X, AlertCircle, Info } from "lucide-react";
-import { clname } from "@/lib/utils";
+import { clname } from "@/lib/Utils";
 
 /**
  * Toast Notification Component

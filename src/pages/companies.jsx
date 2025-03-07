@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 // Custom UI components and icons
-import SideMenu from "../components/layouts/side-menu";
+import SideMenu from "../components/layouts/SideMenu";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import {

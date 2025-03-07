@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from "../components/ui/Tooltip";
 // Import custom UI components
-import SideMenu from "../components/layouts/side-menu";
+import SideMenu from "../components/layouts/SideMenu";
 import { Button } from "../components/ui/Button";
 import {
   Card,
