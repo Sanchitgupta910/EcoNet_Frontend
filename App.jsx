@@ -5,8 +5,8 @@ import ProtectedRoute from "./src/lib/protectedRoute"; // Protects routes from u
 import { ToastProvider } from "./src/components/ui/ToastProvider"; // Provides toast notifications
 
 // Import your page components
-import Login from "./src/pages/login";
-import Companies from "./src/pages/companies";
+import Login from "./src/pages/Login";
+import Companies from "./src/pages/Companies";
 import CompanyInfo from "./src/pages/CompanyInfo";
 import Dashboard from "./src/pages/DashboardPage";
 
