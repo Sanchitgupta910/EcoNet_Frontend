@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { Button } from './button';
-import { Input } from './input';
-import { Label } from './label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import React, { useState } from "react";
+import axios from "axios";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Label } from "./label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 
 export function DustbinForm({ branches = [], onDustbinAdded }) {
   const [formData, setFormData] = useState({
-    capacity: '',
-    branchName: '',
-    branchId: ''
+    capacity: "",
+    officeName: "",
+    branchId: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -17,14 +23,14 @@ export function DustbinForm({ branches = [], onDustbinAdded }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('/api/v1/dustbin/adddustbin', {
+      await axios.post("/api/v1/dustbin/adddustbin", {
         binCapacity: formData.capacity,
-        branchAddress: formData.branchId
+        branchAddress: formData.branchId,
       });
       setLoading(false);
       onDustbinAdded(); // Call the callback to close the form and refresh data
     } catch (error) {
-      console.error('Error adding dustbin:', error);
+      console.error("Error adding dustbin:", error);
       setLoading(false);
     }
   };
@@ -35,7 +41,9 @@ export function DustbinForm({ branches = [], onDustbinAdded }) {
         <Label htmlFor="capacity">Dustbin Capacity</Label>
         <Select
           value={formData.capacity}
-          onValueChange={(value) => setFormData({ ...formData, capacity: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, capacity: value })
+          }
         >
           <SelectTrigger id="capacity" className="w-full">
             <SelectValue placeholder="Select capacity" />
@@ -51,13 +59,15 @@ export function DustbinForm({ branches = [], onDustbinAdded }) {
       <div className="space-y-2">
         <Label htmlFor="branch">Branch</Label>
         <Select
-          value={formData.branchName}
+          value={formData.officeName}
           onValueChange={(value) => {
-            const selectedBranch = branches.find(branch => branch.name === value);
+            const selectedBranch = branches.find(
+              (branch) => branch.name === value
+            );
             setFormData({
               ...formData,
-              branchName: value,
-              branchId: selectedBranch ? selectedBranch.id : ''
+              officeName: value,
+              branchId: selectedBranch ? selectedBranch.id : "",
             });
           }}
         >
@@ -66,18 +76,18 @@ export function DustbinForm({ branches = [], onDustbinAdded }) {
           </SelectTrigger>
           <SelectContent>
             {branches
-            .filter(branch => !branch.isdeleted) // Exclude deleted branches
-            .map((branch) => (
-              <SelectItem key={branch.id} value={branch.name}>
-                {branch.name}
-              </SelectItem>
-            ))}
+              .filter((branch) => !branch.isdeleted) // Exclude deleted branches
+              .map((branch) => (
+                <SelectItem key={branch.id} value={branch.name}>
+                  {branch.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? 'Adding...' : 'Add Dustbin'}
+        {loading ? "Adding..." : "Add Dustbin"}
       </Button>
     </form>
   );

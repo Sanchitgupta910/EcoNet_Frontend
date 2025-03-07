@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-// import socket from "@/lib/socket";
+import { useNavigate } from "react-router-dom";
 
-// Importing custom UI components
+// Custom UI components and icons
 import SideMenu from "../components/layouts/side-menu";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -30,61 +29,52 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
-import { 
+import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent
+  TabsContent,
 } from "../components/ui/tabs";
-import { Label } from "../components/ui/label";
-import { MoreVertical, Plus, Search, Download } from 'lucide-react';
+import AddCompanyForm from "../components/ui/CompanyForm";
+import { MoreVertical, Plus, Search, Download } from "lucide-react";
 
 export default function Company() {
   // ---------------------- State Variables ---------------------- //
 
-  // State for managing companies data fetched from the backend
+  // List of companies fetched from the API
   const [companies, setCompanies] = useState([]);
-  // Search term for filtering companies
-  const [searchTerm, setSearchTerm] = useState("");
-  // Pagination state for companies
-  const [currentPage, setCurrentPage] = useState(1);
-  // Company selected for deletion
-  const [companyToDelete, setCompanyToDelete] = useState(null);
-  // Dialog control for delete confirmation
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  // Dialog control for adding a new company
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  // State for managing users data fetched from the backend
+  // List of users fetched from the API
   const [users, setUsers] = useState([]);
-  // Search term for filtering users
+
+  // Search terms for filtering companies and users
+  const [searchTerm, setSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
-  // Pagination state for users
+
+  // Pagination state for companies and users
+  const [currentPage, setCurrentPage] = useState(1);
   const [userCurrentPage, setUserCurrentPage] = useState(1);
 
-  // State for handling the form input when adding a new company
-  const [newCompany, setNewCompany] = useState({
-    CompanyName: "",
-    domain: "",
-    noofEmployees: "",
-  });
-
-  // State for sorting configuration: which key to sort by and in what direction
+  // Sorting configuration for companies table
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-  // Constants for number of items to show per page
+  // State for dialog controls
+  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  // Constants for items per page
   const itemsPerPage = 10;
   const userItemsPerPage = 15;
 
-  // React Router's navigation hook for redirection
+  // React Router navigation hook
   const navigate = useNavigate();
 
   // ---------------------- Data Fetching ---------------------- //
 
   useEffect(() => {
     /**
-     * Fetch companies data from the API.
-     * If the user is unauthorized (status 401), redirect to the login page.
+     * Fetch companies from the API.
+     * Redirects to login if user is unauthorized.
      */
     const fetchCompanies = async () => {
       try {
@@ -101,36 +91,24 @@ export default function Company() {
     };
 
     /**
-     * Fetch users data from the API.
+     * Fetch users from the API.
      */
     const fetchUsers = async () => {
       try {
         const response = await axios.get("/api/v1/users/all-users");
         setUsers(response.data.data);
       } catch (error) {
-        console.error("Error fetching list of users:", error);
+        console.error("Error fetching users:", error);
       }
     };
 
-    // Initiate both data fetching functions when the component mounts
     fetchCompanies();
     fetchUsers();
   }, [navigate]);
 
-  // Reset the new company form whenever the "Add Company" dialog is closed.
-  useEffect(() => {
-    if (!isAddDialogOpen) {
-      setNewCompany({ CompanyName: "", domain: "", noofEmployees: "" });
-    }
-  }, [isAddDialogOpen]);
+  // ---------------------- Data Filtering & Pagination ---------------------- //
 
- 
-  // ---------------------- Data Filtering & Pagination (Using useMemo) ---------------------- //
-
-  /**
-   * Memoized filtered companies based on the search term.
-   * Recomputes only when 'companies' or 'searchTerm' changes.
-   */
+  // Filter companies based on the search term (case-insensitive)
   const filteredCompanies = useMemo(() => {
     return companies.filter(
       (company) =>
@@ -139,36 +117,33 @@ export default function Company() {
     );
   }, [companies, searchTerm]);
 
-  /**
-   * Memoized filtered users based on the search term.
-   * Recomputes only when 'users' or 'userSearchTerm' changes.
-   */
+  // Filter users based on the search term (case-insensitive)
   const filteredUsers = useMemo(() => {
     return users.filter(
       (user) =>
         user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         user.role.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-        (user.company?.CompanyName || "").toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-        (user.branchAddress?.branchName || "").toLowerCase().includes(userSearchTerm.toLowerCase())
+        (user.company?.CompanyName || "")
+          .toLowerCase()
+          .includes(userSearchTerm.toLowerCase()) ||
+        (user.branchAddress?.officeName || "")
+          .toLowerCase()
+          .includes(userSearchTerm.toLowerCase())
     );
   }, [users, userSearchTerm]);
 
-  // Total pages for companies and users based on filtered results
+  // Calculate total pages for companies and users
   const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
   const userTotalPages = Math.ceil(filteredUsers.length / userItemsPerPage);
 
-  /**
-   * Memoized pagination for companies.
-   */
+  // Paginate companies based on the current page
   const paginatedCompanies = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredCompanies.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredCompanies, currentPage]);
 
-  /**
-   * Memoized pagination for users.
-   */
+  // Paginate users based on the current page
   const paginatedUsers = useMemo(() => {
     const startIndex = (userCurrentPage - 1) * userItemsPerPage;
     return filteredUsers.slice(startIndex, startIndex + userItemsPerPage);
@@ -176,29 +151,19 @@ export default function Company() {
 
   // ---------------------- Event Handlers ---------------------- //
 
-  /**
-   * Handle search input for companies.
-   * Resets the current page to 1 when the search term changes.
-   */
+  // Update search term for companies and reset pagination
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
     setCurrentPage(1);
   };
 
-  /**
-   * Handle search input for users.
-   * Resets the user current page to 1 when the search term changes.
-   */
+  // Update search term for users and reset pagination
   const handleUserSearch = (event) => {
     setUserSearchTerm(event.target.value);
     setUserCurrentPage(1);
   };
 
-  /**
-   * Handle the sorting logic.
-   * Toggles the sort direction if the same key is clicked; otherwise, sets to ascending order.
-   * Also, updates the companies state with sorted data.
-   */
+  // Toggle sorting order based on column key
   const handleSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -206,7 +171,7 @@ export default function Company() {
     }
     setSortConfig({ key, direction });
 
-    // Create a copy of companies to avoid mutating state directly
+    // Sort companies without mutating the state directly
     const sortedCompanies = [...companies].sort((a, b) => {
       if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
       if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
@@ -215,24 +180,21 @@ export default function Company() {
     setCompanies(sortedCompanies);
   };
 
-  /**
-   * Handle deletion by setting the company to delete and opening the delete confirmation dialog.
-   */
+  // Prepare deletion of a company and open confirmation dialog
   const handleDelete = (company) => {
     setCompanyToDelete(company);
     setIsDeleteDialogOpen(true);
   };
 
-  /**
-   * Confirm deletion by sending a request to delete the company.
-   * Updates the state to remove the deleted company from the list.
-   */
+  // Confirm deletion and update state after API call
   const confirmDelete = async () => {
     try {
       await axios.post("/api/v1/company/deleteCompany", {
         domain: companyToDelete.domain,
       });
-      setCompanies(companies.filter((c) => c.domain !== companyToDelete.domain));
+      setCompanies(
+        companies.filter((c) => c.domain !== companyToDelete.domain)
+      );
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting company:", error);
@@ -240,20 +202,20 @@ export default function Company() {
   };
 
   /**
-   * Handle adding a new company.
-   * Validates required fields and sends the request to add the company.
-   * On success, appends the new company to the list and closes the dialog.
+   * Callback to handle adding a new company.
+   * @param {Object} companyData - New company details passed from the form.
    */
-  const handleAddCompany = async () => {
-    if (newCompany.CompanyName && newCompany.domain) {
+  const handleAddCompany = async (companyData) => {
+    if (companyData.CompanyName && companyData.domain) {
       try {
         const response = await axios.post("/api/v1/company/addCompany", {
-          CompanyName: newCompany.CompanyName,
-          domain: newCompany.domain,
-          noofEmployees: newCompany.noofEmployees,
+          CompanyName: companyData.CompanyName,
+          domain: companyData.domain,
+          noofEmployees: companyData.noofEmployees,
+          industry: companyData.industry, // Include industry field
         });
         setCompanies([...companies, response.data.data]);
-        setNewCompany({ CompanyName: "", domain: "", noofEmployees: "" });
+
         setIsAddDialogOpen(false);
       } catch (error) {
         if (error.response && error.response.status === 409) {
@@ -267,23 +229,14 @@ export default function Company() {
     }
   };
 
-  /**
-   * Utility function to export provided data as a CSV file.
-   * @param {Array} data - Array of objects to export.
-   * @param {string} filename - Desired name for the downloaded CSV file.
-   */
+  // Utility function to export data to CSV
   const exportToCSV = (data, filename) => {
-    if (!data.length) return; // Exit if there's no data to export
-
-    // Extract headers from the keys of the first object
+    if (!data.length) return;
     const headers = Object.keys(data[0]).join(",");
-    // Map data values and join them into CSV formatted rows
     const csvContent = [
       headers,
-      ...data.map((item) => Object.values(item).join(","))
+      ...data.map((item) => Object.values(item).join(",")),
     ].join("\n");
-
-    // Create a Blob from the CSV string and trigger a download
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     if (link.download !== undefined) {
@@ -297,10 +250,7 @@ export default function Company() {
     }
   };
 
-  /**
-   * Navigate to the company details page.
-   * @param {string} id - Company ID used in the URL.
-   */
+  // Navigate to detailed view for a selected company
   const handleViewDetails = (id) => {
     navigate(`/company/${id}`);
   };
@@ -309,11 +259,11 @@ export default function Company() {
 
   return (
     <div className="flex h-screen">
-      {/* Side navigation menu */}
+      {/* Side navigation */}
       <SideMenu />
 
       <div className="flex-1 p-10 overflow-auto">
-        {/* Tabs to switch between Companies and Users views */}
+        {/* Tabs for switching between Companies and Users */}
         <Tabs defaultValue="companies" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="companies" className="flex-1">
@@ -324,11 +274,11 @@ export default function Company() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ---------------------- Companies Tab ---------------------- */}
+          {/* Companies Tab */}
           <TabsContent value="companies">
             <div className="flex justify-between items-center mb-6">
-              {/* Search input and CSV export button */}
               <div className="flex items-center space-x-4">
+                {/* Company search input */}
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <Input
@@ -339,6 +289,7 @@ export default function Company() {
                     className="pl-8 pr-4 py-2 w-64"
                   />
                 </div>
+                {/* CSV Export button */}
                 <Button
                   onClick={() => exportToCSV(companies, "companies.csv")}
                   className="bg-green-500 hover:bg-green-600 text-white"
@@ -346,6 +297,7 @@ export default function Company() {
                   <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
               </div>
+
               {/* Dialog for adding a new company */}
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
@@ -353,70 +305,9 @@ export default function Company() {
                     <Plus className="mr-2 h-4 w-4" /> New
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Company</DialogTitle>
-                    <DialogDescription>
-                      Enter the details of the new company here. Click save when you're done.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    {/* Company Name Input */}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="CompanyName" className="text-right">
-                        Name
-                      </Label>
-                      <Input
-                        placeholder="Company Name"
-                        id="CompanyName"
-                        value={newCompany.CompanyName}
-                        onChange={(e) =>
-                          setNewCompany({ ...newCompany, CompanyName: e.target.value })
-                        }
-                        className="col-span-3"
-                      />
-                    </div>
-                    {/* Company Domain Input */}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="domain" className="text-right">
-                        Domain
-                      </Label>
-                      <Input
-                        placeholder="Company's website"
-                        id="domain"
-                        value={newCompany.domain}
-                        onChange={(e) =>
-                          setNewCompany({ ...newCompany, domain: e.target.value })
-                        }
-                        className="col-span-3"
-                      />
-                    </div>
-                    {/* Number of Employees Input */}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="noofEmployees" className="text-right">
-                        Employees
-                      </Label>
-                      <Input
-                        placeholder="Number of employees"
-                        id="noofEmployees"
-                        type="number"
-                        value={newCompany.noofEmployees}
-                        onChange={(e) =>
-                          setNewCompany({ ...newCompany, noofEmployees: e.target.value })
-                        }
-                        className="col-span-3"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
-                      onClick={handleAddCompany}
-                    >
-                      Save
-                    </Button>
-                  </DialogFooter>
+                <DialogContent className="sm:max-w-2xl p-0">
+                  {/* Passing the add company callback to the form */}
+                  <AddCompanyForm onCompanyAdded={handleAddCompany} />
                 </DialogContent>
               </Dialog>
             </div>
@@ -490,7 +381,6 @@ export default function Company() {
                       <TableCell>{company.noofEmployees}</TableCell>
                       <TableCell>{company.createdAt}</TableCell>
                       <TableCell className="text-right">
-                        {/* Dropdown for actions: view details or delete record */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -523,12 +413,14 @@ export default function Company() {
             <div className="flex justify-between items-center mt-4">
               <div>
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(currentPage * itemsPerPage, filteredCompanies.length)} of{" "}
-                {filteredCompanies.length} results
+                {Math.min(currentPage * itemsPerPage, filteredCompanies.length)}{" "}
+                of {filteredCompanies.length} results
               </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
                 >
@@ -547,10 +439,9 @@ export default function Company() {
             </div>
           </TabsContent>
 
-          {/* ---------------------- Users Tab ---------------------- */}
+          {/* Users Tab */}
           <TabsContent value="users">
             <div className="flex justify-between items-center mb-6">
-              {/* Search input for users */}
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
@@ -599,7 +490,7 @@ export default function Company() {
                       <TableCell>{user.role}</TableCell>
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>
-                        {user.branchAddress?.branchName || "N/A"}
+                        {user.branchAddress?.officeName || "N/A"}
                       </TableCell>
                       <TableCell>
                         {user.company?.CompanyName || "N/A"}
@@ -647,19 +538,22 @@ export default function Company() {
         </Tabs>
       </div>
 
-      {/* ---------------------- Delete Confirmation Dialog ---------------------- */}
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete{" "}
-              <span className="font-bold">{companyToDelete?.CompanyName}</span>? This
-              action cannot be undone.
+              <span className="font-bold">{companyToDelete?.CompanyName}</span>?
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>

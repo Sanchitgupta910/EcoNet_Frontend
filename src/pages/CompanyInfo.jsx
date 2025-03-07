@@ -128,10 +128,21 @@ export default function CompanyInfo() {
 
   // ---------------------- New Count Functions ---------------------- //
   /**
-   * Returns the total number of admin users (updated from "Managers" to "Admins").
+   * Returns the total number of admin users.
    */
   const countAdminUsers = () => {
-    return company?.users?.filter((u) => u.role === "Admin").length || 0;
+    const adminRoles = [
+      "SuperAdmin",
+      "RegionalAdmin",
+      "CountryAdmin",
+      "CityAdmin",
+      "OfficeAdmin",
+      "EmployeeDashboardUser",
+      "BinDisplayUser",
+    ];
+    return (
+      company?.users?.filter((u) => adminRoles.includes(u.role)).length || 0
+    );
   };
 
   /**

@@ -1,16 +1,17 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AppLoader from './src/pages/AppLoader'; // Loads essential data on app start
-import ProtectedRoute from './src/lib/protectedRoute'; // Protects routes from unauthorized access
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLoader from "./src/pages/AppLoader"; // Loads essential data on app start
+import ProtectedRoute from "./src/lib/protectedRoute"; // Protects routes from unauthorized access
+import { ToastProvider } from "./src/components/ui/toast-provider"; // Provides toast notifications
 
 // Import your page components
-import Login from './src/pages/login';
-import Companies from './src/pages/companies';
-import CompanyInfo from './src/pages/CompanyInfo';
-import Dashboard from './src/pages/DashboardPage';
+import Login from "./src/pages/login";
+import Companies from "./src/pages/companies";
+import CompanyInfo from "./src/pages/CompanyInfo";
+import Dashboard from "./src/pages/DashboardPage";
 
 // Import global styles (if any)
-import './src/styles/globals.css';
+import "./src/styles/globals.css";
 
 /**
  * App component defines the routing for the entire application.
@@ -30,7 +31,9 @@ function App() {
             path="/companies"
             element={
               <ProtectedRoute>
-                <Companies />
+                <ToastProvider>
+                  <Companies />
+                </ToastProvider>
               </ProtectedRoute>
             }
           />
