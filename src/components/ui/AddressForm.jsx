@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "./button";
-import { Input } from "./input";
-import { Label } from "./label";
+import { Button } from "./Button";
+import { Input } from "./Input";
+import { Label } from "./Label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select";
+} from "./Select";
 
 // Country subdivision mapping for USA, UK, AUS, NZ
 const countrySubdivisionMapping = {

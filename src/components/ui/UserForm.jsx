@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "./button";
-import { Input } from "./input";
-import { Label } from "./label";
+import { Button } from "./Button";
+import { Input } from "./Input";
+import { Label } from "./Label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./select";
+} from "./Select";
 import { Eye, EyeOff } from "lucide-react";
-import { countryCodes } from "./countrycodes";
+import { countryCodes } from "./CountryCodes";
 
 export function UserForm({ onSubmit, branches, companyId }) {
   const [user, setUser] = useState({

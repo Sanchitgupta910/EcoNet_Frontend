@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from "../ui/button.jsx";
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar.jsx';
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs.jsx";
-import { ChevronDown, LogOut, CalendarIcon } from 'lucide-react';
-import { Calendar } from "../ui/calendar.jsx";
-import axios from 'axios';
-import { useDispatch } from 'react-redux';
-import { clearUser } from '../../app/userSlice.js';
+import React, { useState, useEffect } from "react";
+import { Button } from "../ui/Button.jsx";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/Avatar.jsx";
+import { Tabs, TabsList, TabsTrigger } from "../ui/Tabs.jsx";
+import { ChevronDown, LogOut, CalendarIcon } from "lucide-react";
+import { Calendar } from "../ui/Calendar.jsx";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { clearUser } from "../../app/userSlice.js";
 import {
   format,
   startOfWeek,
@@ -14,26 +14,22 @@ import {
   startOfMonth,
   endOfMonth,
   subMonths,
-  subYears
-} from 'date-fns';
+  subYears,
+} from "date-fns";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select.jsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover.jsx";
+} from "../ui/Select.jsx";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu.jsx";
+} from "../ui/DropdownMenu.jsx";
 
 export default function DashboardHeader({
   companyName,
@@ -42,16 +38,19 @@ export default function DashboardHeader({
   userEmail,
   otherEmails,
   isAdmin,
-  onBranchChange 
+  onBranchChange,
 }) {
   // Initialize the selected branch (if available)
   const [selectedBranch, setSelectedBranch] = useState(
-    branches && branches.length > 0 ? branches[0]._id : ''
+    branches && branches.length > 0 ? branches[0]._id : ""
   );
 
   // State for date range filtering (for SuperAdmin or impersonation)
-  const [dateRange, setDateRange] = useState({ from: new Date(), to: new Date() });
-  const [dateFilter, setDateFilter] = useState('today');
+  const [dateRange, setDateRange] = useState({
+    from: new Date(),
+    to: new Date(),
+  });
+  const [dateFilter, setDateFilter] = useState("today");
   const [isHourlyData, setIsHourlyData] = useState(false);
 
   // Update date range automatically when the filter changes.
@@ -60,28 +59,28 @@ export default function DashboardHeader({
   }, [dateFilter]);
 
   const updateDateRange = (filter) => {
-    if (filter === 'custom') return; // Allow manual selection for custom range
+    if (filter === "custom") return; // Allow manual selection for custom range
     const today = new Date();
     let from, to;
     switch (filter) {
-      case 'today':
+      case "today":
         from = to = today;
         break;
-      case 'last-week':
+      case "last-week":
         from = startOfWeek(today);
         to = endOfWeek(today);
         break;
-      case 'last-month': {
+      case "last-month": {
         const previousMonth = subMonths(today, 1);
         from = startOfMonth(previousMonth);
         to = endOfMonth(previousMonth);
         break;
       }
-      case 'last-6-months':
+      case "last-6-months":
         from = subMonths(today, 6);
         to = today;
         break;
-      case 'last-year':
+      case "last-year":
         from = subYears(today, 1);
         to = today;
         break;
@@ -94,36 +93,40 @@ export default function DashboardHeader({
   // Format date range display
   const formatDateRange = (from, to) => {
     if (from.toDateString() === to.toDateString()) {
-      return format(from, 'dd MMM yy');
+      return format(from, "dd MMM yy");
     }
-    return `${format(from, 'dd MMM yy')} - ${format(to, 'dd MMM yy')}`;
+    return `${format(from, "dd MMM yy")} - ${format(to, "dd MMM yy")}`;
   };
 
   // For SuperAdmin impersonation
   const [impersonatedData, setImpersonatedData] = useState(null);
-  const [impersonableEmails, setImpersonableEmails] = useState(otherEmails || []);
+  const [impersonableEmails, setImpersonableEmails] = useState(
+    otherEmails || []
+  );
 
   const dispatch = useDispatch();
 
   // Logout handler: calls API, clears Redux state, and redirects
   const handleLogout = async () => {
     try {
-      await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
+      await axios.post("/api/v1/users/logout", {}, { withCredentials: true });
       dispatch(clearUser());
-      window.location.href = '/login';
+      window.location.href = "/login";
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
     }
   };
 
   // Handle impersonation: either fetch user data or exit impersonation mode
   const handleImpersonation = async (email) => {
     try {
-      if (email === 'exit_impersonation') {
+      if (email === "exit_impersonation") {
         setImpersonatedData(null);
         return;
       }
-      const response = await axios.get(`/api/v1/users/byEmail?email=${email}`, { withCredentials: true });
+      const response = await axios.get(`/api/v1/users/byEmail?email=${email}`, {
+        withCredentials: true,
+      });
       const impersonatedUser = response.data.data;
       setImpersonatedData({
         companyName: impersonatedUser.company?.CompanyName || "No Company",
@@ -137,14 +140,24 @@ export default function DashboardHeader({
   };
 
   // Compute header values based on role or active impersonation.
-  const headerCompanyName = isAdmin ? companyName : (impersonatedData ? impersonatedData.companyName : "");
-  const headerBranches = isAdmin ? branches : (impersonatedData ? impersonatedData.branches : []);
+  const headerCompanyName = isAdmin
+    ? companyName
+    : impersonatedData
+    ? impersonatedData.companyName
+    : "";
+  const headerBranches = isAdmin
+    ? branches
+    : impersonatedData
+    ? impersonatedData.branches
+    : [];
 
   // Effect to initialize or update the selected branch only if the current branch is not valid.
   useEffect(() => {
     if (headerBranches && headerBranches.length > 0) {
       // Check if the current selectedBranch is still in headerBranches.
-      const branchExists = headerBranches.some(branch => branch._id === selectedBranch);
+      const branchExists = headerBranches.some(
+        (branch) => branch._id === selectedBranch
+      );
       if (!branchExists) {
         const initialBranch = headerBranches[0]._id;
         setSelectedBranch(initialBranch);
@@ -155,16 +168,17 @@ export default function DashboardHeader({
 
   // for superadmin, fetch impersonable emails if not provided.
   useEffect(() => {
-    if(!isAdmin && impersonableEmails.length === 0){
-      axios.get('/api/v1/users/all-users', { withCredentials: true })
-      .then(response => {
-        const emails = response.data.data.map(user => user.email);
-        const filteredEmails = emails.filter(email => email !== userEmail);
-        setImpersonableEmails(filteredEmails);
-      })
-      .catch(error => {
-        console.error("Failed to fetch impersonable users:", error);
-      });
+    if (!isAdmin && impersonableEmails.length === 0) {
+      axios
+        .get("/api/v1/users/all-users", { withCredentials: true })
+        .then((response) => {
+          const emails = response.data.data.map((user) => user.email);
+          const filteredEmails = emails.filter((email) => email !== userEmail);
+          setImpersonableEmails(filteredEmails);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch impersonable users:", error);
+        });
     }
   }, [isAdmin, impersonableEmails, userEmail]);
 
@@ -190,8 +204,8 @@ export default function DashboardHeader({
                 {headerCompanyName} {headerCompanyName && " | Branch"}
               </span>
               <div className="flex items-center text-gray-600 transition-colors font-semibold text-lg">
-                <Select 
-                  value={selectedBranch} 
+                <Select
+                  value={selectedBranch}
                   onValueChange={(value) => {
                     setSelectedBranch(value);
                     onBranchChange && onBranchChange(value);
@@ -201,11 +215,12 @@ export default function DashboardHeader({
                     <SelectValue placeholder="Select Branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {headerBranches && headerBranches.map((branch) => (
-                      <SelectItem key={branch._id} value={branch._id}>
-                        {branch.officeName}
-                      </SelectItem>
-                    ))}
+                    {headerBranches &&
+                      headerBranches.map((branch) => (
+                        <SelectItem key={branch._id} value={branch._id}>
+                          {branch.officeName}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -229,7 +244,10 @@ export default function DashboardHeader({
                 <DropdownMenuItem disabled className="text-gray-800">
                   {userEmail}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
@@ -240,7 +258,7 @@ export default function DashboardHeader({
               {impersonatedData && (
                 <Button
                   variant="netnada_blue"
-                  onClick={() => handleImpersonation('exit_impersonation')}
+                  onClick={() => handleImpersonation("exit_impersonation")}
                   className="text-blue-600"
                 >
                   Exit Impersonation
@@ -248,19 +266,28 @@ export default function DashboardHeader({
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-2"
+                  >
                     <span>
-                      {impersonatedData ? impersonatedData.userEmail : "Impersonate User"}
+                      {impersonatedData
+                        ? impersonatedData.userEmail
+                        : "Impersonate User"}
                     </span>
                     <ChevronDown size={16} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {impersonableEmails && impersonableEmails.map((email) => (
-                    <DropdownMenuItem key={email} onClick={() => handleImpersonation(email)}>
-                      {email}
-                    </DropdownMenuItem>
-                  ))}
+                  {impersonableEmails &&
+                    impersonableEmails.map((email) => (
+                      <DropdownMenuItem
+                        key={email}
+                        onClick={() => handleImpersonation(email)}
+                      >
+                        {email}
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -273,7 +300,10 @@ export default function DashboardHeader({
         <div className="flex justify-center items-center py-4 space-x-4">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+              <Button
+                variant="outline"
+                className="w-[280px] justify-start text-left font-normal"
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formatDateRange(dateRange.from, dateRange.to)}
               </Button>
@@ -292,7 +322,7 @@ export default function DashboardHeader({
                   <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
-              {dateFilter === 'custom' && (
+              {dateFilter === "custom" && (
                 <Calendar
                   mode="range"
                   selected={dateRange}
@@ -304,7 +334,10 @@ export default function DashboardHeader({
             </PopoverContent>
           </Popover>
 
-          <Tabs value={isHourlyData ? "hourly" : "daily"} onValueChange={(value) => setIsHourlyData(value === "hourly")}>
+          <Tabs
+            value={isHourlyData ? "hourly" : "daily"}
+            onValueChange={(value) => setIsHourlyData(value === "hourly")}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="daily">Daily</TabsTrigger>
               <TabsTrigger value="hourly">Hourly</TabsTrigger>
@@ -315,4 +348,3 @@ export default function DashboardHeader({
     </div>
   );
 }
-

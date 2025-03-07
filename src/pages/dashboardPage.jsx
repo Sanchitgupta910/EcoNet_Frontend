@@ -214,17 +214,23 @@
 //   );
 // }
 
-import React, { useState, useEffect, useReducer, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import DashboardHeader from '../components/layouts/dashboardHeader';
-import NetNada_logo from '../assets/NetNada_logo.png';
-import SideMenu from '../components/layouts/side-menu';
-import BinCards from '../components/ui/bin-cards';
-import DonutChart from '../components/ui/donutChart';
-import DualLineAreaChart from '../components/ui/areaChart';
-import axios from 'axios';
-import { useSocket } from '../lib/socket';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import React, { useState, useEffect, useReducer, useCallback } from "react";
+import { useSelector } from "react-redux";
+import DashboardHeader from "../components/layouts/dashboardHeader";
+import NetNada_logo from "../assets/NetNada_logo.png";
+import SideMenu from "../components/layouts/side-menu";
+import BinCards from "../components/ui/BinCards";
+import DonutChart from "../components/ui/DonutChart";
+import DualLineAreaChart from "../components/ui/AreaChart";
+import axios from "axios";
+import { useSocket } from "../lib/socket";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/Select";
 
 const initialState = {
   binData: [],
@@ -234,14 +240,19 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'FETCH_SUCCESS':
-      return { ...state, binData: action.payload, isLoading: false, error: null };
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload };
-    case 'UPDATE_BIN':
+    case "FETCH_SUCCESS":
       return {
         ...state,
-        binData: state.binData.map(bin =>
+        binData: action.payload,
+        isLoading: false,
+        error: null,
+      };
+    case "FETCH_ERROR":
+      return { ...state, isLoading: false, error: action.payload };
+    case "UPDATE_BIN":
+      return {
+        ...state,
+        binData: state.binData.map((bin) =>
           bin._id === action.payload._id ? { ...bin, ...action.payload } : bin
         ),
       };
@@ -252,7 +263,9 @@ function reducer(state, action) {
 
 export default function DashboardPage() {
   const user = useSelector((state) => state.user.user);
-  const [selectedBranch, setSelectedBranch] = useState(user?.branchAddress?._id || "");
+  const [selectedBranch, setSelectedBranch] = useState(
+    user?.branchAddress?._id || ""
+  );
   const [state, dispatch] = useReducer(reducer, initialState);
   const [commonFilter, setCommonFilter] = useState("today");
   const [donutData, setDonutData] = useState(null);
@@ -271,16 +284,19 @@ export default function DashboardPage() {
           { withCredentials: true }
         );
         if (!response.data.data || response.data.data.length === 0) {
-          dispatch({ type: 'FETCH_ERROR', payload: "No bin data available for selected branch." });
+          dispatch({
+            type: "FETCH_ERROR",
+            payload: "No bin data available for selected branch.",
+          });
         } else {
           const sortedData = [...response.data.data].sort((a, b) =>
             a.binName.localeCompare(b.binName)
           );
-          dispatch({ type: 'FETCH_SUCCESS', payload: sortedData });
+          dispatch({ type: "FETCH_SUCCESS", payload: sortedData });
         }
       } catch (error) {
         console.error("Error fetching bin data:", error);
-        dispatch({ type: 'FETCH_ERROR', payload: error.message });
+        dispatch({ type: "FETCH_ERROR", payload: error.message });
       }
     }
   }, [selectedBranch, user]);
@@ -297,8 +313,9 @@ export default function DashboardPage() {
           setDonutData(null);
         } else {
           const aggregated = {};
-          rawData.forEach(item => {
-            aggregated[item.binType] = (aggregated[item.binType] || 0) + item.totalWaste;
+          rawData.forEach((item) => {
+            aggregated[item.binType] =
+              (aggregated[item.binType] || 0) + item.totalWaste;
           });
           const labels = Object.keys(aggregated);
           const weights = Object.values(aggregated);
@@ -308,11 +325,11 @@ export default function DashboardPage() {
             datasets: [
               {
                 data: weights,
-                backgroundColor: ['#ffca6c', '#7ba8d9', '#ff9f40', '#4bc0c0'],
-                borderColor: ['#fff', '#fff', '#fff', '#fff'],
+                backgroundColor: ["#ffca6c", "#7ba8d9", "#ff9f40", "#4bc0c0"],
+                borderColor: ["#fff", "#fff", "#fff", "#fff"],
                 borderWidth: 2,
                 hoverOffset: 10,
-              }
+              },
             ],
             totalWeight,
           };
@@ -335,11 +352,11 @@ export default function DashboardPage() {
       const sortedData = [...newBinData].sort((a, b) =>
         a.binName.localeCompare(b.binName)
       );
-      sortedData.forEach(updatedBin => {
-        dispatch({ type: 'UPDATE_BIN', payload: updatedBin });
+      sortedData.forEach((updatedBin) => {
+        dispatch({ type: "UPDATE_BIN", payload: updatedBin });
       });
     };
-    on('binWeightUpdated', handleBinWeightUpdated);
+    on("binWeightUpdated", handleBinWeightUpdated);
   }, [on]);
 
   if (!user) {
@@ -358,14 +375,19 @@ export default function DashboardPage() {
   const companyData = {
     companyName: user.company?.CompanyName || "Default Company",
     companyLogo: user.company?.logo || NetNada_logo,
-    branches: defaultBranch ? [defaultBranch, ...remainingBranches] : allBranches,
+    branches: defaultBranch
+      ? [defaultBranch, ...remainingBranches]
+      : allBranches,
     userEmail: user.email,
     otherEmails: user.otherEmails || [],
     isAdmin: user.role === "Admin",
   };
-  const wasteBreakdownDesc = "A summary of waste distribution by category, based on final daily readings. Total waste is currently 3.2% higher compared to last month.";
-  const landfillDiversionDesc = "Percentage of waste diverted from landfill (all waste excluding General Waste). Landfill diversion is 5.5% higher than last week.";
-  const recyclingRateDesc = "Share of waste that is recycled (from Commingled and Paper & Cardboard bins). Recycling rate is 2.3% lower than last week.";
+  const wasteBreakdownDesc =
+    "A summary of waste distribution by category, based on final daily readings. Total waste is currently 3.2% higher compared to last month.";
+  const landfillDiversionDesc =
+    "Percentage of waste diverted from landfill (all waste excluding General Waste). Landfill diversion is 5.5% higher than last week.";
+  const recyclingRateDesc =
+    "Share of waste that is recycled (from Commingled and Paper & Cardboard bins). Recycling rate is 2.3% lower than last week.";
 
   return (
     <div className="flex h-screen bg-[#EDF2F9]">
@@ -376,7 +398,9 @@ export default function DashboardPage() {
           {user.role !== "SuperAdmin" && (
             <>
               {state.error ? (
-                <div className="text-red-500 text-center my-4">{state.error}</div>
+                <div className="text-red-500 text-center my-4">
+                  {state.error}
+                </div>
               ) : (
                 <BinCards
                   binData={state.binData}
@@ -398,35 +422,41 @@ export default function DashboardPage() {
                 </Select>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
-  <div>
-    <DonutChart
-      title="Waste Breakdown"
-      description={wasteBreakdownDesc}
-      data={donutData || { labels: [], datasets: [{ data: [] }], totalWeight: 0 }}
-    />
-    {!donutData && (
-      <div className="text-center text-gray-600 mt-2">
-        No waste breakdown data available
-      </div>
-    )}
-  </div>
-  <DualLineAreaChart
-    title="Landfill Diversion Rate"
-    description={landfillDiversionDesc}
-    branchId={selectedBranch}
-    filter={commonFilter}
-    rateKey="diversionRate"
-    targetKey="targetDiversionRate"
-  />
-  <DualLineAreaChart
-    title="Recycling Rate"
-    description={recyclingRateDesc}
-    branchId={selectedBranch}
-    filter={commonFilter}
-    rateKey="recyclingRate"
-    targetKey="targetRecyclingRate"
-  />
-</div>
+                <div>
+                  <DonutChart
+                    title="Waste Breakdown"
+                    description={wasteBreakdownDesc}
+                    data={
+                      donutData || {
+                        labels: [],
+                        datasets: [{ data: [] }],
+                        totalWeight: 0,
+                      }
+                    }
+                  />
+                  {!donutData && (
+                    <div className="text-center text-gray-600 mt-2">
+                      No waste breakdown data available
+                    </div>
+                  )}
+                </div>
+                <DualLineAreaChart
+                  title="Landfill Diversion Rate"
+                  description={landfillDiversionDesc}
+                  branchId={selectedBranch}
+                  filter={commonFilter}
+                  rateKey="diversionRate"
+                  targetKey="targetDiversionRate"
+                />
+                <DualLineAreaChart
+                  title="Recycling Rate"
+                  description={recyclingRateDesc}
+                  branchId={selectedBranch}
+                  filter={commonFilter}
+                  rateKey="recyclingRate"
+                  targetKey="targetRecyclingRate"
+                />
+              </div>
             </>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { TableHeader } from "@/components/ui/table";
+import { TableHeader } from "@/components/ui/Table";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,23 +10,23 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../components/ui/tooltip";
+} from "../components/ui/Tooltip";
 // Import custom UI components
 import SideMenu from "../components/layouts/side-menu";
-import { Button } from "../components/ui/button";
+import { Button } from "../components/ui/Button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "../components/ui/Card";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-} from "../components/ui/table";
+} from "../components/ui/Table";
 import {
   Building2,
   Globe,
@@ -45,13 +45,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/dialog";
+} from "../components/ui/Dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
+} from "../components/ui/DropdownMenu";
 
 // Import form components for address, user, and dustbin operations
 import { AddressForm } from "../components/ui/AddressForm";

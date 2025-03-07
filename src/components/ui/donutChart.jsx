@@ -106,11 +106,16 @@
 //   );
 // }
 
-import React, { useState } from 'react';
-import { Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegendContent } from "@/components/ui/chart";
+import React, { useState } from "react";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Card, CardContent, CardHeader, CardTitle } from "./Card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegendContent,
+} from "@/components/ui/Chart";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -125,13 +130,13 @@ const getOptions = (onHover) => ({
       enabled: false,
     },
   },
-  cutout: '70%',
+  cutout: "70%",
   animation: {
     animateRotate: true,
     animateScale: true,
   },
   hover: {
-    mode: 'nearest',
+    mode: "nearest",
     intersect: true,
     onHover: onHover,
   },
@@ -192,12 +197,17 @@ export default function DonutChart({ title, description, data }) {
             <div className="relative w-2/3 h-full">
               <Doughnut data={chartData} options={getOptions(onHover)} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold">{data.totalWeight.toFixed(2)}</span>
+                <span className="text-3xl font-bold">
+                  {data.totalWeight.toFixed(2)}
+                </span>
                 <span className="text-sm text-gray-500">Total Waste (Kgs)</span>
               </div>
             </div>
             <div className="w-1/3 h-full flex items-center justify-center">
-              <ChartLegendContent payload={legendItems} onLegendClick={handleLegendClick} />
+              <ChartLegendContent
+                payload={legendItems}
+                onLegendClick={handleLegendClick}
+              />
             </div>
           </div>
           {tooltip.active && tooltip.payload && (

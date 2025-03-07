@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback } from "react";
-import ToastNotification from "./toast-notifications";
+import ToastNotification from "./ToastNotifications";
 
 // Create context
 const ToastContext = createContext(null);

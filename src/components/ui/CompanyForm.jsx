@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/toast-provider";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { useToast } from "@/components/ui/ToastProvider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/Select";
 import { Building, Globe, Users, Briefcase } from "lucide-react";
 
 // Employee headcount options
@@ -94,9 +94,11 @@ export default function AddCompanyForm({ onCompanyAdded }) {
         noofEmployees: "",
         industry: "",
       });
-      success("Company added successfully!", {
-        title: "Success",
-      });
+      setTimeout(() => {
+        success("Company added successfully!", {
+          title: "Success",
+        });
+      }, 500);
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
@@ -112,7 +114,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
           Enter the company details to add it to your organization
         </p>
       </div>
-      <form onSubmit={handleSubmit}>
+      <form className="mt-[-22px]" onSubmit={handleSubmit}>
         <div className="p-6 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="companyName" className="flex items-center gap-2">

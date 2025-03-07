@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 // Custom UI components and icons
 import SideMenu from "../components/layouts/side-menu";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
 import {
   Table,
   TableBody,
@@ -13,13 +13,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../components/ui/table";
+} from "../components/ui/Table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
+} from "../components/ui/DropdownMenu";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +28,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/dialog";
+} from "../components/ui/Dialog";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "../components/ui/tabs";
+} from "../components/ui/Tabs";
 import AddCompanyForm from "../components/ui/CompanyForm";
 import { MoreVertical, Plus, Search, Download } from "lucide-react";
 
