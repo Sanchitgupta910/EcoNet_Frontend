@@ -1,17 +1,10 @@
 "use client";
 
-import { TableHeader } from "@/components/ui/Table";
-
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../components/ui/Tooltip";
-// Import custom UI components
+
+// Custom UI components and icons
 import SideMenu from "../components/layouts/SideMenu";
 import { Button } from "../components/ui/Button";
 import {
@@ -26,6 +19,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableHeader,
 } from "../components/ui/Table";
 import {
   Building2,
@@ -52,6 +46,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/DropdownMenu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../components/ui/Tooltip";
 
 // Import form components for address, user, and dustbin operations
 import { AddressForm } from "../components/ui/AddressForm";
@@ -59,21 +59,22 @@ import { UserForm } from "../components/ui/UserForm";
 import { DustbinForm } from "../components/ui/DustbinForm";
 
 export default function CompanyInfo() {
-  const { id } = useParams(); // Get company ID from URL
+  // Retrieve company ID from URL parameters
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [company, setCompany] = useState(null); // Company details state
+  const [company, setCompany] = useState(null);
 
-  // Dialog visibility states
+  // Dialog state variables
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDustbinDialogOpen, setIsDustbinDialogOpen] = useState(false);
 
-  // Selected objects for update/deletion
+  // Selected items for update or deletion
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // List of dustbin types (if needed for forms)
+  // List of dustbin types (for forms if needed)
   const dustbinTypes = [
     "General Waste",
     "Commingled",
@@ -82,7 +83,7 @@ export default function CompanyInfo() {
   ];
 
   /**
-   * Fetch company details from the backend.
+   * Fetch company details from the API.
    */
   const fetchCompanyDetails = useCallback(async () => {
     try {
@@ -98,19 +99,21 @@ export default function CompanyInfo() {
   }, [fetchCompanyDetails]);
 
   /**
-   * Helper: Compute branch options for forms.
+   * Compute branch options for form dropdowns.
    */
   const branchOptions = useMemo(() => {
     return (
       company?.branchAddresses?.map((branch) => ({
         id: branch._id,
-        name: branch.officeName, // Changed from branchName to officeName for consistency
+        name: branch.officeName, // Using officeName for consistency
       })) || []
     );
   }, [company]);
 
   /**
-   * Helper: Returns the office name for a user.
+   * Helper function to get the office name for a given user.
+   * @param {Object} user - User object.
+   * @returns {String} - Office name or "N/A".
    */
   const getUserOfficeName = (user) => {
     if (!user.branchAddress) return "N/A";
@@ -126,9 +129,10 @@ export default function CompanyInfo() {
     return branch ? branch.name : "N/A";
   };
 
-  // ---------------------- New Count Functions ---------------------- //
+  // ---------------------- Count Functions ---------------------- //
+
   /**
-   * Returns the total number of admin users.
+   * Count the number of admin users.
    */
   const countAdminUsers = () => {
     const adminRoles = [
@@ -146,15 +150,14 @@ export default function CompanyInfo() {
   };
 
   /**
-   * Returns the total number of office locations (addresses).
+   * Count the number of office locations.
    */
   const countOfficeLocations = () => {
     return company?.branchAddresses?.length || 0;
   };
 
   /**
-   * Returns the total number of waste bins by summing bins from each branch.
-   * Assumes each branch (office) has a "dustbins" property.
+   * Count the total number of waste bins by summing bins across branches.
    */
   const countWasteBins = () => {
     return (
@@ -166,6 +169,10 @@ export default function CompanyInfo() {
 
   // ---------------------- Address Operations ---------------------- //
 
+  /**
+   * Add or update an office address.
+   * @param {Object} addressData - Address details from the form.
+   */
   const addOrUpdateAddress = async (addressData) => {
     try {
       if (selectedAddress && selectedAddress.officeName) {
@@ -199,36 +206,12 @@ export default function CompanyInfo() {
     setIsAddressDialogOpen(false);
   };
 
-  const handleAddAddress = () => {
-    setSelectedAddress(null);
-    setIsAddressDialogOpen(true);
-  };
-
-  const handleUpdateAddress = (address) => {
-    setSelectedAddress(address);
-    setIsAddressDialogOpen(true);
-  };
-
-  const confirmDeleteAddress = async () => {
-    try {
-      await axios.post(`/api/v1/address/deleteCompanyAddress`, {
-        officeName: selectedAddress.officeName,
-      });
-      setCompany((prev) => ({
-        ...prev,
-        branchAddresses: prev.branchAddresses.filter(
-          (a) => a.officeName !== selectedAddress.officeName
-        ),
-      }));
-      setSelectedAddress(null);
-    } catch (error) {
-      console.error("Error deleting address:", error);
-    }
-    setIsDeleteDialogOpen(false);
-  };
-
   // ---------------------- User Operations ---------------------- //
 
+  /**
+   * Add a new user (admin) to the company.
+   * @param {Object} newUser - New user details.
+   */
   const addUser = async (newUser) => {
     try {
       const response = await axios.post("/api/v1/users/register", {
@@ -246,6 +229,9 @@ export default function CompanyInfo() {
     setIsUserDialogOpen(false);
   };
 
+  /**
+   * Delete a user after confirmation.
+   */
   const handleDeleteUser = (user) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
@@ -274,6 +260,9 @@ export default function CompanyInfo() {
     fetchCompanyDetails();
   };
 
+  /**
+   * A reusable component to display statistics.
+   */
   function StatItem({ icon, label, value }) {
     return (
       <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
@@ -285,6 +274,7 @@ export default function CompanyInfo() {
   }
 
   // ---------------------- Render Loading State ---------------------- //
+
   if (!company) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -344,7 +334,7 @@ export default function CompanyInfo() {
             </CardContent>
           </Card>
 
-          {/* ---------------------- Office Locations (Addresses) Section ---------------------- */}
+          {/* Office Locations Section */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center">
@@ -357,7 +347,10 @@ export default function CompanyInfo() {
               >
                 <DialogTrigger>
                   <Button
-                    onClick={handleAddAddress}
+                    onClick={() => {
+                      setSelectedAddress(null);
+                      setIsAddressDialogOpen(true);
+                    }}
                     variant="outline"
                     className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
                   >
@@ -452,7 +445,7 @@ export default function CompanyInfo() {
                                 className="w-36 shadow-lg rounded-md border-slate-200"
                               >
                                 <DropdownMenuItem
-                                  onClick={() => handleUpdateAddress(address)}
+                                  onClick={() => setSelectedAddress(address)}
                                   className="cursor-pointer hover:bg-slate-50"
                                 >
                                   <span className="text-slate-700">Update</span>
@@ -477,7 +470,7 @@ export default function CompanyInfo() {
             )}
           </div>
 
-          {/* ---------------------- Admin Users Section ---------------------- */}
+          {/* Admin Users Section */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center">
@@ -489,8 +482,7 @@ export default function CompanyInfo() {
                     <Button
                       variant="outline"
                       onClick={() => setIsUserDialogOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-full px-4 shadow-sm transition-all"
-                      // disable the button if branch is empty
+                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
                       disabled={
                         !company.branchAddresses ||
                         company.branchAddresses.length === 0
@@ -563,7 +555,7 @@ export default function CompanyInfo() {
             )}
           </div>
 
-          {/* ---------------------- Waste Bins Section ---------------------- */}
+          {/* Waste Bins Section */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center">
@@ -575,7 +567,7 @@ export default function CompanyInfo() {
                     <Button
                       variant="outline"
                       onClick={() => setIsDustbinDialogOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-full px-4 shadow-sm transition-all"
+                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
                       disabled={
                         !company.branchAddresses ||
                         company.branchAddresses.length === 0
@@ -663,7 +655,7 @@ export default function CompanyInfo() {
           </div>
         </div>
 
-        {/* ---------------------- Dialogs Section ---------------------- */}
+        {/* Dialogs Section */}
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
           <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <DialogHeader>

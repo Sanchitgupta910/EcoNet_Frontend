@@ -41,28 +41,22 @@ import { MoreVertical, Plus, Search, Download } from "lucide-react";
 export default function Company() {
   // ---------------------- State Variables ---------------------- //
 
-  // List of companies fetched from the API
   const [companies, setCompanies] = useState([]);
-  // List of users fetched from the API
   const [users, setUsers] = useState([]);
 
-  // Search terms for filtering companies and users
   const [searchTerm, setSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
 
-  // Pagination state for companies and users
   const [currentPage, setCurrentPage] = useState(1);
   const [userCurrentPage, setUserCurrentPage] = useState(1);
 
-  // Sorting configuration for companies table
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-  // State for dialog controls
   const [companyToDelete, setCompanyToDelete] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  // Constants for items per page
+  // Items per page for companies and users
   const itemsPerPage = 10;
   const userItemsPerPage = 15;
 
@@ -72,10 +66,7 @@ export default function Company() {
   // ---------------------- Data Fetching ---------------------- //
 
   useEffect(() => {
-    /**
-     * Fetch companies from the API.
-     * Redirects to login if user is unauthorized.
-     */
+    // Fetch companies from the API and handle unauthorized access by redirecting to login
     const fetchCompanies = async () => {
       try {
         const response = await axios.get("/api/v1/company/getCompany", {
@@ -83,6 +74,7 @@ export default function Company() {
         });
         setCompanies(response.data.data);
       } catch (error) {
+        // Log error in development only; consider using a logging library in production
         console.error("Error fetching companies:", error);
         if (error.response && error.response.status === 401) {
           navigate("/login");
@@ -90,9 +82,7 @@ export default function Company() {
       }
     };
 
-    /**
-     * Fetch users from the API.
-     */
+    // Fetch users from the API
     const fetchUsers = async () => {
       try {
         const response = await axios.get("/api/v1/users/all-users");
@@ -108,7 +98,7 @@ export default function Company() {
 
   // ---------------------- Data Filtering & Pagination ---------------------- //
 
-  // Filter companies based on the search term (case-insensitive)
+  // Filter companies based on search term (case-insensitive)
   const filteredCompanies = useMemo(() => {
     return companies.filter(
       (company) =>
@@ -117,7 +107,7 @@ export default function Company() {
     );
   }, [companies, searchTerm]);
 
-  // Filter users based on the search term (case-insensitive)
+  // Filter users based on search term (case-insensitive)
   const filteredUsers = useMemo(() => {
     return users.filter(
       (user) =>
@@ -133,17 +123,17 @@ export default function Company() {
     );
   }, [users, userSearchTerm]);
 
-  // Calculate total pages for companies and users
+  // Calculate total pages
   const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage);
   const userTotalPages = Math.ceil(filteredUsers.length / userItemsPerPage);
 
-  // Paginate companies based on the current page
+  // Paginate companies list
   const paginatedCompanies = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredCompanies.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredCompanies, currentPage]);
 
-  // Paginate users based on the current page
+  // Paginate users list
   const paginatedUsers = useMemo(() => {
     const startIndex = (userCurrentPage - 1) * userItemsPerPage;
     return filteredUsers.slice(startIndex, startIndex + userItemsPerPage);
@@ -151,19 +141,19 @@ export default function Company() {
 
   // ---------------------- Event Handlers ---------------------- //
 
-  // Update search term for companies and reset pagination
+  // Handle company search input
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
     setCurrentPage(1);
   };
 
-  // Update search term for users and reset pagination
+  // Handle user search input
   const handleUserSearch = (event) => {
     setUserSearchTerm(event.target.value);
     setUserCurrentPage(1);
   };
 
-  // Toggle sorting order based on column key
+  // Toggle sort order based on column key
   const handleSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -171,7 +161,7 @@ export default function Company() {
     }
     setSortConfig({ key, direction });
 
-    // Sort companies without mutating the state directly
+    // Sort companies without directly mutating the state
     const sortedCompanies = [...companies].sort((a, b) => {
       if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
       if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
@@ -180,13 +170,13 @@ export default function Company() {
     setCompanies(sortedCompanies);
   };
 
-  // Prepare deletion of a company and open confirmation dialog
+  // Prepare deletion of a company and open the confirmation dialog
   const handleDelete = (company) => {
     setCompanyToDelete(company);
     setIsDeleteDialogOpen(true);
   };
 
-  // Confirm deletion and update state after API call
+  // Confirm deletion after API call
   const confirmDelete = async () => {
     try {
       await axios.post("/api/v1/company/deleteCompany", {
@@ -202,8 +192,8 @@ export default function Company() {
   };
 
   /**
-   * Callback to handle adding a new company.
-   * @param {Object} companyData - New company details passed from the form.
+   * Handle adding a new company from the form.
+   * @param {Object} companyData - New company details.
    */
   const handleAddCompany = async (companyData) => {
     if (companyData.CompanyName && companyData.domain) {
@@ -212,10 +202,9 @@ export default function Company() {
           CompanyName: companyData.CompanyName,
           domain: companyData.domain,
           noofEmployees: companyData.noofEmployees,
-          industry: companyData.industry, // Include industry field
+          industry: companyData.industry,
         });
         setCompanies([...companies, response.data.data]);
-
         setIsAddDialogOpen(false);
       } catch (error) {
         if (error.response && error.response.status === 409) {
@@ -229,7 +218,7 @@ export default function Company() {
     }
   };
 
-  // Utility function to export data to CSV
+  // Utility function to export data to CSV format
   const exportToCSV = (data, filename) => {
     if (!data.length) return;
     const headers = Object.keys(data[0]).join(",");
@@ -306,7 +295,6 @@ export default function Company() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl p-0">
-                  {/* Passing the add company callback to the form */}
                   <AddCompanyForm onCompanyAdded={handleAddCompany} />
                 </DialogContent>
               </Dialog>
@@ -369,8 +357,9 @@ export default function Company() {
                 <TableBody>
                   {paginatedCompanies.map((company, index) => (
                     <TableRow
+                      onClick={() => handleViewDetails(company._id)}
                       key={company._id}
-                      className="hover:bg-[#fafafa] transition-colors"
+                      className="hover:bg-[#fafafa] transition-colors cursor-pointer"
                     >
                       <TableCell>
                         {(currentPage - 1) * itemsPerPage + index + 1}
@@ -395,7 +384,10 @@ export default function Company() {
                               View details
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleDelete(company)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(company);
+                              }}
                               className="text-red-600"
                             >
                               Delete record
