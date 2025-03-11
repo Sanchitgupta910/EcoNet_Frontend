@@ -124,7 +124,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
             <Input
               id="companyName"
               name="companyName"
-              placeholder="Acme Corporation"
+              placeholder="NetNada Ltd."
               value={formData.companyName}
               onChange={handleInputChange}
               className="transition-all focus-visible:ring-primary"
@@ -140,7 +140,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
             <Input
               id="domain"
               name="domain"
-              placeholder="acmecorp.com"
+              placeholder="netnada.com"
               value={formData.domain}
               onChange={handleInputChange}
               className="transition-all focus-visible:ring-primary"

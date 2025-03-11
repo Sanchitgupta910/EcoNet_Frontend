@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Label } from "./Label";
@@ -11,17 +13,22 @@ import {
 } from "./Select";
 import { Eye, EyeOff } from "lucide-react";
 import { countryCodes } from "./CountryCodes";
-
-export function UserForm({ onSubmit, branches, companyId }) {
+import { useToast } from "@/components/ui/ToastProvider";
+export function UserForm({ onSubmit, branches, companyId, initialData }) {
   const [user, setUser] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    phone: "",
-    countryCode: "",
-    officeName: "",
+    fullName: initialData?.fullName || "",
+    email: initialData?.email || "",
+    password: initialData ? "" : "",
+    phone: initialData?.phone?.replace(/^\+\d+/, "") || "",
+    countryCode: initialData?.phone
+      ? initialData.phone.match(/^\+(\d+)/)?.[0] || ""
+      : "",
+    role: initialData?.role || "",
+    subdivision: initialData?.subdivision || "",
+    subdivisionType: initialData?.subdivisionType || "",
     associatedCompany: companyId,
-    branchAddress: "",
+    branchAddress: initialData?.branchAddress || "",
+    notifyUser: false,
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,10 +45,10 @@ export function UserForm({ onSubmit, branches, companyId }) {
   }, [user.officeName, branches]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setUser((prevUser) => ({
       ...prevUser,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -54,11 +61,21 @@ export function UserForm({ onSubmit, branches, companyId }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { countryCode, phone, ...restUser } = user;
+    const { countryCode, phone, notifyUser, password, ...restUser } = user;
+
+    // Only include password for new users
     const userWithPhone = {
       ...restUser,
-      phone: `${countryCode}${phone}`,
+      ...(phone && countryCode ? { phone: `${countryCode}${phone}` } : {}),
+      ...(initialData ? {} : { password }),
+      notifyViaEmail: notifyUser,
     };
+
+    // Remove empty fields
+    Object.keys(userWithPhone).forEach(
+      (key) => !userWithPhone[key] && delete userWithPhone[key]
+    );
+
     onSubmit(userWithPhone);
   };
 
@@ -99,38 +116,44 @@ export function UserForm({ onSubmit, branches, companyId }) {
           required
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={user.password}
-            onChange={handleChange}
-            required
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            onClick={togglePasswordVisibility}
-          >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-          </Button>
+      {!initialData && (
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={user.password}
+              onChange={handleChange}
+              required
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Country Code and Phone Number */}
       <div className="space-y-2">
         <Label>Mobile Number</Label>
         <div className="flex space-x-2">
-          <Select name="countryCode" onValueChange={handleCountryCodeChange}>
+          <Select
+            name="countryCode"
+            value={user.countryCode}
+            onValueChange={handleCountryCodeChange}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Code" />
             </SelectTrigger>
@@ -183,12 +206,12 @@ export function UserForm({ onSubmit, branches, companyId }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="officeName">Branch</Label>
+        <Label htmlFor="branchAddress">Branch</Label>
         <Select
-          name="officeName"
-          value={user.officeName}
+          name="branchAddress"
+          value={user.branchAddress}
           onValueChange={(value) =>
-            handleChange({ target: { name: "officeName", value } })
+            handleChange({ target: { name: "branchAddress", value } })
           }
         >
           <SelectTrigger>
@@ -196,7 +219,7 @@ export function UserForm({ onSubmit, branches, companyId }) {
           </SelectTrigger>
           <SelectContent>
             {branches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.name}>
+              <SelectItem key={branch.id} value={branch.id}>
                 {branch.name}
               </SelectItem>
             ))}
@@ -204,19 +227,28 @@ export function UserForm({ onSubmit, branches, companyId }) {
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="branchAddress">Branch ID</Label>
-        <Input
-          id="branchAddress"
-          name="branchAddress"
-          value={user.branchAddress}
-          disabled
-          className="bg-gray-100"
-        />
-      </div>
+      {/* Notification checkbox - only shown when editing */}
+      {initialData && (
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="notifyUser"
+            name="notifyUser"
+            checked={user.notifyUser}
+            onChange={handleChange}
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <Label htmlFor="notifyUser" className="text-sm font-normal">
+            Notify user about this update via email
+          </Label>
+        </div>
+      )}
 
-      <Button type="submit" className="w-full">
-        Add Admin User
+      <Button
+        type="submit"
+        className="w-full bg-primary hover:bg-primary/90 text-white"
+      >
+        {initialData ? "Update User" : "Add User"}
       </Button>
     </form>
   );

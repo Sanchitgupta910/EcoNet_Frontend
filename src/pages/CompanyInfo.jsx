@@ -106,6 +106,7 @@ export default function CompanyInfo() {
       company?.branchAddresses?.map((branch) => ({
         id: branch._id,
         name: branch.officeName, // Using officeName for consistency
+        isdeleted: branch.isdeleted, // Include isdeleted
       })) || []
     );
   }, [company]);
@@ -145,7 +146,14 @@ export default function CompanyInfo() {
       "BinDisplayUser",
     ];
     return (
-      company?.users?.filter((u) => adminRoles.includes(u.role)).length || 0
+      company?.users?.filter((u) => {
+        if (!adminRoles.includes(u.role) || u.isdeleted) return false;
+        // Find the branch corresponding to this user.
+        const branch = company.branchAddresses.find(
+          (b) => b._id === u.branchAddress
+        );
+        return branch && branch.isdeleted === false;
+      }).length || 0
     );
   };
 
@@ -153,7 +161,10 @@ export default function CompanyInfo() {
    * Count the number of office locations.
    */
   const countOfficeLocations = () => {
-    return company?.branchAddresses?.length || 0;
+    return (
+      company?.branchAddresses?.filter((addr) => addr.isdeleted === false)
+        .length || 0
+    );
   };
 
   /**
@@ -161,9 +172,12 @@ export default function CompanyInfo() {
    */
   const countWasteBins = () => {
     return (
-      company?.branchAddresses?.reduce((acc, branch) => {
-        return acc + (branch.dustbins ? branch.dustbins.length : 0);
-      }, 0) || 0
+      company?.branchAddresses
+        ?.filter((branch) => branch.isdeleted === false)
+        ?.reduce(
+          (acc, branch) => acc + (branch.dustbins ? branch.dustbins.length : 0),
+          0
+        ) || 0
     );
   };
 
@@ -175,25 +189,30 @@ export default function CompanyInfo() {
    */
   const addOrUpdateAddress = async (addressData) => {
     try {
-      if (selectedAddress && selectedAddress.officeName) {
+      if (selectedAddress && selectedAddress._id) {
+        // Update existing address
         await axios.post("/api/v1/address/updateCompanyAddress", {
-          officeName: selectedAddress.officeName,
           ...addressData,
           addressId: selectedAddress._id,
         });
+
+        // Update local state with the updated address
         setCompany((prev) => ({
           ...prev,
           branchAddresses: prev.branchAddresses.map((addr) =>
-            addr.officeName === selectedAddress.officeName
+            addr._id === selectedAddress._id
               ? { ...addr, ...addressData }
               : addr
           ),
         }));
       } else {
+        // Add new address
         const response = await axios.post("/api/v1/address/addCompanyAddress", {
           ...addressData,
           associatedCompany: id,
         });
+
+        // Update local state with the new address
         setCompany((prev) => ({
           ...prev,
           branchAddresses: [...prev.branchAddresses, response.data.data],
@@ -232,25 +251,25 @@ export default function CompanyInfo() {
   /**
    * Delete a user after confirmation.
    */
-  const handleDeleteUser = (user) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteUser = async () => {
+  const editUser = async (userData) => {
     try {
-      await axios.post(`/api/v1/users/deleteuser`, {
+      const response = await axios.post("/api/v1/users/updateuser", {
+        ...userData,
         userId: selectedUser._id,
       });
+
       setCompany((prev) => ({
         ...prev,
-        users: prev.users.filter((u) => u._id !== selectedUser._id),
+        users: prev.users.map((u) =>
+          u._id === selectedUser._id ? { ...u, ...userData } : u
+        ),
       }));
+
       setSelectedUser(null);
+      setIsUserDialogOpen(false);
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Error updating user:", error);
     }
-    setIsDeleteDialogOpen(false);
   };
 
   // ---------------------- Dustbin Operations ---------------------- //
@@ -282,6 +301,42 @@ export default function CompanyInfo() {
       </div>
     );
   }
+
+  // ---------------------- Delete Operations ---------------------- //
+
+  const confirmDeleteAddress = async () => {
+    try {
+      await axios.post("/api/v1/address/deleteCompanyAddress", {
+        addressId: selectedAddress._id,
+      });
+      setCompany((prev) => ({
+        ...prev,
+        branchAddresses: prev.branchAddresses.filter(
+          (addr) => addr._id !== selectedAddress._id
+        ),
+      }));
+    } catch (error) {
+      console.error("Error deleting address:", error);
+    }
+    setIsDeleteDialogOpen(false);
+    setSelectedAddress(null);
+  };
+
+  // const confirmDeleteUser = async () => {
+  //   try {
+  //     await axios.post("/api/v1/users/deleteuser", {
+  //       userId: selectedUser._id,
+  //     });
+  //     setCompany((prev) => ({
+  //       ...prev,
+  //       users: prev.users.filter((user) => user._id !== selectedUser._id),
+  //     }));
+  //   } catch (error) {
+  //     console.error("Error deleting user:", error);
+  //   }
+  //   setIsDeleteDialogOpen(false);
+  //   setSelectedUser(null);
+  // };
 
   // ---------------------- Component Rendering ---------------------- //
   return (
@@ -377,10 +432,12 @@ export default function CompanyInfo() {
               </Dialog>
             </div>
 
-            {company.branchAddresses && company.branchAddresses.length === 0 ? (
+            {company.branchAddresses &&
+            company.branchAddresses.filter((branch) => !branch.isdeleted)
+              .length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
                 <p className="text-slate-500 mb-4">
-                  No office locations added yet.
+                  No office locations found.
                 </p>
               </div>
             ) : (
@@ -445,7 +502,10 @@ export default function CompanyInfo() {
                                 className="w-36 shadow-lg rounded-md border-slate-200"
                               >
                                 <DropdownMenuItem
-                                  onClick={() => setSelectedAddress(address)}
+                                  onClick={() => {
+                                    setSelectedAddress(address);
+                                    setIsAddressDialogOpen(true);
+                                  }}
                                   className="cursor-pointer hover:bg-slate-50"
                                 >
                                   <span className="text-slate-700">Update</span>
@@ -481,7 +541,10 @@ export default function CompanyInfo() {
                   <TooltipTrigger>
                     <Button
                       variant="outline"
-                      onClick={() => setIsUserDialogOpen(true)}
+                      onClick={() => {
+                        setSelectedUser(null);
+                        setIsUserDialogOpen(true);
+                      }}
                       className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
                       disabled={
                         !company.branchAddresses ||
@@ -513,10 +576,7 @@ export default function CompanyInfo() {
                         Email
                       </TableHead>
                       <TableHead className="font-medium text-slate-700">
-                        Office
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Role
+                        Admin Level
                       </TableHead>
                       <TableHead className="text-right font-medium text-slate-700">
                         Actions
@@ -535,16 +595,40 @@ export default function CompanyInfo() {
                             {user.fullName}
                           </TableCell>
                           <TableCell>{user.email}</TableCell>
-                          <TableCell>{getUserOfficeName(user)}</TableCell>
-                          <TableCell>{user.role}</TableCell>
+                          <TableCell>
+                            {user.role}
+                            {user.subdivisionType && user.subdivision && (
+                              <span className="ml-2 text-sm text-slate-500">
+                                ({user.subdivisionType}: {user.subdivision})
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setIsUserDialogOpen(true);
+                              }}
+                              className="text-primary hover:text-primary-dark hover:bg-primary-50 rounded-md border-primary/20"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="mr-2 h-4 w-4"
+                              >
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                <path d="m15 5 4 4"></path>
+                              </svg>
+                              Edit
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -582,10 +666,13 @@ export default function CompanyInfo() {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            {company.branchAddresses && company.branchAddresses.length === 0 ? (
+            {company.branchAddresses &&
+            company.branchAddresses.filter(
+              (branch) => branch.isdeleted === false
+            ).length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
                 <p className="text-gray-500 mb-4">
-                  No office locations or waste bins added yet.
+                  No office locations or waste bins found.
                 </p>
               </div>
             ) : (
@@ -659,15 +746,20 @@ export default function CompanyInfo() {
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
           <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle>Add New Admin User</DialogTitle>
+              <DialogTitle>
+                {selectedUser ? "Edit Admin User" : "Add New Admin User"}
+              </DialogTitle>
               <DialogDescription>
-                Enter the details for the new user.
+                {selectedUser
+                  ? "Update the details for this user."
+                  : "Enter the details for the new user."}
               </DialogDescription>
             </DialogHeader>
             <UserForm
-              onSubmit={addUser}
+              onSubmit={selectedUser ? editUser : addUser}
               branches={branchOptions}
               companyId={id}
+              initialData={selectedUser}
             />
           </DialogContent>
         </Dialog>
@@ -682,7 +774,8 @@ export default function CompanyInfo() {
               <DialogDescription>
                 <span className="text-red-600 text-xs font-semibold italic">
                   Note: Adding bins will automatically add 4 types of bins
-                  (Landfill, Recycling, Paper, Organic) to the office.
+                  ('General Waste', 'Commingled', 'Organic', 'Paper &
+                  Cardboard') to the office.
                 </span>
               </DialogDescription>
             </DialogHeader>
@@ -700,12 +793,9 @@ export default function CompanyInfo() {
               <DialogDescription>
                 Are you sure you want to delete{" "}
                 <span className="text-red-600 text-md font-semibold">
-                  {selectedAddress
-                    ? selectedAddress.officeName
-                    : selectedUser?.fullName}
+                  {selectedAddress?.officeName}
                 </span>{" "}
-                {selectedAddress ? "office location" : "user"}? This action
-                cannot be undone.
+                office location? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -715,12 +805,7 @@ export default function CompanyInfo() {
               >
                 Cancel
               </Button>
-              <Button
-                variant="destructive"
-                onClick={
-                  selectedAddress ? confirmDeleteAddress : confirmDeleteUser
-                }
-              >
+              <Button variant="destructive" onClick={confirmDeleteAddress}>
                 Delete
               </Button>
             </DialogFooter>
