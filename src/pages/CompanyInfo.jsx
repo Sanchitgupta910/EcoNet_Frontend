@@ -1,18 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 
 // Custom UI components and icons
-import SideMenu from "../components/layouts/SideMenu";
-import { Button } from "../components/ui/Button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/Card";
+import SideMenu from '../components/layouts/SideMenu';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import {
   Table,
   TableBody,
@@ -20,7 +15,7 @@ import {
   TableHead,
   TableRow,
   TableHeader,
-} from "../components/ui/Table";
+} from '../components/ui/Table';
 import {
   Building2,
   Globe,
@@ -30,7 +25,7 @@ import {
   Plus,
   MoreVertical,
   ArrowLeft,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -39,24 +34,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/Dialog";
+} from '../components/ui/Dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/DropdownMenu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../components/ui/Tooltip";
+} from '../components/ui/DropdownMenu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/Tooltip';
 
 // Import form components for address, user, and dustbin operations
-import { AddressForm } from "../components/ui/AddressForm";
-import { UserForm } from "../components/ui/UserForm";
-import { DustbinForm } from "../components/ui/DustbinForm";
+import { AddressForm } from '../components/ui/AddressForm';
+import { UserForm } from '../components/ui/UserForm';
+import { DustbinForm } from '../components/ui/DustbinForm';
 
 export default function CompanyInfo() {
   // Retrieve company ID from URL parameters
@@ -75,12 +65,7 @@ export default function CompanyInfo() {
   const [selectedUser, setSelectedUser] = useState(null);
 
   // List of dustbin types (for forms if needed)
-  const dustbinTypes = [
-    "General Waste",
-    "Commingled",
-    "Organics",
-    "Paper & Cardboard",
-  ];
+  const dustbinTypes = ['General Waste', 'Commingled', 'Organics', 'Paper & Cardboard'];
 
   /**
    * Fetch company details from the API.
@@ -90,7 +75,7 @@ export default function CompanyInfo() {
       const response = await axios.get(`/api/v1/company/${id}`);
       setCompany(response.data.data);
     } catch (error) {
-      console.error("Error fetching company details:", error);
+      console.error('Error fetching company details:', error);
     }
   }, [id]);
 
@@ -117,17 +102,12 @@ export default function CompanyInfo() {
    * @returns {String} - Office name or "N/A".
    */
   const getUserOfficeName = (user) => {
-    if (!user.branchAddress) return "N/A";
-    if (
-      typeof user.branchAddress === "object" &&
-      user.branchAddress.officeName
-    ) {
+    if (!user.branchAddress) return 'N/A';
+    if (typeof user.branchAddress === 'object' && user.branchAddress.officeName) {
       return user.branchAddress.officeName;
     }
-    const branch = branchOptions.find(
-      (branch) => branch.id === user.branchAddress
-    );
-    return branch ? branch.name : "N/A";
+    const branch = branchOptions.find((branch) => branch.id === user.branchAddress);
+    return branch ? branch.name : 'N/A';
   };
 
   // ---------------------- Count Functions ---------------------- //
@@ -137,21 +117,19 @@ export default function CompanyInfo() {
    */
   const countAdminUsers = () => {
     const adminRoles = [
-      "SuperAdmin",
-      "RegionalAdmin",
-      "CountryAdmin",
-      "CityAdmin",
-      "OfficeAdmin",
-      "EmployeeDashboardUser",
-      "BinDisplayUser",
+      'SuperAdmin',
+      'RegionalAdmin',
+      'CountryAdmin',
+      'CityAdmin',
+      'OfficeAdmin',
+      'EmployeeDashboardUser',
+      'BinDisplayUser',
     ];
     return (
       company?.users?.filter((u) => {
         if (!adminRoles.includes(u.role) || u.isdeleted) return false;
         // Find the branch corresponding to this user.
-        const branch = company.branchAddresses.find(
-          (b) => b._id === u.branchAddress
-        );
+        const branch = company.branchAddresses.find((b) => b._id === u.branchAddress);
         return branch && branch.isdeleted === false;
       }).length || 0
     );
@@ -161,10 +139,7 @@ export default function CompanyInfo() {
    * Count the number of office locations.
    */
   const countOfficeLocations = () => {
-    return (
-      company?.branchAddresses?.filter((addr) => addr.isdeleted === false)
-        .length || 0
-    );
+    return company?.branchAddresses?.filter((addr) => addr.isdeleted === false).length || 0;
   };
 
   /**
@@ -174,10 +149,7 @@ export default function CompanyInfo() {
     return (
       company?.branchAddresses
         ?.filter((branch) => branch.isdeleted === false)
-        ?.reduce(
-          (acc, branch) => acc + (branch.dustbins ? branch.dustbins.length : 0),
-          0
-        ) || 0
+        ?.reduce((acc, branch) => acc + (branch.dustbins ? branch.dustbins.length : 0), 0) || 0
     );
   };
 
@@ -191,7 +163,7 @@ export default function CompanyInfo() {
     try {
       if (selectedAddress && selectedAddress._id) {
         // Update existing address
-        await axios.post("/api/v1/address/updateCompanyAddress", {
+        await axios.post('/api/v1/address/updateCompanyAddress', {
           ...addressData,
           addressId: selectedAddress._id,
         });
@@ -200,14 +172,12 @@ export default function CompanyInfo() {
         setCompany((prev) => ({
           ...prev,
           branchAddresses: prev.branchAddresses.map((addr) =>
-            addr._id === selectedAddress._id
-              ? { ...addr, ...addressData }
-              : addr
+            addr._id === selectedAddress._id ? { ...addr, ...addressData } : addr,
           ),
         }));
       } else {
         // Add new address
-        const response = await axios.post("/api/v1/address/addCompanyAddress", {
+        const response = await axios.post('/api/v1/address/addCompanyAddress', {
           ...addressData,
           associatedCompany: id,
         });
@@ -220,7 +190,7 @@ export default function CompanyInfo() {
       }
       setSelectedAddress(null);
     } catch (error) {
-      console.error("Error saving address:", error);
+      console.error('Error saving address:', error);
     }
     setIsAddressDialogOpen(false);
   };
@@ -233,7 +203,7 @@ export default function CompanyInfo() {
    */
   const addUser = async (newUser) => {
     try {
-      const response = await axios.post("/api/v1/users/register", {
+      const response = await axios.post('/api/v1/users/register', {
         ...newUser,
         branchAddress: newUser.branchAddress,
         company: id,
@@ -243,7 +213,7 @@ export default function CompanyInfo() {
         users: [...prev.users, response.data.data],
       }));
     } catch (error) {
-      console.error("Error adding user:", error);
+      console.error('Error adding user:', error);
     }
     setIsUserDialogOpen(false);
   };
@@ -253,22 +223,20 @@ export default function CompanyInfo() {
    */
   const editUser = async (userData) => {
     try {
-      const response = await axios.post("/api/v1/users/updateuser", {
+      const response = await axios.post('/api/v1/users/updateuser', {
         ...userData,
         userId: selectedUser._id,
       });
 
       setCompany((prev) => ({
         ...prev,
-        users: prev.users.map((u) =>
-          u._id === selectedUser._id ? { ...u, ...userData } : u
-        ),
+        users: prev.users.map((u) => (u._id === selectedUser._id ? { ...u, ...userData } : u)),
       }));
 
       setSelectedUser(null);
       setIsUserDialogOpen(false);
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error('Error updating user:', error);
     }
   };
 
@@ -295,28 +263,22 @@ export default function CompanyInfo() {
   // ---------------------- Render Loading State ---------------------- //
 
   if (!company) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   // ---------------------- Delete Operations ---------------------- //
 
   const confirmDeleteAddress = async () => {
     try {
-      await axios.post("/api/v1/address/deleteCompanyAddress", {
+      await axios.post('/api/v1/address/deleteCompanyAddress', {
         addressId: selectedAddress._id,
       });
       setCompany((prev) => ({
         ...prev,
-        branchAddresses: prev.branchAddresses.filter(
-          (addr) => addr._id !== selectedAddress._id
-        ),
+        branchAddresses: prev.branchAddresses.filter((addr) => addr._id !== selectedAddress._id),
       }));
     } catch (error) {
-      console.error("Error deleting address:", error);
+      console.error('Error deleting address:', error);
     }
     setIsDeleteDialogOpen(false);
     setSelectedAddress(null);
@@ -345,7 +307,7 @@ export default function CompanyInfo() {
 
       <div className="flex-1 p-8 overflow-auto space-y-8">
         <Button
-          onClick={() => navigate("/companies")}
+          onClick={() => navigate('/companies')}
           className="mb-6 bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Companies
@@ -393,13 +355,9 @@ export default function CompanyInfo() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-                <Building2 className="mr-2 h-5 w-5 text-primary" /> Office
-                Locations
+                <Building2 className="mr-2 h-5 w-5 text-primary" /> Office Locations
               </h2>
-              <Dialog
-                open={isAddressDialogOpen}
-                onOpenChange={setIsAddressDialogOpen}
-              >
+              <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
                 <DialogTrigger>
                   <Button
                     onClick={() => {
@@ -415,12 +373,12 @@ export default function CompanyInfo() {
                 <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
                   <DialogHeader>
                     <DialogTitle>
-                      {selectedAddress ? "Update Address" : "Add New Address"}
+                      {selectedAddress ? 'Update Address' : 'Add New Address'}
                     </DialogTitle>
                     <DialogDescription>
                       {selectedAddress
-                        ? "Update the address details."
-                        : "Enter the details for the new office location."}
+                        ? 'Update the address details.'
+                        : 'Enter the details for the new office location.'}
                     </DialogDescription>
                   </DialogHeader>
                   <AddressForm
@@ -433,36 +391,21 @@ export default function CompanyInfo() {
             </div>
 
             {company.branchAddresses &&
-            company.branchAddresses.filter((branch) => !branch.isdeleted)
-              .length === 0 ? (
+            company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
-                <p className="text-slate-500 mb-4">
-                  No office locations found.
-                </p>
+                <p className="text-slate-500 mb-4">No office locations found.</p>
               </div>
             ) : (
               <div className="border bg-white rounded-lg shadow-sm overflow-hidden">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow>
-                      <TableHead className="font-medium text-slate-700">
-                        Office Name
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Address
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        City
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Subdivison
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Postal Code
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Country
-                      </TableHead>
+                      <TableHead className="font-medium text-slate-700">Office Name</TableHead>
+                      <TableHead className="font-medium text-slate-700">Address</TableHead>
+                      <TableHead className="font-medium text-slate-700">City</TableHead>
+                      <TableHead className="font-medium text-slate-700">Subdivison</TableHead>
+                      <TableHead className="font-medium text-slate-700">Postal Code</TableHead>
+                      <TableHead className="font-medium text-slate-700">Country</TableHead>
                       <TableHead className="text-right font-medium text-slate-700">
                         Actions
                       </TableHead>
@@ -472,19 +415,14 @@ export default function CompanyInfo() {
                     {company.branchAddresses
                       .filter((address) => !address.isdeleted)
                       .map((address) => (
-                        <TableRow
-                          key={address._id}
-                          className="hover:bg-slate-50 transition-colors"
-                        >
-                          <TableCell className="font-medium">
-                            {address.officeName}
-                          </TableCell>
+                        <TableRow key={address._id} className="hover:bg-slate-50 transition-colors">
+                          <TableCell className="font-medium">{address.officeName}</TableCell>
                           <TableCell>{address.address}</TableCell>
                           <TableCell>{address.city}</TableCell>
                           <TableCell>
                             <span className="font-bold text-slate-500">
                               {address.subdivisionType}:
-                            </span>{" "}
+                            </span>{' '}
                             {address.subdivision}
                           </TableCell>
                           <TableCell>{address.postalCode}</TableCell>
@@ -546,10 +484,7 @@ export default function CompanyInfo() {
                         setIsUserDialogOpen(true);
                       }}
                       className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
-                      disabled={
-                        !company.branchAddresses ||
-                        company.branchAddresses.length === 0
-                      }
+                      disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                     >
                       <Plus className="mr-2 h-4 w-4" /> Add Admin User
                     </Button>
@@ -569,15 +504,9 @@ export default function CompanyInfo() {
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow>
-                      <TableHead className="font-medium text-slate-700">
-                        Full Name
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Email
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Admin Level
-                      </TableHead>
+                      <TableHead className="font-medium text-slate-700">Full Name</TableHead>
+                      <TableHead className="font-medium text-slate-700">Email</TableHead>
+                      <TableHead className="font-medium text-slate-700">Admin Level</TableHead>
                       <TableHead className="text-right font-medium text-slate-700">
                         Actions
                       </TableHead>
@@ -587,13 +516,8 @@ export default function CompanyInfo() {
                     {company.users
                       .filter((user) => !user.isdeleted)
                       .map((user) => (
-                        <TableRow
-                          key={user._id}
-                          className="hover:bg-slate-50 transition-colors"
-                        >
-                          <TableCell className="font-medium">
-                            {user.fullName}
-                          </TableCell>
+                        <TableRow key={user._id} className="hover:bg-slate-50 transition-colors">
+                          <TableCell className="font-medium">{user.fullName}</TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
                             {user.role}
@@ -652,10 +576,7 @@ export default function CompanyInfo() {
                       variant="outline"
                       onClick={() => setIsDustbinDialogOpen(true)}
                       className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
-                      disabled={
-                        !company.branchAddresses ||
-                        company.branchAddresses.length === 0
-                      }
+                      disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                     >
                       <Plus className="mr-2 h-4 w-4" /> Add Bins
                     </Button>
@@ -667,28 +588,18 @@ export default function CompanyInfo() {
               </TooltipProvider>
             </div>
             {company.branchAddresses &&
-            company.branchAddresses.filter(
-              (branch) => branch.isdeleted === false
-            ).length === 0 ? (
+            company.branchAddresses.filter((branch) => branch.isdeleted === false).length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
-                <p className="text-gray-500 mb-4">
-                  No office locations or waste bins found.
-                </p>
+                <p className="text-gray-500 mb-4">No office locations or waste bins found.</p>
               </div>
             ) : (
               <div className="border bg-white rounded-lg shadow-sm overflow-hidden">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow>
-                      <TableHead className="font-medium text-slate-700">
-                        Office Location
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Bin Type
-                      </TableHead>
-                      <TableHead className="font-medium text-slate-700">
-                        Capacity
-                      </TableHead>
+                      <TableHead className="font-medium text-slate-700">Office Location</TableHead>
+                      <TableHead className="font-medium text-slate-700">Bin Type</TableHead>
+                      <TableHead className="font-medium text-slate-700">Capacity</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -709,8 +620,8 @@ export default function CompanyInfo() {
                                   >
                                     {branch.officeName}
                                     <br />
-                                    {branch.address}, {branch.city},{" "}
-                                    {branch.region} {branch.postalCode}
+                                    {branch.address}, {branch.city}, {branch.region}{' '}
+                                    {branch.postalCode}
                                   </TableCell>
                                 )}
                                 <TableCell>{dustbin.dustbinType}</TableCell>
@@ -722,13 +633,9 @@ export default function CompanyInfo() {
                               <TableCell className="font-medium align-top">
                                 {branch.officeName}
                                 <br />
-                                {branch.address}, {branch.city}, {branch.region}{" "}
-                                {branch.postalCode}
+                                {branch.address}, {branch.city}, {branch.region} {branch.postalCode}
                               </TableCell>
-                              <TableCell
-                                colSpan={2}
-                                className="text-center text-gray-500 italic"
-                              >
+                              <TableCell colSpan={2} className="text-center text-gray-500 italic">
                                 No bins available for this office location
                               </TableCell>
                             </TableRow>
@@ -746,13 +653,11 @@ export default function CompanyInfo() {
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
           <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle>
-                {selectedUser ? "Edit Admin User" : "Add New Admin User"}
-              </DialogTitle>
+              <DialogTitle>{selectedUser ? 'Edit Admin User' : 'Add New Admin User'}</DialogTitle>
               <DialogDescription>
                 {selectedUser
-                  ? "Update the details for this user."
-                  : "Enter the details for the new user."}
+                  ? 'Update the details for this user.'
+                  : 'Enter the details for the new user.'}
               </DialogDescription>
             </DialogHeader>
             <UserForm
@@ -764,25 +669,18 @@ export default function CompanyInfo() {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={isDustbinDialogOpen}
-          onOpenChange={setIsDustbinDialogOpen}
-        >
+        <Dialog open={isDustbinDialogOpen} onOpenChange={setIsDustbinDialogOpen}>
           <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle>Add Bins</DialogTitle>
               <DialogDescription>
                 <span className="text-red-600 text-xs font-semibold italic">
-                  Note: Adding bins will automatically add 4 types of bins
-                  ('General Waste', 'Commingled', 'Organic', 'Paper &
-                  Cardboard') to the office.
+                  Note: Adding bins will automatically add 4 types of bins ('General Waste',
+                  'Commingled', 'Organic', 'Paper & Cardboard') to the office.
                 </span>
               </DialogDescription>
             </DialogHeader>
-            <DustbinForm
-              branches={branchOptions}
-              onDustbinAdded={handleDustbinAdded}
-            />
+            <DustbinForm branches={branchOptions} onDustbinAdded={handleDustbinAdded} />
           </DialogContent>
         </Dialog>
 
@@ -791,18 +689,15 @@ export default function CompanyInfo() {
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete{" "}
+                Are you sure you want to delete{' '}
                 <span className="text-red-600 text-md font-semibold">
                   {selectedAddress?.officeName}
-                </span>{" "}
+                </span>{' '}
                 office location? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsDeleteDialogOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancel
               </Button>
               <Button variant="destructive" onClick={confirmDeleteAddress}>
