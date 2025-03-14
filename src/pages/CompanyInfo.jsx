@@ -16,16 +16,7 @@ import {
   TableRow,
   TableHeader,
 } from '../components/ui/Table';
-import {
-  Building2,
-  Globe,
-  Users,
-  UserCog,
-  Trash2,
-  Plus,
-  MoreVertical,
-  ArrowLeft,
-} from 'lucide-react';
+import { Building2, Globe, Users, UserCog, Trash2, Plus, Search, Home } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,24 +26,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../components/ui/Dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/DropdownMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/Tooltip';
+import { Input } from '../components/ui/Input';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '../components/ui/Breadcrumb';
 
 // Import form components for address, user, and dustbin operations
 import { AddressForm } from '../components/ui/AddressForm';
 import { UserForm } from '../components/ui/UserForm';
-import { DustbinForm } from '../components/ui/DustbinForm';
+import { AddBinsForm } from '/src/components/ui/DustbinForm.jsx';
 
 export default function CompanyInfo() {
   // Retrieve company ID from URL parameters
   const { id } = useParams();
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
+  const [searchLocations, setSearchLocations] = useState('');
+  const [searchUsers, setSearchUsers] = useState('');
 
   // Dialog state variables
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
@@ -157,6 +152,9 @@ export default function CompanyInfo() {
 
   /**
    * Add or update an office address.
+   * This function handles both creation and update of a branch address.
+   * For new addresses, it extracts the branchRecord from the response so that the branch table is updated correctly.
+   *
    * @param {Object} addressData - Address details from the form.
    */
   const addOrUpdateAddress = async (addressData) => {
@@ -167,7 +165,6 @@ export default function CompanyInfo() {
           ...addressData,
           addressId: selectedAddress._id,
         });
-
         // Update local state with the updated address
         setCompany((prev) => ({
           ...prev,
@@ -181,12 +178,16 @@ export default function CompanyInfo() {
           ...addressData,
           associatedCompany: id,
         });
-
-        // Update local state with the new address
+        // Update local state with the new address using branchRecord from the response.
         setCompany((prev) => ({
           ...prev,
-          branchAddresses: [...prev.branchAddresses, response.data.data],
+          branchAddresses: [
+            ...prev.branchAddresses,
+            response.data.data.branchRecord, // Updated to extract branchRecord from the combined response.
+          ],
         }));
+        // Optionally log the backend success message.
+        console.log(response.data.message || 'Branch and OrgUnits created successfully');
       }
       setSelectedAddress(null);
     } catch (error) {
@@ -219,7 +220,7 @@ export default function CompanyInfo() {
   };
 
   /**
-   * Delete a user after confirmation.
+   * Edit a user after confirmation.
    */
   const editUser = async (userData) => {
     try {
@@ -252,10 +253,12 @@ export default function CompanyInfo() {
    */
   function StatItem({ icon, label, value }) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
-        <div className="mb-2">{icon}</div>
-        <div className="text-3xl font-bold mb-1">{value}</div>
-        <div className="text-sm text-muted-foreground">{label}</div>
+      <div className="flex items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900">
+        <div className="mr-3">{icon}</div>
+        <div className="flex flex-col">
+          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-sm text-muted-foreground">{label}</div>
+        </div>
       </div>
     );
   }
@@ -284,49 +287,45 @@ export default function CompanyInfo() {
     setSelectedAddress(null);
   };
 
-  // const confirmDeleteUser = async () => {
-  //   try {
-  //     await axios.post("/api/v1/users/deleteuser", {
-  //       userId: selectedUser._id,
-  //     });
-  //     setCompany((prev) => ({
-  //       ...prev,
-  //       users: prev.users.filter((user) => user._id !== selectedUser._id),
-  //     }));
-  //   } catch (error) {
-  //     console.error("Error deleting user:", error);
-  //   }
-  //   setIsDeleteDialogOpen(false);
-  //   setSelectedUser(null);
-  // };
-
   // ---------------------- Component Rendering ---------------------- //
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex h-screen bg-[#F9FAFB]">
       <SideMenu />
 
-      <div className="flex-1 p-8 overflow-auto space-y-8">
-        <Button
-          onClick={() => navigate('/companies')}
-          className="mb-6 bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Companies
-        </Button>
+      <div className="flex-1 p-6 overflow-auto space-y-6">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink onClick={() => navigate('/')}>
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink onClick={() => navigate('/companies')}>Companies</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink>{company.CompanyName}</BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="space-y-6">
           {/* Company Details Card */}
-          <Card className="w-full my-6 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-8">
-              <CardTitle className="text-3xl font-bold tracking-tight">
+          <Card className="w-full overflow-hidden shadow-sm">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-4">
+              <CardTitle className="text-2xl font-bold tracking-tight">
                 {company.CompanyName}
               </CardTitle>
-              <div className="flex items-center text-muted-foreground mt-2">
+              <div className="flex items-center text-muted-foreground">
                 <Globe className="h-4 w-4 mr-2" />
                 <span>{company.domain}</span>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatItem
                   icon={<Users className="h-5 w-5 text-blue-500" />}
                   label="Employees"
@@ -352,301 +351,428 @@ export default function CompanyInfo() {
           </Card>
 
           {/* Office Locations Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-                <Building2 className="mr-2 h-5 w-5 text-primary" /> Office Locations
-              </h2>
-              <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-                <DialogTrigger>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-0 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                  <Building2 className="mr-2 h-5 w-5 text-primary" /> Office Locations
+                </CardTitle>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search offices..."
+                    className="pl-8 h-9 w-64"
+                    value={searchLocations}
+                    onChange={(e) => setSearchLocations(e.target.value)}
+                  />
+                </div>
+                <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+                  <DialogTrigger>
+                    <Button
+                      onClick={() => {
+                        setSelectedAddress(null);
+                        setIsAddressDialogOpen(true);
+                      }}
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9"
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Add Address
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {selectedAddress ? 'Update Address' : 'Add New Address'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {selectedAddress
+                          ? 'Update the address details.'
+                          : 'Enter the details for the new office location.'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <AddressForm
+                      onSubmit={addOrUpdateAddress}
+                      initialData={selectedAddress}
+                      companyId={id}
+                      companyName={company.CompanyName}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {company.branchAddresses &&
+              company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
+                  <p className="text-slate-500 mb-4">No office locations found.</p>
                   <Button
                     onClick={() => {
                       setSelectedAddress(null);
                       setIsAddressDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Add Address
+                    <Plus className="mr-2 h-4 w-4" /> Add First Office
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {selectedAddress ? 'Update Address' : 'Add New Address'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {selectedAddress
-                        ? 'Update the address details.'
-                        : 'Enter the details for the new office location.'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddressForm
-                    onSubmit={addOrUpdateAddress}
-                    initialData={selectedAddress}
-                    companyId={id}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            {company.branchAddresses &&
-            company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
-                <p className="text-slate-500 mb-4">No office locations found.</p>
-              </div>
-            ) : (
-              <div className="border bg-white rounded-lg shadow-sm overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-medium text-slate-700">Office Name</TableHead>
-                      <TableHead className="font-medium text-slate-700">Address</TableHead>
-                      <TableHead className="font-medium text-slate-700">City</TableHead>
-                      <TableHead className="font-medium text-slate-700">Subdivison</TableHead>
-                      <TableHead className="font-medium text-slate-700">Postal Code</TableHead>
-                      <TableHead className="font-medium text-slate-700">Country</TableHead>
-                      <TableHead className="text-right font-medium text-slate-700">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {company.branchAddresses
-                      .filter((address) => !address.isdeleted)
-                      .map((address) => (
-                        <TableRow key={address._id} className="hover:bg-slate-50 transition-colors">
-                          <TableCell className="font-medium">{address.officeName}</TableCell>
-                          <TableCell>{address.address}</TableCell>
-                          <TableCell>{address.city}</TableCell>
-                          <TableCell>
-                            <span className="font-bold text-slate-500">
-                              {address.subdivisionType}:
-                            </span>{' '}
-                            {address.subdivision}
-                          </TableCell>
-                          <TableCell>{address.postalCode}</TableCell>
-                          <TableCell>{address.country}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-36 shadow-lg rounded-md border-slate-200"
-                              >
-                                <DropdownMenuItem
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="font-medium text-slate-700">Office Name</TableHead>
+                        <TableHead className="font-medium text-slate-700">Address</TableHead>
+                        <TableHead className="font-medium text-slate-700">City</TableHead>
+                        <TableHead className="font-medium text-slate-700">Subdivison</TableHead>
+                        <TableHead className="font-medium text-slate-700">Postal Code</TableHead>
+                        <TableHead className="font-medium text-slate-700">Country</TableHead>
+                        <TableHead className="text-right font-medium text-slate-700">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {company.branchAddresses
+                        .filter((address) => !address.isdeleted)
+                        .filter(
+                          (address) =>
+                            address.officeName
+                              .toLowerCase()
+                              .includes(searchLocations.toLowerCase()) ||
+                            address.city.toLowerCase().includes(searchLocations.toLowerCase()) ||
+                            address.country.toLowerCase().includes(searchLocations.toLowerCase()),
+                        )
+                        .map((address) => (
+                          <TableRow key={address._id}>
+                            <TableCell className="font-medium">{address.officeName}</TableCell>
+                            <TableCell>{address.address}</TableCell>
+                            <TableCell>{address.city}</TableCell>
+                            <TableCell>
+                              <span className="font-bold text-slate-500">
+                                {address.subdivisionType}:
+                              </span>{' '}
+                              {address.subdivision}
+                            </TableCell>
+                            <TableCell>{address.postalCode}</TableCell>
+                            <TableCell>{address.country}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-blue-600"
                                   onClick={() => {
                                     setSelectedAddress(address);
                                     setIsAddressDialogOpen(true);
                                   }}
-                                  className="cursor-pointer hover:bg-slate-50"
                                 >
-                                  <span className="text-slate-700">Update</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="h-4 w-4"
+                                  >
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                    <path d="m15 5 4 4"></path>
+                                  </svg>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600"
                                   onClick={() => {
                                     setSelectedAddress(address);
                                     setIsDeleteDialogOpen(true);
                                   }}
-                                  className="text-red-600 cursor-pointer hover:bg-red-50"
                                 >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Admin Users Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-                <UserCog className="mr-2 h-5 w-5 text-primary" /> Admin Users
-              </h2>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedUser(null);
-                        setIsUserDialogOpen(true);
-                      }}
-                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
-                      disabled={!company.branchAddresses || company.branchAddresses.length === 0}
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Add Admin User
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Please add office location first</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            {company.users && company.users.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
-                <p className="text-slate-500 mb-4">No users added yet.</p>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-0 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                  <UserCog className="mr-2 h-5 w-5 text-primary" /> Admin Users
+                </CardTitle>
               </div>
-            ) : (
-              <div className="border bg-white rounded-lg shadow-sm overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-medium text-slate-700">Full Name</TableHead>
-                      <TableHead className="font-medium text-slate-700">Email</TableHead>
-                      <TableHead className="font-medium text-slate-700">Admin Level</TableHead>
-                      <TableHead className="text-right font-medium text-slate-700">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {company.users
-                      .filter((user) => !user.isdeleted)
-                      .map((user) => (
-                        <TableRow key={user._id} className="hover:bg-slate-50 transition-colors">
-                          <TableCell className="font-medium">{user.fullName}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            {user.role}
-                            {user.subdivisionType && user.subdivision && (
-                              <span className="ml-2 text-sm text-slate-500">
-                                ({user.subdivisionType}: {user.subdivision})
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search users..."
+                    className="pl-8 h-9 w-64"
+                    value={searchUsers}
+                    onChange={(e) => setSearchUsers(e.target.value)}
+                  />
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setIsUserDialogOpen(true);
+                        }}
+                        className="bg-primary hover:bg-primary/90 hover:text-white text-white rounded-[6px] h-9"
+                        disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" /> Add Admin
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Please add office location first</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {company.users && company.users.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
+                  <p className="text-slate-500 mb-4">No users added yet.</p>
+                  <Button
+                    onClick={() => {
+                      setSelectedUser(null);
+                      setIsUserDialogOpen(true);
+                    }}
+                    variant="outline"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
+                    disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add First Admin
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="font-medium text-slate-700">Full Name</TableHead>
+                        <TableHead className="font-medium text-slate-700">Email</TableHead>
+                        <TableHead className="font-medium text-slate-700">Admin Level</TableHead>
+                        <TableHead className="font-medium text-slate-700">Subdivision</TableHead>
+                        <TableHead className="text-right font-medium text-slate-700">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {company.users
+                        .filter((user) => !user.isdeleted)
+                        .filter(
+                          (user) =>
+                            user.fullName.toLowerCase().includes(searchUsers.toLowerCase()) ||
+                            user.email.toLowerCase().includes(searchUsers.toLowerCase()) ||
+                            user.role.toLowerCase().includes(searchUsers.toLowerCase()),
+                        )
+                        .map((user) => (
+                          <TableRow key={user._id}>
+                            <TableCell className="font-medium">{user.fullName}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {user.role}
                               </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsUserDialogOpen(true);
-                              }}
-                              className="text-primary hover:text-primary-dark hover:bg-primary-50 rounded-md border-primary/20"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="mr-2 h-4 w-4"
-                              >
-                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                                <path d="m15 5 4 4"></path>
-                              </svg>
-                              Edit
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+                            </TableCell>
+                            <TableCell>{user.OrgUnit.name}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-blue-600"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setIsUserDialogOpen(true);
+                                  }}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="h-4 w-4"
+                                  >
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                    <path d="m15 5 4 4"></path>
+                                  </svg>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Waste Bins Section */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-                <Trash2 className="mr-2 h-5 w-5 text-primary" /> Waste Bins
-              </h2>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsDustbinDialogOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-white rounded-full px-4 shadow-sm transition-all"
-                      disabled={!company.branchAddresses || company.branchAddresses.length === 0}
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Add Bins
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Please add office location first</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            {company.branchAddresses &&
-            company.branchAddresses.filter((branch) => branch.isdeleted === false).length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-slate-100">
-                <p className="text-gray-500 mb-4">No office locations or waste bins found.</p>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-0 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                  <Trash2 className="mr-2 h-5 w-5 text-primary" /> Waste Bins
+                </CardTitle>
               </div>
-            ) : (
-              <div className="border bg-white rounded-lg shadow-sm overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-medium text-slate-700">Office Location</TableHead>
-                      <TableHead className="font-medium text-slate-700">Bin Type</TableHead>
-                      <TableHead className="font-medium text-slate-700">Capacity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {company.branchAddresses
-                      .filter((branch) => !branch.isdeleted)
-                      .map((branch) => (
-                        <React.Fragment key={branch._id}>
-                          {(branch.dustbins || []).length > 0 ? (
-                            branch.dustbins.map((dustbin, index) => (
-                              <TableRow
-                                key={`${branch._id}-${dustbin.dustbinType}`}
-                                className="hover:bg-slate-50 transition-colors"
-                              >
-                                {index === 0 && (
-                                  <TableCell
-                                    rowSpan={branch.dustbins.length}
-                                    className="font-medium align-top"
-                                  >
-                                    {branch.officeName}
-                                    <br />
-                                    {branch.address}, {branch.city}, {branch.region}{' '}
-                                    {branch.postalCode}
+              <div className="flex items-center space-x-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsDustbinDialogOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9"
+                        disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                      >
+                        <Plus className="mr-1 h-3.5 w-3.5" /> Add Bins
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Please add office location first</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {company.branchAddresses &&
+              company.branchAddresses.filter((branch) => branch.isdeleted === false).length ===
+                0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
+                  <p className="text-gray-500 mb-4">No office locations or waste bins found.</p>
+                  <Button
+                    onClick={() => {
+                      setSelectedAddress(null);
+                      setIsAddressDialogOpen(true);
+                    }}
+                    variant="outline"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Office First
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="font-medium text-slate-700">
+                          Office Location
+                        </TableHead>
+                        <TableHead className="font-medium text-slate-700">Bin Type</TableHead>
+                        <TableHead className="font-medium text-slate-700">Capacity</TableHead>
+                        <TableHead className="text-right font-medium text-slate-700">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {company.branchAddresses
+                        .filter((branch) => !branch.isdeleted)
+                        .map((branch) => (
+                          <React.Fragment key={branch._id}>
+                            {(branch.dustbins || []).length > 0 ? (
+                              branch.dustbins.map((dustbin, index) => (
+                                <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
+                                  {index === 0 && (
+                                    <TableCell
+                                      rowSpan={branch.dustbins.length}
+                                      className="font-medium align-top"
+                                    >
+                                      {branch.officeName}
+                                      <br />
+                                      {branch.address}, {branch.city}, {branch.region}{' '}
+                                      {branch.postalCode}
+                                    </TableCell>
+                                  )}
+                                  <TableCell>{dustbin.dustbinType}</TableCell>
+                                  <TableCell>{dustbin.binCapacity}L</TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-blue-600"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-4 w-4"
+                                      >
+                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                        <path d="m15 5 4 4"></path>
+                                      </svg>
+                                    </Button>
                                   </TableCell>
-                                )}
-                                <TableCell>{dustbin.dustbinType}</TableCell>
-                                <TableCell>{dustbin.binCapacity}L</TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell className="font-medium align-top">
+                                  {branch.officeName}
+                                  <br />
+                                  {branch.address}, {branch.city}, {branch.region}{' '}
+                                  {branch.postalCode}
+                                </TableCell>
+                                <TableCell colSpan={2} className="text-center text-gray-500 italic">
+                                  No bins available for this office location
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-primary border-primary/20"
+                                    onClick={() => setIsDustbinDialogOpen(true)}
+                                  >
+                                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Bins
+                                  </Button>
+                                </TableCell>
                               </TableRow>
-                            ))
-                          ) : (
-                            <TableRow className="hover:bg-slate-50 transition-colors">
-                              <TableCell className="font-medium align-top">
-                                {branch.officeName}
-                                <br />
-                                {branch.address}, {branch.city}, {branch.region} {branch.postalCode}
-                              </TableCell>
-                              <TableCell colSpan={2} className="text-center text-gray-500 italic">
-                                No bins available for this office location
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </React.Fragment>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+                            )}
+                          </React.Fragment>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Dialogs Section */}
@@ -670,17 +796,8 @@ export default function CompanyInfo() {
         </Dialog>
 
         <Dialog open={isDustbinDialogOpen} onOpenChange={setIsDustbinDialogOpen}>
-          <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle>Add Bins</DialogTitle>
-              <DialogDescription>
-                <span className="text-red-600 text-xs font-semibold italic">
-                  Note: Adding bins will automatically add 4 types of bins ('General Waste',
-                  'Commingled', 'Organic', 'Paper & Cardboard') to the office.
-                </span>
-              </DialogDescription>
-            </DialogHeader>
-            <DustbinForm branches={branchOptions} onDustbinAdded={handleDustbinAdded} />
+          <DialogContent className="bg-white">
+            <AddBinsForm branches={branchOptions} onDustbinAdded={handleDustbinAdded} />
           </DialogContent>
         </Dialog>
 
