@@ -11,6 +11,7 @@ import CompanyInfo from './src/pages/CompanyInfo';
 import Dashboard from './src/pages/DashboardPage';
 import InviteUserPage from './src/pages/InviteUser';
 import PasswordResetRequestPage from './src/pages/PasswordResetRequestPage';
+import UserSetupPage from './src/pages/UserSetup';
 
 // Import global styles (if any)
 import './src/styles/globals.css';
@@ -63,6 +64,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Public route for User Setup page */}
+          <Route path="/user-setup" element={<UserSetupPage />} />
 
           {/* Public route for Password Reset Request page */}
           <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
