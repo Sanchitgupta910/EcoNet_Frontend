@@ -1,17 +1,19 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppLoader from "./src/lib/AppLoader"; // Loads essential data on app start
-import ProtectedRoute from "./src/lib/ProtectedRoute"; // Protects routes from unauthorized access
-import { ToastProvider } from "./src/components/ui/ToastProvider"; // Provides toast notifications
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppLoader from './src/lib/AppLoader'; // Loads essential data on app start
+import ProtectedRoute from './src/lib/ProtectedRoute'; // Protects routes from unauthorized access
+import { ToastProvider } from './src/components/ui/ToastProvider'; // Provides toast notifications
 
 // Import your page components
-import Login from "./src/pages/Login";
-import Companies from "./src/pages/Companies";
-import CompanyInfo from "./src/pages/CompanyInfo";
-import Dashboard from "./src/pages/DashboardPage";
+import Login from './src/pages/Login';
+import Companies from './src/pages/Companies';
+import CompanyInfo from './src/pages/CompanyInfo';
+import Dashboard from './src/pages/DashboardPage';
+import InviteUserPage from './src/pages/InviteUser';
+import PasswordResetRequestPage from './src/pages/PasswordResetRequestPage';
 
 // Import global styles (if any)
-import "./src/styles/globals.css";
+import './src/styles/globals.css';
 
 /**
  * App component defines the routing for the entire application.
@@ -49,6 +51,21 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Protected route for  Invite User page */}
+          <Route
+            path="/invite-user"
+            element={
+              <ProtectedRoute>
+                <ToastProvider>
+                  <InviteUserPage />
+                </ToastProvider>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Public route for Password Reset Request page */}
+          <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
 
           {/* Protected route for Dashboard page */}
           <Route

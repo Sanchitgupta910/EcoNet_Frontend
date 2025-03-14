@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import SideMenu from '../components/layouts/SideMenu';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Card, CardHeader } from '../components/ui/Card';
 import {
   Table,
   TableBody,
@@ -14,12 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/Table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/DropdownMenu';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +28,18 @@ import {
 } from '../components/ui/Dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import AddCompanyForm from '../components/ui/CompanyForm';
-import { MoreVertical, Plus, Search, Download } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Download,
+  Building2,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Globe,
+  Briefcase,
+} from 'lucide-react';
 
 export default function Company() {
   // ---------------------- State Variables ---------------------- //
@@ -230,270 +238,388 @@ export default function Company() {
     navigate(`/company/${id}`);
   };
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   // ---------------------- Component Render ---------------------- //
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#F9FAFB]">
       {/* Side navigation */}
       <SideMenu />
 
-      <div className="flex-1 p-10 overflow-auto">
+      <div className="flex-1 p-6 overflow-auto space-y-6">
+        {/* Page Title */}
+        {/* <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-slate-800">Companies Management</h1>
+        </div> */}
+
         {/* Tabs for switching between Companies and Users */}
-        <Tabs defaultValue="companies" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="companies" className="flex-1">
-              Companies
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex-1">
-              Users
-            </TabsTrigger>
-          </TabsList>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <Tabs defaultValue="companies" className="w-full">
+              <TabsList className="mb-2 bg-slate-100">
+                <TabsTrigger value="companies" className="flex-1 data-[state=active]:bg-white">
+                  Companies
+                </TabsTrigger>
+                <TabsTrigger value="users" className="flex-1 data-[state=active]:bg-white">
+                  Users
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Companies Tab */}
-          <TabsContent value="companies">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center space-x-4">
-                {/* Company search input */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search companies..."
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    className="pl-8 pr-4 py-2 px-10 w-64"
-                  />
+              {/* Companies Tab */}
+              <TabsContent value="companies">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center space-x-4">
+                    {/* Company search input */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search companies..."
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        className="pl-8 h-9 w-64"
+                      />
+                    </div>
+                    {/* CSV Export button */}
+                    <Button
+                      onClick={() => exportToCSV(companies, 'companies.csv')}
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                    >
+                      <Download className="mr-2 h-4 w-4" /> Export CSV
+                    </Button>
+                  </div>
+
+                  {/* Dialog for adding a new company */}
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90 text-white h-9">
+                        <Plus className="mr-2 h-4 w-4" /> Add Company
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-2xl p-0">
+                      <AddCompanyForm onCompanyAdded={handleAddCompany} />
+                    </DialogContent>
+                  </Dialog>
                 </div>
-                {/* CSV Export button */}
-                <Button
-                  onClick={() => exportToCSV(companies, 'companies.csv')}
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
-              </div>
 
-              {/* Dialog for adding a new company */}
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white">
-                    <Plus className="mr-2 h-4 w-4" /> New
+                {/* Companies Table */}
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="w-[80px] font-medium text-slate-700">
+                          Sl. No
+                        </TableHead>
+                        <TableHead className="font-medium text-slate-700">Company</TableHead>
+                        <TableHead
+                          className="cursor-pointer font-medium text-slate-700"
+                          onClick={() => handleSort('domain')}
+                        >
+                          Domain{' '}
+                          {sortConfig.key === 'domain'
+                            ? sortConfig.direction === 'asc'
+                              ? '▲'
+                              : '▼'
+                            : ''}
+                        </TableHead>
+                        <TableHead
+                          className="cursor-pointer font-medium text-slate-700"
+                          onClick={() => handleSort('noofEmployees')}
+                        >
+                          Employees{' '}
+                          {sortConfig.key === 'noofEmployees'
+                            ? sortConfig.direction === 'asc'
+                              ? '▲'
+                              : '▼'
+                            : ''}
+                        </TableHead>
+                        <TableHead className="font-medium text-slate-700">Industry</TableHead>
+                        <TableHead
+                          className="cursor-pointer font-medium text-slate-700"
+                          onClick={() => handleSort('createdAt')}
+                        >
+                          Created{' '}
+                          {sortConfig.key === 'createdAt'
+                            ? sortConfig.direction === 'asc'
+                              ? '▲'
+                              : '▼'
+                            : ''}
+                        </TableHead>
+                        <TableHead className="text-right font-medium text-slate-700">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedCompanies.map((company, index) => (
+                        <TableRow key={company._id}>
+                          <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary">
+                                <Building2 className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="font-medium">{company.CompanyName}</div>
+                                <div className="text-xs text-muted-foreground">{company._id}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Globe className="h-4 w-4 text-muted-foreground mr-2" />
+                              {company.domain}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 text-muted-foreground mr-2" />
+                              {company.noofEmployees || 'N/A'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Briefcase className="h-4 w-4 text-muted-foreground mr-2" />
+                              {company.industry || 'N/A'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 text-muted-foreground mr-2" />
+                              {formatDate(company.createdAt)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-blue-600"
+                                onClick={() => handleViewDetails(company._id)}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(company);
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls for Companies */}
+                <div className="flex justify-between items-center mt-4 py-2">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+                    {Math.min(currentPage * itemsPerPage, filteredCompanies.length)} of{' '}
+                    {filteredCompanies.length} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      // Show pages around current page
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-8 w-8 p-0 ${
+                            currentPage === pageNum ? 'bg-primary text-white' : ''
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Users Tab */}
+              <TabsContent value="users">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search users..."
+                      value={userSearchTerm}
+                      onChange={handleUserSearch}
+                      className="pl-8 h-9 w-64"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => exportToCSV(users, 'users.csv')}
+                    variant="outline"
+                    size="sm"
+                    className="h-9"
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl p-0">
-                  <AddCompanyForm onCompanyAdded={handleAddCompany} />
-                </DialogContent>
-              </Dialog>
-            </div>
+                </div>
 
-            {/* Companies Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[#f8f8f8] transition-colors">
-                  <TableRow>
-                    <TableHead className="w-[100px]">Sl. No</TableHead>
-                    <TableHead className="cursor-pointer">_id</TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('CompanyName')}>
-                      Company Name{' '}
-                      {sortConfig.key === 'CompanyName'
-                        ? sortConfig.direction === 'asc'
-                          ? '▲'
-                          : '▼'
-                        : ''}
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('domain')}>
-                      Domain{' '}
-                      {sortConfig.key === 'domain'
-                        ? sortConfig.direction === 'asc'
-                          ? '▲'
-                          : '▼'
-                        : ''}
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer"
-                      onClick={() => handleSort('noofEmployees')}
+                {/* Users Table */}
+                <div className="overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="w-[80px] font-medium text-slate-700">
+                          Sl. No
+                        </TableHead>
+                        <TableHead className="font-medium text-slate-700">Full Name</TableHead>
+                        <TableHead className="font-medium text-slate-700">Email</TableHead>
+                        <TableHead className="font-medium text-slate-700">Role</TableHead>
+                        <TableHead className="font-medium text-slate-700">Phone</TableHead>
+                        <TableHead className="font-medium text-slate-700">Branch</TableHead>
+                        <TableHead className="font-medium text-slate-700">Company</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedUsers.map((user, index) => (
+                        <TableRow key={user._id}>
+                          <TableCell>
+                            {(userCurrentPage - 1) * userItemsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell className="font-medium">{user.fullName}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {user.role}
+                            </span>
+                          </TableCell>
+                          <TableCell>{user.phone || 'N/A'}</TableCell>
+                          <TableCell>{user.branchAddress?.officeName || 'N/A'}</TableCell>
+                          <TableCell>{user.company?.CompanyName || 'N/A'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls for Users */}
+                <div className="flex justify-between items-center mt-4 py-2">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(userCurrentPage - 1) * userItemsPerPage + 1} to{' '}
+                    {Math.min(userCurrentPage * userItemsPerPage, filteredUsers.length)} of{' '}
+                    {filteredUsers.length} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUserCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={userCurrentPage === 1}
+                      className="h-8 w-8 p-0"
                     >
-                      Employees{' '}
-                      {sortConfig.key === 'noofEmployees'
-                        ? sortConfig.direction === 'asc'
-                          ? '▲'
-                          : '▼'
-                        : ''}
-                    </TableHead>
-                    <TableHead className="cursor-pointer">Industry</TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('createdAt')}>
-                      Created at{' '}
-                      {sortConfig.key === 'createdAt'
-                        ? sortConfig.direction === 'asc'
-                          ? '▲'
-                          : '▼'
-                        : ''}
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedCompanies.map((company, index) => (
-                    <TableRow
-                      onClick={() => handleViewDetails(company._id)}
-                      key={company._id}
-                      className="hover:bg-[#fafafa] transition-colors cursor-pointer"
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {Array.from({ length: Math.min(5, userTotalPages) }, (_, i) => {
+                      // Show pages around current page
+                      let pageNum;
+                      if (userTotalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (userCurrentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (userCurrentPage >= userTotalPages - 2) {
+                        pageNum = userTotalPages - 4 + i;
+                      } else {
+                        pageNum = userCurrentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={userCurrentPage === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setUserCurrentPage(pageNum)}
+                          className={`h-8 w-8 p-0 ${
+                            userCurrentPage === pageNum ? 'bg-primary text-white' : ''
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setUserCurrentPage((prev) => Math.min(prev + 1, userTotalPages))
+                      }
+                      disabled={userCurrentPage === userTotalPages}
+                      className="h-8 w-8 p-0"
                     >
-                      <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                      <TableCell>{company._id}</TableCell>
-                      <TableCell>{company.CompanyName}</TableCell>
-                      <TableCell>{company.domain}</TableCell>
-                      <TableCell>{company.noofEmployees}</TableCell>
-                      <TableCell>{company.industry}</TableCell>
-                      <TableCell>{company.createdAt}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(company._id)}>
-                              View details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(company);
-                              }}
-                              className="text-red-600"
-                            >
-                              Delete record
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination Controls for Companies */}
-            <div className="flex justify-between items-center mt-4">
-              <div>
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-                {Math.min(currentPage * itemsPerPage, filteredCompanies.length)} of{' '}
-                {filteredCompanies.length} results
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
-                >
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users">
-            <div className="flex justify-between items-center mb-6">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search users..."
-                  value={userSearchTerm}
-                  onChange={handleUserSearch}
-                  className="pl-8 pr-4 py-2 w-64"
-                />
-              </div>
-              <Button
-                onClick={() => exportToCSV(users, 'users.csv')}
-                className="bg-green-500 hover:bg-green-600 text-white"
-              >
-                <Download className="mr-2 h-4 w-4" /> Export CSV
-              </Button>
-            </div>
-
-            {/* Users Table */}
-            <div className="border rounded-lg overflow-hidden mb-8">
-              <Table>
-                <TableHeader className="bg-[#f8f8f8] transition-colors">
-                  <TableRow>
-                    <TableHead className="w-[100px]">Sl. No</TableHead>
-                    <TableHead>User ID</TableHead>
-                    <TableHead>Full Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Company</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedUsers.map((user, index) => (
-                    <TableRow key={user._id} className="hover:bg-[#fafafa] transition-colors">
-                      <TableCell>{(userCurrentPage - 1) * userItemsPerPage + index + 1}</TableCell>
-                      <TableCell>{user._id}</TableCell>
-                      <TableCell>{user.fullName}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
-                      <TableCell>{user.branchAddress?.officeName || 'N/A'}</TableCell>
-                      <TableCell>{user.createdby?.fullName || 'N/A'}</TableCell>
-                      <TableCell>{user.company?.CompanyName || 'N/A'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination Controls for Users */}
-            <div className="flex justify-between items-center mt-4">
-              <div>
-                Showing {(userCurrentPage - 1) * userItemsPerPage + 1} to{' '}
-                {Math.min(userCurrentPage * userItemsPerPage, filteredUsers.length)} of{' '}
-                {filteredUsers.length} results
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setUserCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={userCurrentPage === 1}
-                  className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
-                >
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => setUserCurrentPage((prev) => Math.min(prev + 1, userTotalPages))}
-                  disabled={userCurrentPage === userTotalPages}
-                  className="bg-[#2c7be5] hover:bg-[#1a68d1] text-white"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
       </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete{' '}
-              <span className="font-bold">{companyToDelete?.CompanyName}</span>? This action cannot
-              be undone.
+              <span className="font-bold text-red-600">{companyToDelete?.CompanyName}</span>? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
