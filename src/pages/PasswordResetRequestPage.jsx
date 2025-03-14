@@ -54,14 +54,6 @@ export default function PasswordResetRequestPage() {
   return (
     <div className="flex min-h-screen bg-[#F9FAFB] items-center justify-center p-4">
       <div className="max-w-md w-full space-y-6">
-        {/* Page Description Section */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Reset Your Password</h1>
-          <p className="text-gray-500">
-            Enter your email address below and we'll send you a secure link to reset your password.
-          </p>
-        </div>
-
         {/* Password Reset Request Form Card */}
         <Card className="shadow-sm">
           <CardHeader>

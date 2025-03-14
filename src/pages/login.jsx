@@ -400,6 +400,9 @@ export default function LoginPage() {
             <Link to="/password-reset-request" className="text-sm text-primary text-sky-800">
               Forgot password?
             </Link>
+            {/* <Link to="/password-reset" className="text-sm text-primary text-sky-800">
+              Forgot password?
+            </Link> */}
           </div>
 
           {/* Submit Button */}

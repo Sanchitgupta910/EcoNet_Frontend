@@ -12,6 +12,7 @@ import Dashboard from './src/pages/DashboardPage';
 import InviteUserPage from './src/pages/InviteUser';
 import PasswordResetRequestPage from './src/pages/PasswordResetRequestPage';
 import UserSetupPage from './src/pages/UserSetup';
+import PasswordResetPage from './src/pages/PasswordResetPage';
 
 // Import global styles (if any)
 import './src/styles/globals.css';
@@ -70,6 +71,9 @@ function App() {
 
           {/* Public route for Password Reset Request page */}
           <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
+
+          {/* Public route for Password Reset page */}
+          <Route path="/password-reset" element={<PasswordResetPage />} />
 
           {/* Protected route for Dashboard page */}
           <Route

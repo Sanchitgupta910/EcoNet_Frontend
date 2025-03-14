@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, UserCheck } from 'lucide-react';
-import SideMenu from '@/components/layouts/SideMenu';
 
 /**
  * User Setup Page Component
@@ -77,7 +76,6 @@ export default function UserSetupPage() {
 
   return (
     <div className="flex min-h-screen bg-[#F9FAFB] items-center justify-center p-4">
-      <SideMenu />
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <Card className="shadow-sm w-full max-w-md">
           <CardHeader>
