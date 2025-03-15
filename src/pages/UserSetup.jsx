@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,17 +19,21 @@ import { Eye, EyeOff, UserCheck } from 'lucide-react';
 
 /**
  * User Setup Page Component
- * Allows invited users to complete their account setup.
- * @returns {JSX.Element} - User setup page.
+ * This page allows an invited user to complete their account setup.
+ * It extracts the invitation token from the URL query parameters, then submits
+ * the user's full name, password, and phone (optional) to the /api/v1/users/completeRegistration endpoint.
  */
 export default function UserSetupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Get email from URL query parameters
+  // Extract the invitation token from the URL
+  const token = searchParams.get('token') || '';
+
+  // Optionally, if you also want to display the invited email, you can extract it:
   const email = searchParams.get('email') || '';
 
-  // Form state
+  // Form state for account setup
   const [formData, setFormData] = useState({
     fullName: '',
     password: '',
@@ -39,9 +44,10 @@ export default function UserSetupPage() {
   // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   /**
-   * Handle form field changes.
+   * Handle changes to form fields.
    * @param {string} field - Field name.
    * @param {*} value - New field value.
    */
@@ -54,21 +60,43 @@ export default function UserSetupPage() {
 
   /**
    * Handle form submission.
+   * This function calls the completeRegistration endpoint with the invitation token
+   * and the entered account details.
+   * On success, the user is navigated to the login page.
    * @param {Event} e - Form submit event.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // If no token is present, do not proceed
+    if (!token) {
+      setError('Invitation token is missing.');
+      return;
+    }
+
     setIsSubmitting(true);
+    setError('');
 
-    // Simulate API call
     try {
-      // In a real app, this would be an API call to create the user account
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await axios.post(
+        '/api/v1/users/completeRegistration',
+        {
+          token,
+          fullName: formData.fullName,
+          password: formData.password,
+          phone: formData.phone,
+        },
+        { withCredentials: true },
+      );
 
-      // Redirect to login page after account creation
+      // On success, redirect to login
       navigate('/login');
-    } catch (error) {
-      console.error('Error creating account:', error);
+    } catch (err) {
+      console.error('Error completing registration:', err);
+      setError(
+        err.response?.data?.message ||
+          'An error occurred during account creation. Please try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -155,11 +183,18 @@ export default function UserSetupPage() {
                 />
                 <Label htmlFor="terms" className="text-sm font-normal">
                   I accept the{' '}
-                  <a href="#" className="text-primary underline">
+                  <a
+                    href="https://www.netnada.com/netnada-terms-and-conditions"
+                    className="text-primary underline"
+                    target="_blank"
+                  >
                     Terms and Conditions
                   </a>
                 </Label>
               </div>
+
+              {/* Error Message */}
+              {error && <p className="text-sm text-red-600">{error}</p>}
             </form>
           </CardContent>
           <CardFooter>
