@@ -1182,8 +1182,8 @@ export default function CompanyInfo() {
           </Breadcrumb>
           {/* Updated Invite button to navigate to InviteUser.jsx page */}
           <Button
-            className="bg-primary hover:bg-primary/90 text-white rounded-md"
-            onClick={() => navigate('/invite-user')}
+            className="bg-primary hover:bg-primary/90 text-white rounded-md h-9 w-[150px]"
+            onClick={() => navigate(`/invite-user/${id}`)}
           >
             <UserPlus className="mr-2 h-4 w-4" /> Invite User
           </Button>
@@ -1253,7 +1253,7 @@ export default function CompanyInfo() {
                         setIsAddressDialogOpen(true);
                       }}
                       size="sm"
-                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9"
+                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[150px]"
                     >
                       <Plus className="mr-1 h-3.5 w-3.5" /> Add Address
                     </Button>
@@ -1290,7 +1290,7 @@ export default function CompanyInfo() {
                       setIsAddressDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[150px]"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add First Office
                   </Button>
@@ -1414,7 +1414,7 @@ export default function CompanyInfo() {
                           setSelectedUser(null);
                           setIsUserDialogOpen(true);
                         }}
-                        className="bg-primary hover:bg-primary/90 hover:text-white text-white rounded-[6px] h-9"
+                        className="bg-primary hover:bg-primary/90 hover:text-white text-white rounded-[6px] h-9 w-[150px]"
                         disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                       >
                         <Plus className="mr-1 h-3.5 w-3.5" /> Add Admin
@@ -1437,7 +1437,7 @@ export default function CompanyInfo() {
                       setIsUserDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[150px]"
                     disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add First Admin
@@ -1530,7 +1530,7 @@ export default function CompanyInfo() {
                       <Button
                         size="sm"
                         onClick={() => setIsDustbinDialogOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9"
+                        className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[150px]"
                         disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                       >
                         <Plus className="mr-1 h-3.5 w-3.5" /> Add Bins

@@ -64,7 +64,7 @@ function App() {
 
           {/* Protected route for  Invite User page */}
           <Route
-            path="/invite-user"
+            path="/invite-user/:companyId"
             element={
               <ProtectedRoute>
                 <ToastProvider>
