@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,86 +18,73 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, KeyRound, CheckCircle } from 'lucide-react';
 
 /**
- * Password Reset Page Component
- * Allows users to set a new password after receiving a reset link.
- * @param {Object} props - Component props containing URL parameters.
- * @param {Object} props.params - URL parameters including reset token.
- * @returns {JSX.Element} - Password reset page.
+ * PasswordResetPage Component
+ * -------------------------------------------
+ * Allows users to reset their password using the token provided in the reset link.
+ * It captures the new password and its confirmation, validates them, and calls the
+ * backend endpoint to update the password.
+ *
+ * Expected Query Parameter:
+ *   - token: The reset token.
+ *
+ * Required Field:
+ *   - newPassword: The new password to set.
+ *
+ * On success, the token fields are cleared and the user is redirected to the login page.
+ *
+ * @returns {JSX.Element} - The password reset page.
  */
-export default function PasswordResetPage({ params }) {
+export default function PasswordResetPage() {
   const navigate = useNavigate();
-  const { token } = params;
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
-  // Form state
+  // Form state for password inputs.
   const [formData, setFormData] = useState({
-    email: '',
     password: '',
     confirmPassword: '',
   });
 
-  // UI state
+  // UI state.
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Check if passwords match
-  const passwordsMatch = formData.password && formData.password === formData.confirmPassword;
-
-  /**
-   * Simulate fetching the email associated with the reset token.
-   * In a real app, validate the token with the backend.
-   */
-  useEffect(() => {
-    setTimeout(() => {
-      setFormData((prev) => ({
-        ...prev,
-        email: 'user@example.com',
-      }));
-    }, 500);
-  }, [token]);
-
-  /**
-   * Handle form field changes.
-   * @param {string} field - Field name.
-   * @param {string} value - New field value.
-   */
+  // Handler for input changes.
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (error) setError('');
   };
 
-  /**
-   * Handle form submission.
-   * @param {Event} e - Form submit event.
-   */
+  // Handle form submission.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate that passwords match
-    if (!passwordsMatch) {
+    // Validate that the new password and confirmation match.
+    if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
     setIsSubmitting(true);
+    setError('');
 
-    // Simulate API call to reset the password
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the backend endpoint with the reset token and new password.
+      await axios.post('/api/v1/users/resetPassword', {
+        token,
+        newPassword: formData.password,
+      });
       setIsSuccess(true);
-
-      // Redirect to login page after 2 seconds
+      // Redirect to login page after a delay.
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
       console.error('Error resetting password:', err);
-      setError('Failed to reset password. Please try again.');
+      setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,7 +92,7 @@ export default function PasswordResetPage({ params }) {
 
   return (
     <div className="flex min-h-screen bg-[#F9FAFB] items-center justify-center p-4">
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full space-y-6">
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-2xl font-bold flex items-center">
@@ -117,7 +105,7 @@ export default function PasswordResetPage({ params }) {
               <Alert className="bg-green-50 border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Password reset successful! Redirecting you to the login page...
+                  Password reset successful! Redirecting to login page...
                 </AlertDescription>
               </Alert>
             ) : (
@@ -127,17 +115,6 @@ export default function PasswordResetPage({ params }) {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                {/* Email Field - Non-editable */}
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
                 {/* New Password Field */}
                 <div className="space-y-2">
                   <Label htmlFor="password">New Password</Label>
@@ -191,17 +168,25 @@ export default function PasswordResetPage({ params }) {
               </form>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col items-center">
             {!isSuccess && (
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting || !passwordsMatch}
+                disabled={
+                  isSubmitting ||
+                  !formData.password ||
+                  !formData.confirmPassword ||
+                  formData.password !== formData.confirmPassword
+                }
                 onClick={handleSubmit}
               >
                 {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
               </Button>
             )}
+            <Link to="/login" className="mt-4 text-sm text-primary hover:underline">
+              Back to Login
+            </Link>
           </CardFooter>
         </Card>
       </div>

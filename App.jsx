@@ -29,6 +29,14 @@ function App() {
         <Routes>
           {/* Public route for login */}
           <Route path="/login" element={<Login />} />
+          {/* Public route for User Setup page */}
+          <Route path="/user-setup" element={<UserSetupPage />} />
+
+          {/* Public route for Password Reset Request page */}
+          <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
+
+          {/* Public route for Password Reset page */}
+          <Route path="/password-reset" element={<PasswordResetPage />} />
 
           {/* Protected route for Companies page */}
           <Route
@@ -65,15 +73,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          {/* Public route for User Setup page */}
-          <Route path="/user-setup" element={<UserSetupPage />} />
-
-          {/* Public route for Password Reset Request page */}
-          <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
-
-          {/* Public route for Password Reset page */}
-          <Route path="/password-reset" element={<PasswordResetPage />} />
 
           {/* Protected route for Dashboard page */}
           <Route
