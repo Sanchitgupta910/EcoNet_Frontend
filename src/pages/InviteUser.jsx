@@ -42,6 +42,19 @@ import {
 import SideMenu from '@/components/layouts/SideMenu';
 import MySVG from '../assets/invite.svg';
 
+// Retrieve current logged-in user from sessionStorage (not localStorage)
+const storedUser = sessionStorage.getItem('user');
+let currentUser = { role: '' };
+try {
+  currentUser = storedUser ? JSON.parse(storedUser) : { role: '' };
+} catch (err) {
+  console.error('Error parsing stored user:', err);
+  currentUser = { role: '' };
+}
+
+console.log('Loaded currentUser:', currentUser);
+
+// Mapping of allowed roles based on the logged-in user's role.
 const allowedRolesMapping = {
   SuperAdmin: [
     'SuperAdmin',
@@ -70,6 +83,15 @@ const allowedRolesMapping = {
   OfficeAdmin: ['OfficeAdmin', 'EmployeeDashboardUser', 'BinDisplayUser'],
 };
 
+// Use an empty array as default if currentUser.role is not valid.
+const allowedRoles =
+  typeof currentUser.role === 'string' && Array.isArray(allowedRolesMapping[currentUser.role])
+    ? allowedRolesMapping[currentUser.role]
+    : [];
+
+console.log('Allowed roles:', allowedRoles);
+
+// Mapping for OrgUnit type based on the selected invite role.
 const roleToOrgUnitTypeMapping = {
   SuperAdmin: 'Country',
   RegionalAdmin: 'Region',
@@ -82,14 +104,11 @@ const roleToOrgUnitTypeMapping = {
 
 export default function InviteUserPage() {
   const navigate = useNavigate();
-  const { companyId } = useParams(); // Fetch the company ID from the route parameters
-  console.log('Fetched companyId:', companyId); // Log the companyId for debugging
+  // Expect route: /invite-user/:companyId
+  const { companyId } = useParams();
+  console.log('Fetched companyId:', companyId);
 
-  // Simulate current logged-in user (for example, CountryAdmin).
-  const currentUser = { role: 'CountryAdmin' };
-  const allowedRoles = allowedRolesMapping[currentUser.role] || [];
-
-  // Form state for the invitation.
+  // Form state for the invitation (keys must match backend expectation)
   const [formData, setFormData] = useState({
     email: '',
     role: '',
@@ -100,12 +119,15 @@ export default function InviteUserPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // When role changes, fetch OrgUnit options filtered by unit type and companyId.
   useEffect(() => {
-    if (formData.role) {
+    if (formData.role && companyId) {
       const unitType = roleToOrgUnitTypeMapping[formData.role] || '';
       if (unitType) {
         axios
-          .get(`/api/v1/orgUnits/byType?type=${unitType}`, { withCredentials: true })
+          .get(`/api/v1/orgUnits/byType?type=${unitType}&company=${companyId}`, {
+            withCredentials: true,
+          })
           .then((response) => {
             setOrgUnitOptions(response.data.data);
           })
@@ -117,16 +139,19 @@ export default function InviteUserPage() {
       } else {
         setOrgUnitOptions([]);
       }
+      // Reset OrgUnit selection when role changes.
       setFormData((prev) => ({ ...prev, OrgUnit: '' }));
     }
-  }, [formData.role]);
+  }, [formData.role, companyId]);
 
+  // Handle form field changes.
   const handleChange = (field, value) => {
     if (isSuccess) setIsSuccess(false);
     if (error) setError('');
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Handle form submission.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -138,7 +163,7 @@ export default function InviteUserPage() {
         '/api/v1/users/invite',
         {
           ...formData,
-          company: companyId, // Pass the properly fetched company ID
+          company: companyId, // Use the companyId from the route.
         },
         { withCredentials: true },
       );
@@ -181,6 +206,7 @@ export default function InviteUserPage() {
           </Breadcrumb>
 
           <div className="grid lg:grid-cols-5 gap-8 items-center">
+            {/* Left Section: Informational SVG and details */}
             <div className="lg:col-span-2 flex flex-col justify-center">
               <div className="max-w-md mx-auto lg:mx-0">
                 <MySVG className="w-full h-auto max-h-[300px] mb-8" />
@@ -212,6 +238,7 @@ export default function InviteUserPage() {
               </div>
             </div>
 
+            {/* Right Section: Invitation Form */}
             <Card className="shadow-md lg:col-span-3 border-0">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -222,7 +249,7 @@ export default function InviteUserPage() {
                 </div>
                 <CardDescription className="text-base">
                   Send an invitation to a new user. They will receive an email with instructions to
-                  complete their registration.
+                  complete registration.
                 </CardDescription>
               </CardHeader>
               <CardContent>

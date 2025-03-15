@@ -29,6 +29,7 @@ function App() {
         <Routes>
           {/* Public route for login */}
           <Route path="/login" element={<Login />} />
+
           {/* Public route for User Setup page */}
           <Route path="/user-setup" element={<UserSetupPage />} />
 

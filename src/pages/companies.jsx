@@ -404,17 +404,15 @@ export default function Company() {
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-1">
                               <Button
-                                variant="ghost"
                                 size="sm"
-                                className="h-8 text-blue-600"
+                                className="h-8 text-blue-600 bg-slate-50 hover:bg-slate-100"
                                 onClick={() => handleViewDetails(company._id)}
                               >
                                 View
                               </Button>
                               <Button
-                                variant="ghost"
                                 size="sm"
-                                className="h-8 text-red-600"
+                                className="h-8 text-red-600 bg-slate-50 hover:bg-slate-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(company);

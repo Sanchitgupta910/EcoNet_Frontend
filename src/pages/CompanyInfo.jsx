@@ -327,12 +327,14 @@ export default function CompanyInfo() {
             </BreadcrumbList>
           </Breadcrumb>
           {/* Updated Invite button to navigate to InviteUser.jsx page */}
-          <Button
-            className="bg-primary hover:bg-primary/90 text-white rounded-md h-9 w-[150px]"
-            onClick={() => navigate(`/invite-user/${id}`)}
-          >
-            <UserPlus className="mr-2 h-4 w-4" /> Invite User
-          </Button>
+          {company.branchAddresses.filter((branch) => !branch.isdeleted).length > 1 && (
+            <Button
+              className="bg-primary hover:bg-primary/90 text-white rounded-md h-9 w-[150px]"
+              onClick={() => navigate(`/invite-user/${id}`)}
+            >
+              <UserPlus className="mr-2 h-4 w-4" /> Invite User
+            </Button>
+          )}
         </div>
         <div className="space-y-6">
           {/* Company Details Card */}
@@ -436,7 +438,7 @@ export default function CompanyInfo() {
                       setIsAddressDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[150px]"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[200px]"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add First Office
                   </Button>
@@ -583,7 +585,7 @@ export default function CompanyInfo() {
                       setIsUserDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[150px]"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[200px]"
                     disabled={!company.branchAddresses || company.branchAddresses.length === 0}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add First Admin
@@ -701,7 +703,7 @@ export default function CompanyInfo() {
                       setIsAddressDialogOpen(true);
                     }}
                     variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[200px]"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add Office First
                   </Button>

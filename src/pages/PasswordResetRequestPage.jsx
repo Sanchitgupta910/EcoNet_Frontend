@@ -55,11 +55,9 @@ export default function PasswordResetRequestPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-2xl font-bold flex items-center">
-              <KeyRound className="mr-2 h-5 w-5 text-primary" /> Reset Password
+              <KeyRound className="mr-2 h-5 w-5 text-primary" /> Forgot your password?
             </CardTitle>
-            <CardDescription>
-              Enter your email address to receive your password reset link.
-            </CardDescription>
+            <CardDescription>Enter your email and we'll send you a reset link.</CardDescription>
           </CardHeader>
           <CardContent>
             {isSuccess ? (
