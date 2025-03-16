@@ -25,7 +25,8 @@
     --input: 210 20% 90%; /* #e5e7eb */
 
     /* Primary Brand Color */
-    --primary: 168 49% 38%; /* #0d9488 (teal) */
+    --primary: 168 49% 38%; /* #0d9488 (teal)*/
+
     --primary-foreground: 0 0% 100%; /* #ffffff */
 
     /* Secondary / Accent Color (optional pink accent) */

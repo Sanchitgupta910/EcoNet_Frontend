@@ -313,16 +313,23 @@ export default function CompanyInfo() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink onClick={() => navigate('/')}>
-                  <Home className="h-4 w-4" />
+                  <Home className="h-4 w-4 cursor-pointer hover:text-primary" />
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => navigate('/companies')}>Companies</BreadcrumbLink>
+                <BreadcrumbLink
+                  onClick={() => navigate('/companies')}
+                  className="hover:text-primary cursor-pointer "
+                >
+                  Companies
+                </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink>{company.CompanyName}</BreadcrumbLink>
+                <BreadcrumbLink className="hover:text-primary cursor-pointer font-medium text-primary">
+                  {company.CompanyName}
+                </BreadcrumbLink>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
