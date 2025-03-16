@@ -43,6 +43,10 @@ export function UserForm({ onSubmit, companyId, initialData }) {
         break;
       case 'OfficeAdmin':
         unitType = 'Branch';
+      case 'EmployeeDashboardUser':
+        unitType = 'Branch';
+      case 'BinDisplayUser':
+        unitType = 'Branch';
         break;
       default:
         unitType = '';
