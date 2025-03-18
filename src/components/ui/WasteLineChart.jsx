@@ -16,7 +16,6 @@ import {
 import { Info, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 // Transform API data for the chart.
-// Expects each bin object to have a "data" array of daily readings.
 const transformDataForChart = (bins) => {
   if (!bins || bins.length === 0) return [];
   const dateMap = new Map();
@@ -35,12 +34,16 @@ const transformDataForChart = (bins) => {
   );
 };
 
-// Generate a color configuration based on bin names using Tailwind colors.
+// Generate a color configuration based on bin names.
 const getColorForBin = (binName) => {
   const nameLower = binName.toLowerCase();
-  if (nameLower.includes('general') || nameLower.includes('waste')) {
+  if (
+    nameLower.includes('general') ||
+    nameLower.includes('waste') ||
+    nameLower.includes('landfill')
+  ) {
     return '#F43F5E'; // Tailwind rose-500
-  } else if (nameLower.includes('commingled') || nameLower.includes('mixed')) {
+  } else if (nameLower.includes('commingled')) {
     return '#F59E0B'; // Tailwind amber-500
   } else if (nameLower.includes('organic')) {
     return '#10B981'; // Tailwind emerald-500
@@ -64,7 +67,7 @@ const generateColorConfig = (bins) => {
   return colorMap;
 };
 
-// Custom tooltip component
+// Custom tooltip component.
 const CustomTooltip = ({ active, payload, label, colorConfig }) => {
   if (active && payload && payload.length) {
     return (
@@ -99,19 +102,24 @@ export default function WasteLineChart({ branchId }) {
   const [error, setError] = useState(null);
   const [colorConfig, setColorConfig] = useState({});
   const [trendComparison, setTrendComparison] = useState(null);
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+
+  // Listen to window resize events to update the chart's key.
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchWasteData = async () => {
       try {
         setIsLoading(true);
-        // Pass branchId as query parameter to filter bins by branch.
         const response = await axios.get(`/api/v1/analytics/wasteLast7Days?branchId=${branchId}`, {
           withCredentials: true,
         });
         console.log('Raw API data:', response.data.data);
-
         if (response.data.success) {
-          // Assume API now returns only bins for the branch.
           const binsData = response.data.data.filter((bin) => bin.data && bin.data.length > 0);
           setBins(binsData);
           setChartData(transformDataForChart(binsData));
@@ -122,56 +130,12 @@ export default function WasteLineChart({ branchId }) {
       } catch (err) {
         console.error('Error fetching waste data:', err);
         setError('Error fetching waste data');
-        // Fallback data for preview
-        const fallbackBins = [
-          {
-            _id: '1',
-            binName: 'Landfill',
-            data: Array.from({ length: 7 }, (_, i) => ({
-              date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0],
-              weight: 1.5 + Math.random() * 0.2,
-            })),
-          },
-          {
-            _id: '2',
-            binName: 'Mixed recycling',
-            data: Array.from({ length: 7 }, (_, i) => ({
-              date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0],
-              weight: 1.4 + Math.random() * 0.15,
-            })),
-          },
-          {
-            _id: '3',
-            binName: 'Comingled',
-            data: Array.from({ length: 7 }, (_, i) => ({
-              date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split('T')[0],
-              weight: 1.3 + Math.random() * 0.1,
-            })),
-          },
-        ];
-        setBins(fallbackBins);
-        setChartData(transformDataForChart(fallbackBins));
-        setColorConfig(generateColorConfig(fallbackBins));
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (branchId) {
-      fetchWasteData();
-    }
-  }, [branchId]);
-
-  // Fetch trend comparison data
-  useEffect(() => {
     const fetchTrendComparison = async () => {
-      if (!branchId) return;
       try {
         const response = await axios.get(
           `/api/v1/analytics/wasteTrendComparison?branchId=${branchId}`,
@@ -184,7 +148,11 @@ export default function WasteLineChart({ branchId }) {
         console.error('Error fetching trend comparison:', err);
       }
     };
-    fetchTrendComparison();
+
+    if (branchId) {
+      fetchWasteData();
+      fetchTrendComparison();
+    }
   }, [branchId]);
 
   if (isLoading) {
@@ -221,16 +189,17 @@ export default function WasteLineChart({ branchId }) {
   }
 
   return (
-    <Card className="shadow-md border border-gray-100 bg-white/95 flex flex-col h-full">
+    <Card className="shadow-md border border-gray-100 bg-white/95 flex flex-col h-full overflow-hidden">
       <CardHeader className="pb-3 border-b border-gray-100">
         <CardTitle className="text-base font-medium text-gray-800">Total Waste Recorded</CardTitle>
         <CardDescription className="text-xs text-gray-500">
           Daily waste generation by bin type
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 p-5">
-        <div className="h-full w-full">
-          <ResponsiveContainer width="100%" height={180}>
+      <CardContent className="flex-1 p-5 flex flex-col">
+        {/* Chart Container */}
+        <div className="flex-1">
+          <ResponsiveContainer width="100%" height="100%" key={windowHeight}>
             <LineChart data={chartData} margin={{ top: 20, right: 20, left: 5, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis
@@ -281,47 +250,47 @@ export default function WasteLineChart({ branchId }) {
               ))}
             </LineChart>
           </ResponsiveContainer>
-
-          {/* Combined Legend Row */}
-          <div className="mt-4 flex items-center justify-between px-2">
-            {/* Bin Legend on the left */}
-            <div className="flex flex-wrap gap-4">
-              {bins.map((bin) => (
+        </div>
+        {/* Legend and Trend Comparison in a flex row */}
+        <div className="mt-4 flex items-center justify-between px-2">
+          {/* Legend on the left */}
+          <div className="flex flex-wrap gap-4">
+            {bins.map((bin) => (
+              <div key={bin._id} className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full">
                 <div
-                  key={bin._id}
-                  className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
-                    style={{
-                      backgroundColor:
-                        colorConfig[bin.binName]?.color || getColorForBin(bin.binName),
-                    }}
-                  ></div>
-                  <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                    {bin.binName}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {/* Trend Comparison Sentence on the right */}
-            {trendComparison && (
-              <div className="flex items-center">
+                  className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
+                  style={{
+                    backgroundColor: colorConfig[bin.binName]?.color || getColorForBin(bin.binName),
+                  }}
+                ></div>
                 <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                  This week, total waste was {trendComparison.thisWeekWaste} KG, which is{' '}
-                  {trendComparison.percentageChange}%
-                  {trendComparison.trend === 'higher' ? (
-                    <ArrowUpRight className="inline-block h-4 w-4 text-emerald-600 mx-1" />
-                  ) : trendComparison.trend === 'lower' ? (
-                    <ArrowDownRight className="inline-block h-4 w-4 text-rose-600 mx-1" />
-                  ) : (
-                    <span className="mx-1">equal to</span>
-                  )}{' '}
-                  than last week ({trendComparison.lastWeekWaste} KG).
+                  {bin.binName}
                 </span>
               </div>
-            )}
+            ))}
           </div>
+          {/* Trend Comparison Info on the right */}
+          {trendComparison && (
+            <div className="flex items-center">
+              <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                This week, total waste was {trendComparison.thisWeekWaste} KG, which is{' '}
+                {trendComparison.trend === 'higher' ? (
+                  <>
+                    <ArrowUpRight className="inline-block h-4 w-4 text-emerald-600 mx-1" />
+                    higher
+                  </>
+                ) : trendComparison.trend === 'lower' ? (
+                  <>
+                    <ArrowDownRight className="inline-block h-4 w-4 text-rose-600 mx-1" />
+                    lower
+                  </>
+                ) : (
+                  'equal to'
+                )}{' '}
+                last week ({trendComparison.lastWeekWaste} KG).
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
