@@ -441,6 +441,7 @@ export default function EmployeeBinDisplayDashboard() {
     try {
       const response = await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
       if (response.data.success) {
+        sessionStorage.clear();
         window.location.href = '/login';
       }
     } catch (error) {

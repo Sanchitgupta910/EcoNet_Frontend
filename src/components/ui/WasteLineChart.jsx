@@ -141,6 +141,7 @@ export default function WasteLineChart({ branchId }) {
           `/api/v1/analytics/wasteTrendComparison?branchId=${branchId}`,
           { withCredentials: true },
         );
+        console.log('Trend comparison data:', response.data.data);
         if (response.data.success) {
           setTrendComparison(response.data.data);
         }
@@ -251,9 +252,9 @@ export default function WasteLineChart({ branchId }) {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        {/* Legend and Trend Comparison in a flex row */}
+        {/* Combined Legend Row */}
         <div className="mt-4 flex items-center justify-between px-2">
-          {/* Legend on the left */}
+          {/* Bin Legend on the left */}
           <div className="flex flex-wrap gap-4">
             {bins.map((bin) => (
               <div key={bin._id} className="flex items-center bg-gray-50 px-3 py-1.5 rounded-full">
@@ -274,6 +275,7 @@ export default function WasteLineChart({ branchId }) {
             <div className="flex items-center">
               <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
                 This week, total waste was {trendComparison.thisWeekWaste} KG, which is{' '}
+                {trendComparison.percentageChange}%
                 {trendComparison.trend === 'higher' ? (
                   <>
                     <ArrowUpRight className="inline-block h-4 w-4 text-emerald-600 mx-1" />
@@ -287,7 +289,7 @@ export default function WasteLineChart({ branchId }) {
                 ) : (
                   'equal to'
                 )}{' '}
-                last week ({trendComparison.lastWeekWaste} KG).
+                than last week ({trendComparison.lastWeekWaste} KG).
               </span>
             </div>
           )}
