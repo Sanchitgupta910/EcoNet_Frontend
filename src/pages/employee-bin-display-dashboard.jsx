@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { clearUser } from '../app/userSlice';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { Bell, LogOut, RefreshCw, TrendingUp, ArrowUpRight, Recycle } from 'lucide-react';
@@ -364,6 +365,7 @@ export default function EmployeeBinDisplayDashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [nextUpdate, setNextUpdate] = useState(new Date(Date.now() + 3600000));
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
 
   const fetchBinStatus = useCallback(async () => {
     const branchId = user?.OrgUnit?.branchAddress?._id;
@@ -441,7 +443,9 @@ export default function EmployeeBinDisplayDashboard() {
     try {
       const response = await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
       if (response.data.success) {
-        sessionStorage.clear();
+        dispatch(clearUser());
+        // sessionStorage.clear();
+
         window.location.href = '/login';
       }
     } catch (error) {

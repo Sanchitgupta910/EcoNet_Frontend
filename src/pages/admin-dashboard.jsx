@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { clearUser } from '../app/userSlice';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { format, subMonths } from 'date-fns';
@@ -261,6 +262,7 @@ export default function AdminDashboard() {
   // Get user data from Redux store
   const user = useSelector((state) => state.user.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // State for filters and data
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -281,7 +283,8 @@ export default function AdminDashboard() {
     try {
       const response = await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
       if (response.data.success) {
-        sessionStorage.clear();
+        // sessionStorage.clear();
+        dispatch(clearUser());
         window.location.href = '/login';
       }
     } catch (error) {

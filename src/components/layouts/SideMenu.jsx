@@ -209,6 +209,7 @@ export default function SideMenu({ logoMargin = 'm-2' }) {
   const handleLogout = async () => {
     try {
       await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
+      // sessionStorage.clear();
       dispatch(clearUser());
       navigate('/login');
     } catch (error) {
