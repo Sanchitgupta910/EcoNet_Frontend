@@ -1,21 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-
-// Custom UI components and icons
-import SideMenu from '../components/layouts/SideMenu';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableHeader,
-} from '../components/ui/Table';
 import {
   Building2,
   Globe,
@@ -25,8 +12,12 @@ import {
   Plus,
   Search,
   Home,
-  UserPlus,
+  ArrowLeft,
 } from 'lucide-react';
+import { useTheme } from '@/components/ui/theme-provider';
+
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Dialog,
   DialogContent,
@@ -35,29 +26,86 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../components/ui/Dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/Tooltip';
-import { Input } from '../components/ui/Input';
+} from '@/components/ui/Dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
+import { Input } from '@/components/ui/Input';
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '../components/ui/Breadcrumb';
+} from '@/components/ui/Breadcrumb';
+import { Badge } from '@/components/ui/Badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import LoadingSpinner from '@/components/ui/Spinner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 
 // Import form components for address, user, and dustbin operations
-import { AddressForm } from '../components/ui/AddressForm';
-import { UserForm } from '../components/ui/UserForm';
-import { AddBinsForm } from '/src/components/ui/DustbinForm.jsx';
+import { AddressForm } from '@/components/ui/AddressForm';
+import { UserForm } from '@/components/ui/UserForm';
+import { AddBinsForm } from '@/components/ui/DustbinForm';
+
+// Add this constant at the top of the file, after the imports
+const roleColorMap = {
+  SuperAdmin: {
+    light: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    dark: 'bg-indigo-900/20 text-indigo-300 border-indigo-800/30',
+  },
+  RegionalAdmin: {
+    light: 'bg-violet-100 text-violet-700 border-violet-200',
+    dark: 'bg-violet-900/20 text-violet-300 border-violet-800/30',
+  },
+  CountryAdmin: {
+    light: 'bg-blue-100 text-blue-700 border-blue-200',
+    dark: 'bg-blue-900/20 text-blue-300 border-blue-800/30',
+  },
+  CityAdmin: {
+    light: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    dark: 'bg-cyan-900/20 text-cyan-300 border-cyan-800/30',
+  },
+  OfficeAdmin: {
+    light: 'bg-teal-100 text-teal-700 border-teal-200',
+    dark: 'bg-teal-900/20 text-teal-300 border-teal-800/30',
+  },
+  EmployeeDashboardUser: {
+    light: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    dark: 'bg-emerald-900/20 text-emerald-300 border-emerald-800/30',
+  },
+  BinDisplayUser: {
+    light: 'bg-amber-100 text-amber-700 border-amber-200',
+    dark: 'bg-amber-900/20 text-amber-300 border-amber-800/30',
+  },
+};
+
+// Add this helper function after the roleColorMap
+const getRoleBadgeClass = (role, theme) => {
+  return roleColorMap[role]
+    ? roleColorMap[role][theme === 'dark' ? 'dark' : 'light']
+    : theme === 'dark'
+    ? 'bg-gray-900/20 text-gray-300 border-gray-800/30'
+    : 'bg-gray-100 text-gray-700 border-gray-200';
+};
 
 export default function CompanyInfo() {
+  const { theme } = useTheme();
   // Retrieve company ID from URL parameters
   const { id } = useParams();
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [searchLocations, setSearchLocations] = useState('');
   const [searchUsers, setSearchUsers] = useState('');
+  const [searchBins, setSearchBins] = useState('');
 
   // Dialog state variables
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
@@ -76,13 +124,23 @@ export default function CompanyInfo() {
    * Fetch company details from the API.
    */
   const fetchCompanyDetails = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
     try {
       const response = await axios.get(`/api/v1/company/${id}`);
       setCompany(response.data.data);
     } catch (error) {
       console.error('Error fetching company details:', error);
+      setError('Failed to load company details. Please try again.');
+
+      if (error.response && error.response.status === 401) {
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchCompanyDetails();
@@ -262,27 +320,6 @@ export default function CompanyInfo() {
     fetchCompanyDetails();
   };
 
-  /**
-   * A reusable component to display statistics.
-   */
-  function StatItem({ icon, label, value }) {
-    return (
-      <div className="flex items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900">
-        <div className="mr-3">{icon}</div>
-        <div className="flex flex-col">
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-sm text-muted-foreground">{label}</div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------------------- Render Loading State ---------------------- //
-
-  if (!company) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
   // ---------------------- Delete Operations ---------------------- //
 
   const confirmDeleteAddress = async () => {
@@ -301,347 +338,770 @@ export default function CompanyInfo() {
     setSelectedAddress(null);
   };
 
+  // Function to get bin type badge styling
+  const getBinTypeBadgeStyle = (binType) => {
+    const nameLower = binType.toLowerCase();
+
+    if (nameLower.includes('general') || nameLower.includes('waste')) {
+      return theme === 'dark'
+        ? 'bg-rose-900/20 text-rose-300 border-rose-800/30'
+        : 'bg-rose-50 text-rose-700 border-rose-200';
+    } else if (nameLower.includes('commingled') || nameLower.includes('mixed')) {
+      return theme === 'dark'
+        ? 'bg-amber-900/20 text-amber-300 border-amber-800/30'
+        : 'bg-amber-50 text-amber-700 border-amber-200';
+    } else if (nameLower.includes('organic')) {
+      return theme === 'dark'
+        ? 'bg-emerald-900/20 text-emerald-300 border-emerald-800/30'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    } else if (nameLower.includes('paper') || nameLower.includes('cardboard')) {
+      return theme === 'dark'
+        ? 'bg-blue-900/20 text-blue-300 border-blue-800/30'
+        : 'bg-blue-50 text-blue-700 border-blue-200';
+    } else if (nameLower.includes('glass')) {
+      return theme === 'dark'
+        ? 'bg-purple-900/20 text-purple-300 border-purple-800/30'
+        : 'bg-purple-50 text-purple-700 border-purple-200';
+    } else {
+      return theme === 'dark'
+        ? 'bg-sky-900/20 text-sky-300 border-sky-800/30'
+        : 'bg-sky-50 text-sky-700 border-sky-200';
+    }
+  };
+
+  // Function to get bin type icon color
+  const getBinTypeIconColor = (binType) => {
+    const nameLower = binType.toLowerCase();
+
+    if (nameLower.includes('general') || nameLower.includes('waste')) {
+      return theme === 'dark' ? 'text-rose-400' : 'text-rose-600';
+    } else if (nameLower.includes('commingled') || nameLower.includes('mixed')) {
+      return theme === 'dark' ? 'text-amber-400' : 'text-amber-600';
+    } else if (nameLower.includes('organic')) {
+      return theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600';
+    } else if (nameLower.includes('paper') || nameLower.includes('cardboard')) {
+      return theme === 'dark' ? 'text-blue-400' : 'text-blue-600';
+    } else if (nameLower.includes('glass')) {
+      return theme === 'dark' ? 'text-purple-400' : 'text-purple-600';
+    } else {
+      return theme === 'dark' ? 'text-sky-400' : 'text-sky-600';
+    }
+  };
+
+  // ---------------------- Loading & Error States ---------------------- //
+  if (loading) {
+    return (
+      <div
+        className={`flex h-[calc(100vh-64px)] w-full items-center justify-center ${
+          theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'
+        }`}
+      >
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className={`container mx-auto px-4 py-8 ${
+          theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50'
+        }`}
+      >
+        <Card
+          className={`border-destructive ${theme === 'dark' ? 'bg-slate-800 text-slate-100' : ''}`}
+        >
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+            <CardDescription className={theme === 'dark' ? 'text-slate-300' : ''}>
+              {error}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => fetchCompanyDetails()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // ---------------------- Component Rendering ---------------------- //
   return (
-    <div className="flex h-screen bg-[#F9FAFB]">
-      <SideMenu />
-
-      <div className="flex-1 p-6 overflow-auto space-y-6">
+    <div
+      className={`min-h-screen ${theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50'}`}
+    >
+      <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Breadcrumb Navigation */}
         <div className="flex justify-between items-center">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink onClick={() => navigate('/')}>
-                  <Home className="h-4 w-4 cursor-pointer hover:text-primary" />
+                <BreadcrumbLink asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`p-0 ${
+                      theme === 'dark'
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                        : ''
+                    }`}
+                    onClick={() => navigate('/')}
+                  >
+                    <Home className="h-4 w-4" />
+                  </Button>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`p-0 ${
+                      theme === 'dark'
+                        ? 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                        : ''
+                    }`}
+                    onClick={() => navigate('/companies')}
+                  >
+                    Companies
+                  </Button>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink
-                  onClick={() => navigate('/companies')}
-                  className="hover:text-primary cursor-pointer "
+                  className={`font-medium ${theme === 'dark' ? 'text-indigo-400' : 'text-primary'}`}
                 >
-                  Companies
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink className="hover:text-primary cursor-pointer font-medium text-primary">
                   {company.CompanyName}
                 </BreadcrumbLink>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          {/* Updated Invite button to navigate to InviteUser.jsx page */}
-          {company.branchAddresses.filter((branch) => !branch.isdeleted).length > 1 && (
-            <Button
-              className="bg-primary hover:bg-primary/90 text-white rounded-md h-9 w-[150px]"
-              onClick={() => navigate(`/invite-user/${id}`)}
-            >
-              <UserPlus className="mr-2 h-4 w-4" /> Invite User
-            </Button>
-          )}
-        </div>
-        <div className="space-y-6">
-          {/* Company Details Card */}
-          <Card className="w-full overflow-hidden shadow-sm">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pb-4">
-              <CardTitle className="text-2xl font-bold tracking-tight">
-                {company.CompanyName}
-              </CardTitle>
-              <div className="flex items-center text-muted-foreground">
-                <Globe className="h-4 w-4 mr-2" />
-                <span>{company.domain}</span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatItem
-                  icon={<Users className="h-5 w-5 text-blue-500" />}
-                  label="Employees"
-                  value={company.noofEmployees}
-                />
-                <StatItem
-                  icon={<UserCog className="h-5 w-5 text-indigo-500" />}
-                  label="Admin(s)"
-                  value={countAdminUsers()}
-                />
-                <StatItem
-                  icon={<Building2 className="h-5 w-5 text-emerald-500" />}
-                  label="Office Location(s)"
-                  value={countOfficeLocations()}
-                />
-                <StatItem
-                  icon={<Trash2 className="h-5 w-5 text-amber-500" />}
-                  label="Waste Bins"
-                  value={countWasteBins()}
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Office Locations Section */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                  <Building2 className="mr-2 h-5 w-5 text-primary" /> Office Locations
-                </CardTitle>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search offices..."
-                    className="pl-8 h-9 w-64"
-                    value={searchLocations}
-                    onChange={(e) => setSearchLocations(e.target.value)}
-                  />
+          {/* Back button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/companies')}
+            className={
+              theme === 'dark'
+                ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
+                : ''
+            }
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Companies
+          </Button>
+        </div>
+
+        {/* Company Details Card */}
+        <Card
+          className={`overflow-hidden ${
+            theme === 'dark'
+              ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+              : ''
+          }`}
+        >
+          <CardHeader
+            className={`${theme === 'dark' ? 'bg-slate-800/50 pb-4' : 'bg-muted/50 pb-4'}`}
+          >
+            <CardTitle
+              className={`text-2xl font-bold tracking-tight ${
+                theme === 'dark' ? 'text-white' : ''
+              }`}
+            >
+              {company.CompanyName}
+            </CardTitle>
+            <div
+              className={`flex items-center ${
+                theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+              }`}
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              <span>{company.domain}</span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Update the stat cards to match the dashboard's modern style */}
+            {/* Replace the existing card grid in the CardContent section with this: */}
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div
+                className={`rounded-xl border p-6 shadow-lg hover:shadow-indigo-500/10 transition-all group ${
+                  theme === 'dark'
+                    ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                    : 'backdrop-blur-md bg-white border-slate-200/70'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p
+                      className={`text-sm font-medium mb-1 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      Employees
+                    </p>
+                    <h3
+                      className={`text-3xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-slate-800'
+                      }`}
+                    >
+                      {company.noofEmployees || '0'}
+                    </h3>
+                  </div>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-indigo-500/20 text-indigo-400 group-hover:bg-indigo-500/30'
+                        : 'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200'
+                    } transition-colors`}
+                  >
+                    <Users className="h-5 w-5" />
+                  </div>
                 </div>
-                <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
-                  <DialogTrigger>
+              </div>
+
+              <div
+                className={`rounded-xl border p-6 shadow-lg hover:shadow-emerald-500/10 transition-all group ${
+                  theme === 'dark'
+                    ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                    : 'backdrop-blur-md bg-white border-slate-200/70'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p
+                      className={`text-sm font-medium mb-1 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      Admin(s)
+                    </p>
+                    <h3
+                      className={`text-3xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-slate-800'
+                      }`}
+                    >
+                      {countAdminUsers()}
+                    </h3>
+                  </div>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
+                        : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200'
+                    } transition-colors`}
+                  >
+                    <UserCog className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`rounded-xl border p-6 shadow-lg hover:shadow-blue-500/10 transition-all group ${
+                  theme === 'dark'
+                    ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                    : 'backdrop-blur-md bg-white border-slate-200/70'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p
+                      className={`text-sm font-medium mb-1 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      Office Location(s)
+                    </p>
+                    <h3
+                      className={`text-3xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-slate-800'
+                      }`}
+                    >
+                      {countOfficeLocations()}
+                    </h3>
+                  </div>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-blue-500/20 text-blue-400 group-hover:bg-blue-500/30'
+                        : 'bg-blue-100 text-blue-600 group-hover:bg-blue-200'
+                    } transition-colors`}
+                  >
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`rounded-xl border p-6 shadow-lg hover:shadow-amber-500/10 transition-all group ${
+                  theme === 'dark'
+                    ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                    : 'backdrop-blur-md bg-white border-slate-200/70'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p
+                      className={`text-sm font-medium mb-1 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      Waste Bins
+                    </p>
+                    <h3
+                      className={`text-3xl font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-slate-800'
+                      }`}
+                    >
+                      {countWasteBins()}
+                    </h3>
+                  </div>
+                  <div
+                    className={`p-3 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-amber-500/20 text-amber-400 group-hover:bg-amber-500/30'
+                        : 'bg-amber-100 text-amber-600 group-hover:bg-amber-200'
+                    } transition-colors`}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabs for Company Data */}
+        <Card
+          className={
+            theme === 'dark'
+              ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+              : ''
+          }
+        >
+          <CardHeader className="pb-8">
+            <Tabs defaultValue="locations" className="w-full">
+              <TabsList className={`mb-4 ${theme === 'dark' ? 'bg-slate-800/70' : ''}`}>
+                <TabsTrigger
+                  value="locations"
+                  className={`flex-1 ${
+                    theme === 'dark'
+                      ? 'data-[state=active]:bg-indigo-600 data-[state=active]:text-white'
+                      : ''
+                  }`}
+                >
+                  Office Locations
+                </TabsTrigger>
+                <TabsTrigger
+                  value="users"
+                  className={`flex-1 ${
+                    theme === 'dark'
+                      ? 'data-[state=active]:bg-indigo-600 data-[state=active]:text-white'
+                      : ''
+                  }`}
+                >
+                  Admin Users
+                </TabsTrigger>
+                <TabsTrigger
+                  value="bins"
+                  className={`flex-1 ${
+                    theme === 'dark'
+                      ? 'data-[state=active]:bg-indigo-600 data-[state=active]:text-white'
+                      : ''
+                  }`}
+                >
+                  Waste Bins
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Office Locations Tab */}
+              <TabsContent value="locations">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="relative">
+                    <Search
+                      className={`absolute left-2.5 top-2.5 h-4 w-4 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    />
+                    <Input
+                      type="search"
+                      placeholder="Search offices..."
+                      className={`pl-8 h-9 w-64 ${
+                        theme === 'dark'
+                          ? 'bg-slate-800/70 border-slate-700 text-white placeholder:text-slate-400'
+                          : ''
+                      }`}
+                      value={searchLocations}
+                      onChange={(e) => setSearchLocations(e.target.value)}
+                    />
+                  </div>
+                  <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        onClick={() => {
+                          setSelectedAddress(null);
+                          setIsAddressDialogOpen(true);
+                        }}
+                        size="sm"
+                        className="h-9"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Add Office
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent
+                      className={
+                        theme === 'dark'
+                          ? 'backdrop-blur-md bg-slate-800 border-slate-700/50 text-white'
+                          : ''
+                      }
+                    >
+                      <DialogHeader>
+                        <DialogTitle className={theme === 'dark' ? 'text-white' : ''}>
+                          {selectedAddress ? 'Update Office' : 'Add New Office'}
+                        </DialogTitle>
+                        <DialogDescription className={theme === 'dark' ? 'text-slate-300' : ''}>
+                          {selectedAddress
+                            ? 'Update the office details.'
+                            : 'Enter the details for the new office location.'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <AddressForm
+                        onSubmit={addOrUpdateAddress}
+                        initialData={selectedAddress}
+                        companyId={id}
+                        companyName={company.CompanyName}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Now update the Office Locations table to match the leaderboard style */}
+                {/* Replace the existing table in the Office Locations TabsContent with this: */}
+
+                {company.branchAddresses &&
+                company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
+                  <div
+                    className={`text-center py-12 border rounded-lg ${
+                      theme === 'dark' ? 'border-slate-700' : ''
+                    }`}
+                  >
+                    <Building2
+                      className={`mx-auto h-12 w-12 ${
+                        theme === 'dark' ? 'text-slate-600' : 'text-muted-foreground/50'
+                      }`}
+                    />
+                    <h3
+                      className={`mt-4 text-lg font-medium ${theme === 'dark' ? 'text-white' : ''}`}
+                    >
+                      No office locations found
+                    </h3>
+                    <p
+                      className={`mt-2 text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    >
+                      Add your first office location to get started.
+                    </p>
                     <Button
                       onClick={() => {
                         setSelectedAddress(null);
                         setIsAddressDialogOpen(true);
                       }}
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[150px]"
+                      variant="outline"
+                      className={`mt-4 ${
+                        theme === 'dark'
+                          ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
+                          : ''
+                      }`}
                     >
-                      <Plus className="mr-1 h-3.5 w-3.5" /> Add Address
+                      <Plus className="mr-2 h-4 w-4" /> Add First Office
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {selectedAddress ? 'Update Address' : 'Add New Address'}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {selectedAddress
-                          ? 'Update the address details.'
-                          : 'Enter the details for the new office location.'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <AddressForm
-                      onSubmit={addOrUpdateAddress}
-                      initialData={selectedAddress}
-                      companyId={id}
-                      companyName={company.CompanyName}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              {company.branchAddresses &&
-              company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
-                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
-                  <p className="text-slate-500 mb-4">No office locations found.</p>
-                  <Button
-                    onClick={() => {
-                      setSelectedAddress(null);
-                      setIsAddressDialogOpen(true);
-                    }}
-                    variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[200px]"
+                  </div>
+                ) : (
+                  <div
+                    className={`rounded-md border ${theme === 'dark' ? 'border-slate-700/50' : ''}`}
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Add First Office
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-slate-50">
-                      <TableRow>
-                        <TableHead className="font-medium text-slate-700">Office Name</TableHead>
-                        <TableHead className="font-medium text-slate-700">Address</TableHead>
-                        <TableHead className="font-medium text-slate-700">City</TableHead>
-                        <TableHead className="font-medium text-slate-700">Subdivison</TableHead>
-                        <TableHead className="font-medium text-slate-700">Postal Code</TableHead>
-                        <TableHead className="font-medium text-slate-700">Country</TableHead>
-                        <TableHead className="text-right font-medium text-slate-700">
-                          Actions
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {company.branchAddresses
-                        .filter((address) => !address.isdeleted)
-                        .filter(
-                          (address) =>
-                            address.officeName
-                              .toLowerCase()
-                              .includes(searchLocations.toLowerCase()) ||
-                            address.city.toLowerCase().includes(searchLocations.toLowerCase()) ||
-                            address.country.toLowerCase().includes(searchLocations.toLowerCase()),
-                        )
-                        .map((address) => (
-                          <TableRow key={address._id}>
-                            <TableCell className="font-medium">{address.officeName}</TableCell>
-                            <TableCell>{address.address}</TableCell>
-                            <TableCell>{address.city}</TableCell>
-                            <TableCell>
-                              <span className="font-bold text-slate-500">
-                                {address.subdivisionType}:
-                              </span>{' '}
-                              {address.subdivision}
-                            </TableCell>
-                            <TableCell>{address.postalCode}</TableCell>
-                            <TableCell>{address.country}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-1">
-                                {/* Action button with soft rounded background matching table header */}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-blue-600 bg-slate-50 hover:bg-slate-100 rounded-md"
-                                  onClick={() => {
-                                    setSelectedAddress(address);
-                                    setIsAddressDialogOpen(true);
-                                  }}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="h-4 w-4"
-                                  >
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                                    <path d="m15 5 4 4"></path>
-                                  </svg>
-                                </Button>
-                                {/* Action button with soft rounded background matching table header */}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-red-600 bg-slate-50 hover:bg-slate-100 rounded-md"
-                                  onClick={() => {
-                                    setSelectedAddress(address);
-                                    setIsDeleteDialogOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Admin Users Section */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                  <UserCog className="mr-2 h-5 w-5 text-primary" /> Admin Users
-                </CardTitle>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search users..."
-                    className="pl-8 h-9 w-64"
-                    value={searchUsers}
-                    onChange={(e) => setSearchUsers(e.target.value)}
-                  />
-                </div>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUser(null);
-                          setIsUserDialogOpen(true);
-                        }}
-                        className="bg-primary hover:bg-primary/90 hover:text-white text-white rounded-[6px] h-9 w-[150px]"
-                        disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                    <Table>
+                      <TableHeader
+                        className={theme === 'dark' ? 'bg-slate-800/50 text-slate-300' : ''}
                       >
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Add Admin
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Please add office location first</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              {company.users && company.users.length === 0 ? (
-                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
-                  <p className="text-slate-500 mb-4">No users added yet.</p>
-                  <Button
-                    onClick={() => {
-                      setSelectedUser(null);
-                      setIsUserDialogOpen(true);
-                    }}
-                    variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white h-9 w-[200px]"
-                    disabled={!company.branchAddresses || company.branchAddresses.length === 0}
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add First Admin
-                  </Button>
+                        <TableRow className={theme === 'dark' ? 'border-slate-700/50' : ''}>
+                          <TableHead className="font-medium">Office Name</TableHead>
+                          <TableHead className="font-medium">Address</TableHead>
+                          <TableHead className="font-medium">City</TableHead>
+                          <TableHead className="font-medium">Subdivision</TableHead>
+                          <TableHead className="font-medium">Postal Code</TableHead>
+                          <TableHead className="font-medium">Country</TableHead>
+                          <TableHead className="text-right font-medium">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className={theme === 'dark' ? 'bg-slate-900' : ''}>
+                        {company.branchAddresses
+                          .filter((address) => !address.isdeleted)
+                          .filter(
+                            (address) =>
+                              address.officeName
+                                .toLowerCase()
+                                .includes(searchLocations.toLowerCase()) ||
+                              address.city.toLowerCase().includes(searchLocations.toLowerCase()) ||
+                              address.country.toLowerCase().includes(searchLocations.toLowerCase()),
+                          )
+                          .map((address) => (
+                            <TableRow
+                              key={address._id}
+                              className={
+                                theme === 'dark'
+                                  ? 'border-slate-700/50 hover:bg-slate-800/50'
+                                  : 'hover:bg-slate-100/70'
+                              }
+                            >
+                              <TableCell className="font-medium">
+                                <div className="flex items-center">
+                                  <div
+                                    className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 ${
+                                      theme === 'dark'
+                                        ? 'bg-blue-500/20 text-blue-400'
+                                        : 'bg-blue-100 text-blue-600'
+                                    }`}
+                                  >
+                                    <Building2 className="h-4 w-4" />
+                                  </div>
+                                  {address.officeName}
+                                </div>
+                              </TableCell>
+                              <TableCell>{address.address}</TableCell>
+                              <TableCell>{address.city}</TableCell>
+                              <TableCell>
+                                <span
+                                  className={`font-medium ${
+                                    theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                                  }`}
+                                >
+                                  {address.subdivisionType}:
+                                </span>{' '}
+                                {address.subdivision}
+                              </TableCell>
+                              <TableCell>{address.postalCode}</TableCell>
+                              <TableCell>{address.country}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setSelectedAddress(address);
+                                      setIsAddressDialogOpen(true);
+                                    }}
+                                    className={
+                                      theme === 'dark' ? 'hover:bg-slate-700/70 text-slate-300' : ''
+                                    }
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="h-4 w-4"
+                                    >
+                                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                                      <path d="m15 5 4 4"></path>
+                                    </svg>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`text-destructive ${
+                                      theme === 'dark' ? 'hover:bg-slate-700/70' : ''
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedAddress(address);
+                                      setIsDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Admin Users Tab */}
+              <TabsContent value="users">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="relative">
+                    <Search
+                      className={`absolute left-2.5 top-2.5 h-4 w-4 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    />
+                    <Input
+                      type="search"
+                      placeholder="Search users..."
+                      className={`pl-8 h-9 w-64 ${
+                        theme === 'dark'
+                          ? 'bg-slate-800/70 border-slate-700 text-white placeholder:text-slate-400'
+                          : ''
+                      }`}
+                      value={searchUsers}
+                      onChange={(e) => setSearchUsers(e.target.value)}
+                    />
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(null);
+                              setIsUserDialogOpen(true);
+                            }}
+                            className="h-9"
+                            disabled={
+                              !company.branchAddresses || company.branchAddresses.length === 0
+                            }
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Add Admin
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        className={
+                          theme === 'dark' ? 'bg-slate-800 text-slate-100 border-slate-700' : ''
+                        }
+                      >
+                        <p>Please add office location first</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-              ) : (
-                <div className="overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-slate-50">
-                      <TableRow>
-                        <TableHead className="font-medium text-slate-700">Full Name</TableHead>
-                        <TableHead className="font-medium text-slate-700">Email</TableHead>
-                        <TableHead className="font-medium text-slate-700">Admin Level</TableHead>
-                        <TableHead className="font-medium text-slate-700">Subdivision</TableHead>
-                        <TableHead className="text-right font-medium text-slate-700">
-                          Actions
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {company.users
-                        .filter((user) => !user.isdeleted)
-                        .filter(
-                          (user) =>
-                            user.fullName.toLowerCase().includes(searchUsers.toLowerCase()) ||
-                            user.email.toLowerCase().includes(searchUsers.toLowerCase()) ||
-                            user.role.toLowerCase().includes(searchUsers.toLowerCase()),
-                        )
-                        .map((user) => (
-                          <TableRow key={user._id}>
-                            <TableCell className="font-medium">{user.fullName}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {user.role}
-                              </span>
-                            </TableCell>
-                            <TableCell>{user.OrgUnit.name}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-1">
-                                {/* Action button with soft rounded background matching table header */}
+
+                {/* Now update the Admin Users table to match the leaderboard style */}
+                {/* Replace the existing table in the Admin Users TabsContent with this: */}
+
+                {company.users && company.users.filter((user) => !user.isdeleted).length === 0 ? (
+                  <div
+                    className={`text-center py-12 border rounded-lg ${
+                      theme === 'dark' ? 'border-slate-700' : ''
+                    }`}
+                  >
+                    <UserCog
+                      className={`mx-auto h-12 w-12 ${
+                        theme === 'dark' ? 'text-slate-600' : 'text-muted-foreground/50'
+                      }`}
+                    />
+                    <h3
+                      className={`mt-4 text-lg font-medium ${theme === 'dark' ? 'text-white' : ''}`}
+                    >
+                      No admin users found
+                    </h3>
+                    <p
+                      className={`mt-2 text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    >
+                      Add your first admin user to manage this company.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setSelectedUser(null);
+                        setIsUserDialogOpen(true);
+                      }}
+                      variant="outline"
+                      className={`mt-4 ${
+                        theme === 'dark'
+                          ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
+                          : ''
+                      }`}
+                      disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add First Admin
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className={`rounded-md border ${theme === 'dark' ? 'border-slate-700/50' : ''}`}
+                  >
+                    <Table>
+                      <TableHeader
+                        className={theme === 'dark' ? 'bg-slate-800/50 text-slate-300' : ''}
+                      >
+                        <TableRow className={theme === 'dark' ? 'border-slate-700/50' : ''}>
+                          <TableHead className="font-medium">Full Name</TableHead>
+                          <TableHead className="font-medium">Email</TableHead>
+                          <TableHead className="font-medium">Admin Level</TableHead>
+                          <TableHead className="font-medium">Subdivision</TableHead>
+                          <TableHead className="text-right font-medium">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className={theme === 'dark' ? 'bg-slate-900' : ''}>
+                        {company.users
+                          .filter((user) => !user.isdeleted)
+                          .filter(
+                            (user) =>
+                              user.fullName.toLowerCase().includes(searchUsers.toLowerCase()) ||
+                              user.email.toLowerCase().includes(searchUsers.toLowerCase()) ||
+                              user.role.toLowerCase().includes(searchUsers.toLowerCase()),
+                          )
+                          .map((user) => (
+                            <TableRow
+                              key={user._id}
+                              className={
+                                theme === 'dark'
+                                  ? 'border-slate-700/50 hover:bg-slate-800/50'
+                                  : 'hover:bg-slate-100/70'
+                              }
+                            >
+                              <TableCell className="font-medium">
+                                <div className="flex items-center">
+                                  <div
+                                    className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 ${
+                                      theme === 'dark'
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : 'bg-emerald-100 text-emerald-600'
+                                    }`}
+                                  >
+                                    <UserCog className="h-4 w-4" />
+                                  </div>
+                                  {user.fullName}
+                                </div>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              {/* Update the Badge in the Admin Users table */}
+                              {/* Find the line with the Badge component in the Admin Users table and replace it with: */}
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={getRoleBadgeClass(user.role, theme)}
+                                >
+                                  {user.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{user.OrgUnit?.name || 'N/A'}</TableCell>
+                              <TableCell className="text-right">
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-blue-600 bg-slate-50 hover:bg-slate-100 rounded-md"
+                                  size="icon"
                                   onClick={() => {
                                     setSelectedUser(user);
                                     setIsUserDialogOpen(true);
                                   }}
+                                  className={
+                                    theme === 'dark' ? 'hover:bg-slate-700/70 text-slate-300' : ''
+                                  }
                                 >
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -659,168 +1119,201 @@ export default function CompanyInfo() {
                                     <path d="m15 5 4 4"></path>
                                   </svg>
                                 </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
 
-          {/* Waste Bins Section */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                  <Trash2 className="mr-2 h-5 w-5 text-primary" /> Waste Bins
-                </CardTitle>
-              </div>
-              <div className="flex items-center space-x-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button
-                        size="sm"
-                        onClick={() => setIsDustbinDialogOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[150px]"
-                        disabled={!company.branchAddresses || company.branchAddresses.length === 0}
+                {/* Waste Bins Tab */}
+              </TabsContent>
+
+              {/* Waste Bins Tab */}
+              <TabsContent value="bins">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="relative">
+                    <Search
+                      className={`absolute left-2.5 top-2.5 h-4 w-4 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    />
+                    <Input
+                      type="search"
+                      placeholder="Search bins..."
+                      className={`pl-8 h-9 w-64 ${
+                        theme === 'dark'
+                          ? 'bg-slate-800/70 border-slate-700 text-white placeholder:text-slate-400'
+                          : ''
+                      }`}
+                      value={searchBins}
+                      onChange={(e) => setSearchBins(e.target.value)}
+                    />
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            size="sm"
+                            onClick={() => setIsDustbinDialogOpen(true)}
+                            className="h-9"
+                            disabled={
+                              !company.branchAddresses || company.branchAddresses.length === 0
+                            }
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Add Bins
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        className={
+                          theme === 'dark' ? 'bg-slate-800 text-slate-100 border-slate-700' : ''
+                        }
                       >
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Add Bins
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Please add office location first</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              {company.branchAddresses &&
-              company.branchAddresses.filter((branch) => branch.isdeleted === false).length ===
-                0 ? (
-                <div className="text-center py-8 bg-white rounded-lg border border-slate-100">
-                  <p className="text-gray-500 mb-4">No office locations or waste bins found.</p>
-                  <Button
-                    onClick={() => {
-                      setSelectedAddress(null);
-                      setIsAddressDialogOpen(true);
-                    }}
-                    variant="outline"
-                    className="bg-primary hover:bg-primary/90 text-white hover:text-white rounded-[6px] h-9 w-[200px]"
+                        <p>Please add office location first</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                {company.branchAddresses &&
+                company.branchAddresses.filter((branch) => branch.isdeleted === false).length ===
+                  0 ? (
+                  <div
+                    className={`text-center py-12 border rounded-lg ${
+                      theme === 'dark' ? 'border-slate-700' : ''
+                    }`}
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Add Office First
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-hidden">
-                  <Table>
-                    <TableHeader className="bg-slate-50">
-                      <TableRow>
-                        <TableHead className="font-medium text-slate-700">
-                          Office Location
-                        </TableHead>
-                        <TableHead className="font-medium text-slate-700">Bin Type</TableHead>
-                        <TableHead className="font-medium text-slate-700">Capacity</TableHead>
-                        <TableHead className="text-right font-medium text-slate-700">
-                          Actions
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {company.branchAddresses
-                        .filter((branch) => !branch.isdeleted)
-                        .map((branch) => (
-                          <React.Fragment key={branch._id}>
-                            {(branch.dustbins || []).length > 0 ? (
-                              branch.dustbins.map((dustbin, index) => (
-                                <TableRow key={`${branch._id}-${dustbin.dustbinType}`}>
-                                  {index === 0 && (
-                                    <TableCell
-                                      rowSpan={branch.dustbins.length}
-                                      className="font-medium align-top"
-                                    >
-                                      {branch.officeName}
-                                      <br />
-                                      {branch.address}, {branch.city}, {branch.region}{' '}
-                                      {branch.postalCode}
-                                    </TableCell>
-                                  )}
-                                  <TableCell>{dustbin.dustbinType}</TableCell>
-                                  <TableCell>{dustbin.binCapacity}L</TableCell>
-                                  <TableCell className="text-right">
-                                    {/* Action button with soft rounded background matching table header */}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 text-blue-600 bg-slate-50 hover:bg-slate-100 rounded-md"
-                                    >
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-4 w-4"
-                                      >
-                                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                                        <path d="m15 5 4 4"></path>
-                                      </svg>
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell className="font-medium align-top">
-                                  {branch.officeName}
-                                  <br />
-                                  {branch.address}, {branch.city}, {branch.region}{' '}
-                                  {branch.postalCode}
-                                </TableCell>
-                                <TableCell colSpan={2} className="text-center text-gray-500 italic">
-                                  No bins available for this office location
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-primary border-primary/20"
-                                    onClick={() => setIsDustbinDialogOpen(true)}
-                                  >
-                                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Bins
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <Trash2
+                      className={`mx-auto h-12 w-12 ${
+                        theme === 'dark' ? 'text-slate-600' : 'text-muted-foreground/50'
+                      }`}
+                    />
+                    <h3
+                      className={`mt-4 text-lg font-medium ${theme === 'dark' ? 'text-white' : ''}`}
+                    >
+                      No waste bins found
+                    </h3>
+                    <p
+                      className={`mt-2 text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-muted-foreground'
+                      }`}
+                    >
+                      Add an office location first, then you can add waste bins.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setSelectedAddress(null);
+                        setIsAddressDialogOpen(true);
+                      }}
+                      variant="outline"
+                      className={`mt-4 ${
+                        theme === 'dark'
+                          ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
+                          : ''
+                      }`}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add Office First
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {company.branchAddresses
+                      .filter((branch) => !branch.isdeleted)
+                      .filter(
+                        (branch) =>
+                          branch.officeName.toLowerCase().includes(searchBins.toLowerCase()) ||
+                          (branch.address &&
+                            branch.address.toLowerCase().includes(searchBins.toLowerCase())) ||
+                          (branch.dustbins &&
+                            branch.dustbins.some((bin) =>
+                              bin.dustbinType.toLowerCase().includes(searchBins.toLowerCase()),
+                            )),
+                      )
+                      .map((branch) => (
+                        <div
+                          key={branch._id}
+                          className={`rounded-xl border p-6 shadow-lg hover:shadow-indigo-500/10 transition-all ${
+                            theme === 'dark'
+                              ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                              : 'backdrop-blur-md bg-white border-slate-200/70'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3
+                                className={`text-lg font-semibold ${
+                                  theme === 'dark' ? 'text-white' : 'text-slate-800'
+                                }`}
+                              >
+                                {branch.officeName}
+                              </h3>
+                              <p
+                                className={`text-sm mt-1 ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                                }`}
+                              >
+                                {branch.address}, {branch.city}
+                              </p>
+                            </div>
+                            <div
+                              className={`p-3 rounded-lg ${
+                                theme === 'dark'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-blue-100 text-blue-600'
+                              } transition-colors`}
+                            >
+                              <Building2 className="h-5 w-5" />
+                            </div>
+                          </div>
+
+                          {branch.dustbins && branch.dustbins.length > 0 ? (
+                            <div className="mt-4">
+                              <p
+                                className={`text-sm font-medium mb-2 ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                                }`}
+                              >
+                                Bin Types
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {branch.dustbins.map((bin, index) => {
+                                  const badgeStyle = getBinTypeBadgeStyle(bin.dustbinType);
+                                  return (
+                                    <Badge key={index} variant="outline" className={badgeStyle}>
+                                      {bin.dustbinType} ({bin.binCapacity}L)
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className={`mt-4 text-sm ${
+                                theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                              }`}
+                            >
+                              No bins configured for this location
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
 
         {/* Dialogs Section */}
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
-          <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedUser ? 'Edit Admin User' : 'Add New Admin User'}</DialogTitle>
-              <DialogDescription>
-                {selectedUser
-                  ? 'Update the details for this user.'
-                  : 'Enter the details for the new user.'}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent
+            className={`sm:max-w-md ${
+              theme === 'dark' ? 'backdrop-blur-md bg-slate-800 border-slate-700/50 text-white' : ''
+            }`}
+          >
             <UserForm
               onSubmit={selectedUser ? editUser : addUser}
               branches={branchOptions}
@@ -831,25 +1324,43 @@ export default function CompanyInfo() {
         </Dialog>
 
         <Dialog open={isDustbinDialogOpen} onOpenChange={setIsDustbinDialogOpen}>
-          <DialogContent className="bg-white">
+          <DialogContent
+            className={
+              theme === 'dark' ? 'backdrop-blur-md bg-slate-800 border-slate-700/50 text-white' : ''
+            }
+          >
             <AddBinsForm branches={branchOptions} onDustbinAdded={handleDustbinAdded} />
           </DialogContent>
         </Dialog>
 
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="bg-white rounded-lg shadow-lg max-w-md mx-auto">
+          <DialogContent
+            className={`sm:max-w-md ${
+              theme === 'dark' ? 'backdrop-blur-md bg-slate-800 border-slate-700/50 text-white' : ''
+            }`}
+          >
             <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className={theme === 'dark' ? 'text-white' : ''}>
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className={theme === 'dark' ? 'text-slate-300' : ''}>
                 Are you sure you want to delete{' '}
-                <span className="text-red-600 text-md font-semibold">
+                <span className="font-semibold text-destructive">
                   {selectedAddress?.officeName}
                 </span>{' '}
                 office location? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+                className={
+                  theme === 'dark'
+                    ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
+                    : ''
+                }
+              >
                 Cancel
               </Button>
               <Button variant="destructive" onClick={confirmDeleteAddress}>

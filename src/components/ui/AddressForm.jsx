@@ -1,11 +1,16 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import { Button } from './Button';
-import { Input } from './Input';
-import { Label } from './Label';
-import { useToast } from '@/components/ui/ToastProvider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
+import { Building2, MapPin, Globe } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Country subdivision mapping for USA, UK, AUS, NZ
 const countrySubdivisionMapping = {
@@ -107,6 +112,7 @@ const countrySubdivisionMapping = {
   },
 };
 
+// Mapping from subdivision (state/region) to cities for each country
 // Mapping from subdivision (state/region) to cities for each country.
 const cityMapping = {
   USA: {
@@ -200,9 +206,7 @@ const countryCodes = Object.keys(countrySubdivisionMapping);
 const DEFAULT_SUBDIVISION_LABEL = 'Region/Province';
 
 export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
-  const { success, error } = useToast();
-
-  // Initialize state only once using initialData (if provided)
+  // Initialize state with initialData (if provided)
   const [address, setAddress] = useState({
     officeName: '',
     address: '',
@@ -213,7 +217,7 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
     ...initialData,
   });
 
-  // Update state only when initialData is provided and actually changes.
+  // Update state when initialData changes
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setAddress({
@@ -298,7 +302,7 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
       : [];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4">
       <div className="space-y-2">
         <Label htmlFor="associatedCompany">Organization ID</Label>
         <Input
@@ -306,36 +310,43 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
           name="associatedCompany"
           value={companyId || ''}
           disabled
-          className="bg-gray-100"
+          className="bg-muted"
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="officeName">Office Name</Label>
-        <Input
-          placeholder="e.g. NetNada HQ"
-          id="officeName"
-          name="officeName"
-          value={address.officeName}
-          onChange={handleChange}
-          required
-        />
+        <div className="relative">
+          <Building2 className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+          <Input
+            id="officeName"
+            name="officeName"
+            placeholder="e.g. NetNada HQ"
+            className="pl-10"
+            value={address.officeName}
+            onChange={handleChange}
+            required
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="country">Country</Label>
-        <Select value={address.country} onValueChange={handleCountryChange} required>
-          <SelectTrigger id="country">
-            <SelectValue placeholder="Select a country" />
-          </SelectTrigger>
-          <SelectContent>
-            {countryCodes.map((code) => (
-              <SelectItem key={code} value={code}>
-                {countrySubdivisionMapping[code].name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <Globe className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground z-10" />
+          <Select value={address.country} onValueChange={handleCountryChange} required>
+            <SelectTrigger id="country" className="pl-10">
+              <SelectValue placeholder="Select a country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countryCodes.map((code) => (
+                <SelectItem key={code} value={code}>
+                  {countrySubdivisionMapping[code].name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -381,24 +392,31 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
             </SelectContent>
           </Select>
         ) : (
-          // If no subdivision is selected or no city options are available, disable the city selector.
-          <Select disabled value={address.city}>
-            <SelectTrigger id="city">
-              <SelectValue placeholder="Select subdivision first" />
-            </SelectTrigger>
-          </Select>
+          <Input
+            id="city"
+            name="city"
+            placeholder="Enter city"
+            value={address.city}
+            onChange={handleChange}
+            required
+          />
         )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="address">Address</Label>
-        <Input
-          id="address"
-          name="address"
-          value={address.address}
-          onChange={handleChange}
-          required
-        />
+        <div className="relative">
+          <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+          <Input
+            id="address"
+            name="address"
+            placeholder="123 Main Street"
+            className="pl-10"
+            value={address.address}
+            onChange={handleChange}
+            required
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -406,15 +424,18 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
         <Input
           id="postalCode"
           name="postalCode"
+          placeholder="10001"
           value={address.postalCode}
           onChange={handleChange}
           required
         />
       </div>
 
-      <Button type="submit" className="w-full mt-6">
-        {initialData && initialData._id ? 'Update Address' : 'Add Address'}
-      </Button>
+      <div className="pt-2">
+        <Button type="submit" className="w-full">
+          {initialData && initialData._id ? 'Update Address' : 'Add Address'}
+        </Button>
+      </div>
     </form>
   );
 }

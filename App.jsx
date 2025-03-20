@@ -1,122 +1,55 @@
-// import React from 'react';
-// import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// import AppLoader from './src/lib/AppLoader'; // Loads essential data on app start
-// import ProtectedRoute from './src/lib/ProtectedRoute'; // Protects routes from unauthorized access
-// import { ToastProvider } from './src/components/ui/ToastProvider'; // Provides toast notifications
-
-// // Import your page components
-// import Login from './src/pages/Login';
-// import Companies from './src/pages/Companies';
-// import CompanyInfo from './src/pages/CompanyInfo';
-// // import Dashboard from './src/pages/DashboardPage';
-// import InviteUserPage from './src/pages/InviteUser';
-// import PasswordResetRequestPage from './src/pages/PasswordResetRequestPage';
-// import UserSetupPage from './src/pages/UserSetup';
-// import PasswordResetPage from './src/pages/PasswordResetPage';
-
-// // Import global styles (if any)
-// import './src/styles/globals.css';
-
-// /**
-//  * App component defines the routing for the entire application.
-//  * It wraps the routes with AppLoader, which loads the current user data,
-//  * and uses ProtectedRoute to restrict access to authenticated users.
-//  */
-// function App() {
-//   return (
-//     <BrowserRouter>
-//       <AppLoader>
-//         <Routes>
-//           {/* Public route for login */}
-//           <Route path="/login" element={<Login />} />
-
-//           {/* Public route for User Setup page */}
-//           <Route path="/user-setup" element={<UserSetupPage />} />
-
-//           {/* Public route for Password Reset Request page */}
-//           <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
-
-//           {/* Public route for Password Reset page */}
-//           <Route path="/password-reset" element={<PasswordResetPage />} />
-
-//           {/* Protected route for Companies page */}
-//           <Route
-//             path="/companies"
-//             element={
-//               <ProtectedRoute>
-//                 <ToastProvider>
-//                   <Companies />
-//                 </ToastProvider>
-//               </ProtectedRoute>
-//             }
-//           />
-
-//           {/* Protected route for Company Info page */}
-//           <Route
-//             path="/company/:id"
-//             element={
-//               <ProtectedRoute>
-//                 <ToastProvider>
-//                   <CompanyInfo />
-//                 </ToastProvider>
-//               </ProtectedRoute>
-//             }
-//           />
-
-//           {/* Protected route for  Invite User page */}
-//           <Route
-//             path="/invite-user/:companyId"
-//             element={
-//               <ProtectedRoute>
-//                 <ToastProvider>
-//                   <InviteUserPage />
-//                 </ToastProvider>
-//               </ProtectedRoute>
-//             }
-//           />
-//         </Routes>
-//       </AppLoader>
-//     </BrowserRouter>
-//   );
-// }
-
-// export default App;
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AppLoader from './src/lib/AppLoader'; // Loads essential data on app start
-import ProtectedRoute from './src/lib/ProtectedRoute'; // Protects routes from unauthorized access
-import { ToastProvider } from './src/components/ui/ToastProvider'; // Provides toast notifications
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AppLoader from './src/lib/AppLoader';
+import ProtectedRoute from './src/lib/ProtectedRoute';
+import { ToastProvider } from './src/components/ui/ToastProvider';
+import ClientLayout from './src/components/layouts/ClientLayout'; // Ensure correct import
 
-// Import page components
 import Login from './src/pages/Login';
 import Companies from './src/pages/Companies';
 import CompanyInfo from './src/pages/CompanyInfo';
+import UserLogs from './src/pages/UserLogs';
 import InviteUserPage from './src/pages/InviteUser';
 import PasswordResetRequestPage from './src/pages/PasswordResetRequestPage';
 import UserSetupPage from './src/pages/UserSetup';
 import PasswordResetPage from './src/pages/PasswordResetPage';
 
-// Import dashboard pages
+// Dashboard pages
 import AdminDashboard from './src/pages/admin-dashboard.jsx';
 import EmployeeBinDisplayDashboard from './src/pages/employee-bin-display-dashboard.jsx';
 
-// Import global styles
 import './src/styles/globals.css';
 
 /**
- * App component defines the routing for the entire application.
- * It wraps the routes with AppLoader to load the current user data,
- * and uses ProtectedRoute to restrict access to authenticated users.
+ * Higher-order component to restrict access to SuperAdmin only.
+ * Only users with role "SuperAdmin" can access the wrapped component.
  */
-function App() {
-  // Retrieve the user role from session storage
-  const userRole = sessionStorage.getItem('userRole');
+const SuperAdminOnly = ({ children }) => {
+  const storedUser = JSON.parse(sessionStorage.getItem('user'));
+  const userRole = storedUser?.role;
+  return userRole === 'SuperAdmin' ? children : <Navigate to="/dashboard" />;
+};
 
-  // Determine which dashboard component to render based on role.
-  // EmployeeDashboard and BinDisplayUser roles will see the EmployeeBinDisplayDashboard.
-  // All other admin roles will see the AdminDashboard.
+/**
+ * Higher-order component to restrict access to admin-only routes.
+ * Only allowed roles (SuperAdmin, CountryAdmin, RegionalAdmin, CityAdmin) are permitted.
+ * EmployeeDashboardUser and BinDisplayUser are redirected.
+ */
+const AdminDashboardOnly = ({ children }) => {
+  const storedUser = JSON.parse(sessionStorage.getItem('user'));
+  const userRole = storedUser?.role;
+  const allowedRoles = ['SuperAdmin', 'CountryAdmin', 'RegionalAdmin', 'CityAdmin'];
+  return allowedRoles.includes(userRole) ? children : <Navigate to="/dashboard" />;
+};
+
+function App() {
+  const storedUser = JSON.parse(sessionStorage.getItem('user'));
+  const userRole = storedUser?.role;
+  const isEmployeeOrBinDisplay =
+    userRole === 'EmployeeDashboardUser' || userRole === 'BinDisplayUser';
+
   const renderDashboard = () => {
-    if (userRole === 'EmployeeDashboardUser' || userRole === 'BinDisplayUser') {
+    if (isEmployeeOrBinDisplay) {
       return <EmployeeBinDisplayDashboard />;
     }
     return <AdminDashboard />;
@@ -126,54 +59,59 @@ function App() {
     <BrowserRouter>
       <AppLoader>
         <Routes>
-          {/* Public Routes */}
+          {/* Public Routes (No Layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/user-setup" element={<UserSetupPage />} />
           <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
 
-          {/* Protected Route for Companies */}
+          {/* Protected Routes */}
           <Route
-            path="/companies"
+            path="/*"
             element={
               <ProtectedRoute>
-                <ToastProvider>
-                  <Companies />
-                </ToastProvider>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Protected Route for Company Info */}
-          <Route
-            path="/company/:id"
-            element={
-              <ProtectedRoute>
-                <ToastProvider>
-                  <CompanyInfo />
-                </ToastProvider>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Protected Route for Invite User */}
-          <Route
-            path="/invite-user/:companyId"
-            element={
-              <ProtectedRoute>
-                <ToastProvider>
-                  <InviteUserPage />
-                </ToastProvider>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Protected Dashboard Route */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <ToastProvider>{renderDashboard()}</ToastProvider>
+                {isEmployeeOrBinDisplay ? (
+                  // For Employee/Bin Display users, render without ClientLayout (i.e. no header)
+                  <ToastProvider>
+                    <Routes>
+                      <Route path="/dashboard" element={renderDashboard()} />
+                    </Routes>
+                  </ToastProvider>
+                ) : (
+                  // For Admin users, wrap protected pages with ClientLayout (includes header)
+                  <ClientLayout>
+                    <ToastProvider>
+                      <Routes>
+                        <Route path="/dashboard" element={renderDashboard()} />
+                        <Route
+                          path="/companies"
+                          element={
+                            <SuperAdminOnly>
+                              <Companies />
+                            </SuperAdminOnly>
+                          }
+                        />
+                        <Route
+                          path="/company/:id"
+                          element={
+                            <SuperAdminOnly>
+                              <CompanyInfo />
+                            </SuperAdminOnly>
+                          }
+                        />
+                        <Route
+                          path="/user-logs"
+                          element={
+                            <AdminDashboardOnly>
+                              <UserLogs />
+                            </AdminDashboardOnly>
+                          }
+                        />
+                        <Route path="/invite-user/:companyId" element={<InviteUserPage />} />
+                      </Routes>
+                    </ToastProvider>
+                  </ClientLayout>
+                )}
               </ProtectedRoute>
             }
           />
