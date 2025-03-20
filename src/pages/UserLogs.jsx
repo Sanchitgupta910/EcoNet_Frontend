@@ -163,27 +163,11 @@ export default function UserLogs() {
       className={`min-h-screen ${theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50'}`}
     >
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1
-            className={`text-2xl font-bold tracking-tight ${
-              theme === 'dark' ? 'text-white' : 'text-slate-800'
-            }`}
-          >
-            User Management
-          </h1>
-        </div>
-        <Card
-          className={
-            theme === 'dark'
-              ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
-              : ''
-          }
-        >
+        <div className="flex justify-between items-center"></div>
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className={theme === 'dark' ? 'text-white' : ''}>User List</CardTitle>
-            <CardDescription className={theme === 'dark' ? 'text-slate-300' : ''}>
-              View and manage all users.
-            </CardDescription>
+            <CardTitle></CardTitle>
+            <CardDescription></CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">

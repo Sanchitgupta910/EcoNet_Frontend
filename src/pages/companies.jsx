@@ -223,13 +223,7 @@ export default function Companies() {
           }`}
         >
           <CardHeader>
-            <CardTitle
-              className={`text-2xl font-bold tracking-tight ${
-                theme === 'dark' ? 'text-white' : 'text-slate-800'
-              }`}
-            >
-              Companies Management
-            </CardTitle>
+            <CardTitle></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-4">
@@ -447,7 +441,7 @@ export default function Companies() {
                             >
                               View
                             </Button>
-                            <Button
+                            {/* <Button
                               size="sm"
                               variant="destructive"
                               className="h-8"
@@ -457,7 +451,7 @@ export default function Companies() {
                               }}
                             >
                               Delete
-                            </Button>
+                            </Button> */}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -112,7 +112,6 @@ const countrySubdivisionMapping = {
   },
 };
 
-// Mapping from subdivision (state/region) to cities for each country
 // Mapping from subdivision (state/region) to cities for each country.
 const cityMapping = {
   USA: {
