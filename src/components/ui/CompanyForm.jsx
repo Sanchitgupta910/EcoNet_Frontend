@@ -1,60 +1,53 @@
-// "use client";
+// 'use client';
 
-// import { useState } from "react";
-// import { Button } from "@/components/ui/Button";
-// import { Input } from "@/components/ui/Input";
-// import { Label } from "@/components/ui/Label";
-// import { useToast } from "@/components/ui/ToastProvider";
+// import { useState } from 'react';
+// import { Button } from '@/components/ui/Button';
+// import { Input } from '@/components/ui/Input';
+// import { Label } from '@/components/ui/Label';
+// import { useToast } from '@/components/ui/ToastProvider';
 // import {
 //   Select,
 //   SelectContent,
 //   SelectItem,
 //   SelectTrigger,
 //   SelectValue,
-// } from "@/components/ui/Select";
-// import { Building, Globe, Users, Briefcase } from "lucide-react";
+// } from '@/components/ui/Select';
+// import { Building, Globe, Users, Briefcase } from 'lucide-react';
 
 // // Employee headcount options
-// const headcountOptions = [
-//   "1-10",
-//   "11-50",
-//   "51-100",
-//   "101-250",
-//   "251-500",
-//   "More than 500",
-// ];
+// const headcountOptions = ['1-10', '11-50', '51-100', '101-250', '251-500', 'More than 500'];
 
 // // Industry options
 // const industryOptions = [
-//   "Accommodation and Tourism",
-//   "Architecture",
-//   "Construction",
-//   "Consulting",
-//   "Education & Training",
-//   "Environmental Services",
-//   "Financial Services",
-//   "Food",
-//   "Healthcare",
-//   "Information Technology",
-//   "Legal Services",
-//   "Manufacturing",
-//   "Mining",
-//   "Non-Profit Organisations",
-//   "Professional, Scientific & Technical Services",
-//   "Property & Real Estate",
-//   "Public Administration",
-//   "Retail & Wholesale Trade",
-//   "Transport & Logistics",
-//   "Utilities, Energy & Waste Services",
+//   'Accommodation and Tourism',
+//   'Architecture',
+//   'Construction',
+//   'Consulting',
+//   'Education & Training',
+//   'Environmental Services',
+//   'Financial Services',
+//   'Food',
+//   'Healthcare',
+//   'Information Technology',
+//   'Legal Services',
+//   'Manufacturing',
+//   'Mining',
+//   'Non-Profit Organisations',
+//   'Professional, Scientific & Technical Services',
+//   'Property & Real Estate',
+//   'Public Administration',
+//   'Retail & Wholesale Trade',
+//   'Transport & Logistics',
+//   'Utilities, Energy & Waste Services',
 // ];
 
 // export default function AddCompanyForm({ onCompanyAdded }) {
 //   const { success } = useToast();
 //   const [formData, setFormData] = useState({
-//     companyName: "",
-//     domain: "",
-//     noofEmployees: "",
-//     industry: "",
+//     companyName: '',
+//     domain: '',
+//     noofEmployees: '',
+//     industry: '',
 //   });
 
 //   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +68,7 @@
 //     try {
 //       // Replace with your actual API call. Here we simulate a delay.
 //       await new Promise((resolve) => setTimeout(resolve, 1000));
-//       console.log("Form submitted:", formData);
+//       console.log('Form submitted:', formData);
 
 //       // Call the callback function with the new company data
 //       if (onCompanyAdded) {
@@ -89,18 +82,18 @@
 
 //       // Reset form after successful submission
 //       setFormData({
-//         companyName: "",
-//         domain: "",
-//         noofEmployees: "",
-//         industry: "",
+//         companyName: '',
+//         domain: '',
+//         noofEmployees: '',
+//         industry: '',
 //       });
 //       setTimeout(() => {
-//         success("Company added successfully!", {
-//           title: "Success",
+//         success('Company added successfully!', {
+//           title: 'Success',
 //         });
 //       }, 500);
 //     } catch (error) {
-//       console.error("Error submitting form:", error);
+//       console.error('Error submitting form:', error);
 //     } finally {
 //       setIsSubmitting(false);
 //     }
@@ -150,17 +143,14 @@
 
 //           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 //             <div className="space-y-2">
-//               <Label
-//                 htmlFor="noofEmployees"
-//                 className="flex items-center gap-2"
-//               >
+//               <Label htmlFor="noofEmployees" className="flex items-center gap-2">
 //                 <Users className="h-4 w-4 text-primary" />
 //                 Employee Headcount
 //               </Label>
 //               <Select
 //                 value={formData.noofEmployees} // Changed from headcount to noofEmployees
 //                 onValueChange={
-//                   (value) => handleSelectChange("noofEmployees", value) // Changed key to noofEmployees
+//                   (value) => handleSelectChange('noofEmployees', value) // Changed key to noofEmployees
 //                 }
 //                 required
 //               >
@@ -172,11 +162,7 @@
 //                 </SelectTrigger>
 //                 <SelectContent>
 //                   {headcountOptions.map((option) => (
-//                     <SelectItem
-//                       key={option}
-//                       value={option}
-//                       className="cursor-pointer"
-//                     >
+//                     <SelectItem key={option} value={option} className="cursor-pointer">
 //                       {option}
 //                     </SelectItem>
 //                   ))}
@@ -191,22 +177,15 @@
 //               </Label>
 //               <Select
 //                 value={formData.industry}
-//                 onValueChange={(value) => handleSelectChange("industry", value)}
+//                 onValueChange={(value) => handleSelectChange('industry', value)}
 //                 required
 //               >
-//                 <SelectTrigger
-//                   id="industry"
-//                   className="transition-all focus-visible:ring-primary"
-//                 >
+//                 <SelectTrigger id="industry" className="transition-all focus-visible:ring-primary">
 //                   <SelectValue placeholder="Select industry" />
 //                 </SelectTrigger>
 //                 <SelectContent className="max-h-[300px]">
 //                   {industryOptions.map((option) => (
-//                     <SelectItem
-//                       key={option}
-//                       value={option}
-//                       className="cursor-pointer"
-//                     >
+//                     <SelectItem key={option} value={option} className="cursor-pointer">
 //                       {option}
 //                     </SelectItem>
 //                   ))}
@@ -223,10 +202,10 @@
 //             className="transition-all"
 //             onClick={() =>
 //               setFormData({
-//                 companyName: "",
-//                 domain: "",
-//                 noofEmployees: "",
-//                 industry: "",
+//                 companyName: '',
+//                 domain: '',
+//                 noofEmployees: '',
+//                 industry: '',
 //               })
 //             }
 //           >
@@ -262,7 +241,7 @@
 //                 Adding...
 //               </>
 //             ) : (
-//               "Add Company"
+//               'Add Company'
 //             )}
 //           </Button>
 //         </div>
@@ -270,6 +249,224 @@
 //     </div>
 //   );
 // }
+
+// import { useState } from 'react';
+// import { Building2, Globe, Users, Briefcase, Loader2 } from 'lucide-react';
+
+// import { Button } from '@/components/ui/button';
+// import { Input } from '@/components/ui/input';
+// import { Label } from '@/components/ui/label';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '@/components/ui/select';
+
+// // Employee headcount options
+// const headcountOptions = ['1-10', '11-50', '51-100', '101-250', '251-500', 'More than 500'];
+
+// // Industry options
+// const industryOptions = [
+//   'Accommodation and Tourism',
+//   'Architecture',
+//   'Construction',
+//   'Consulting',
+//   'Education & Training',
+//   'Environmental Services',
+//   'Financial Services',
+//   'Food',
+//   'Healthcare',
+//   'Information Technology',
+//   'Legal Services',
+//   'Manufacturing',
+//   'Mining',
+//   'Non-Profit Organisations',
+//   'Professional, Scientific & Technical Services',
+//   'Property & Real Estate',
+//   'Public Administration',
+//   'Retail & Wholesale Trade',
+//   'Transport & Logistics',
+//   'Utilities, Energy & Waste Services',
+// ];
+
+// export default function AddCompanyForm({ onCompanyAdded }) {
+//   const [formData, setFormData] = useState({
+//     companyName: '',
+//     domain: '',
+//     noofEmployees: '',
+//     industry: '',
+//   });
+
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleSelectChange = (name, value) => {
+//     setFormData((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setIsSubmitting(true);
+
+//     try {
+//       // Call the callback function with the new company data
+//       if (onCompanyAdded) {
+//         await onCompanyAdded({
+//           CompanyName: formData.companyName,
+//           domain: formData.domain,
+//           noofEmployees: formData.noofEmployees,
+//           industry: formData.industry,
+//         });
+//       }
+
+//       // Reset form after successful submission
+//       setFormData({
+//         companyName: '',
+//         domain: '',
+//         noofEmployees: '',
+//         industry: '',
+//       });
+//     } catch (error) {
+//       console.error('Error submitting form:', error);
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
+
+//   const handleReset = () => {
+//     setFormData({
+//       companyName: '',
+//       domain: '',
+//       noofEmployees: '',
+//       industry: '',
+//     });
+//   };
+
+//   return (
+//     <div className="w-full">
+//       <div className="space-y-1 mb-6 p-6 bg-muted/50">
+//         <h2 className="text-2xl font-bold">Add a New Company</h2>
+//         <p className="text-muted-foreground">
+//           Enter the company details to add it to your organization
+//         </p>
+//       </div>
+//       <form className="mt-[-22px]" onSubmit={handleSubmit}>
+//         <div className="p-6 space-y-6">
+//           <div className="space-y-2">
+//             <Label htmlFor="companyName" className="flex items-center gap-2">
+//               <Building2 className="h-4 w-4 text-primary" />
+//               Company Name
+//             </Label>
+//             <Input
+//               id="companyName"
+//               name="companyName"
+//               placeholder="NetNada Ltd."
+//               value={formData.companyName}
+//               onChange={handleInputChange}
+//               className="transition-all focus-visible:ring-primary"
+//               required
+//             />
+//           </div>
+
+//           <div className="space-y-2">
+//             <Label htmlFor="domain" className="flex items-center gap-2">
+//               <Globe className="h-4 w-4 text-primary" />
+//               Domain
+//             </Label>
+//             <Input
+//               id="domain"
+//               name="domain"
+//               placeholder="netnada.com"
+//               value={formData.domain}
+//               onChange={handleInputChange}
+//               className="transition-all focus-visible:ring-primary"
+//               required
+//             />
+//           </div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             <div className="space-y-2">
+//               <Label htmlFor="noofEmployees" className="flex items-center gap-2">
+//                 <Users className="h-4 w-4 text-primary" />
+//                 Employee Headcount
+//               </Label>
+//               <Select
+//                 value={formData.noofEmployees}
+//                 onValueChange={(value) => handleSelectChange('noofEmployees', value)}
+//                 required
+//               >
+//                 <SelectTrigger
+//                   id="noofEmployees"
+//                   className="transition-all focus-visible:ring-primary"
+//                 >
+//                   <SelectValue placeholder="Select headcount range" />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {headcountOptions.map((option) => (
+//                     <SelectItem key={option} value={option} className="cursor-pointer">
+//                       {option}
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//             </div>
+
+//             <div className="space-y-2">
+//               <Label htmlFor="industry" className="flex items-center gap-2">
+//                 <Briefcase className="h-4 w-4 text-primary" />
+//                 Industry
+//               </Label>
+//               <Select
+//                 value={formData.industry}
+//                 onValueChange={(value) => handleSelectChange('industry', value)}
+//                 required
+//               >
+//                 <SelectTrigger id="industry" className="transition-all focus-visible:ring-primary">
+//                   <SelectValue placeholder="Select industry" />
+//                 </SelectTrigger>
+
+//                 <SelectContent className="!max-h-[300px] !overflow-y-auto">
+//                   {industryOptions.map((option) => (
+//                     <SelectItem key={option} value={option} className="cursor-pointer">
+//                       {option}
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//             </div>
+//           </div>
+//         </div>
+
+//         <div className="flex justify-end gap-2 px-6 py-4 bg-muted border-t">
+//           <Button variant="outline" type="button" className="transition-all" onClick={handleReset}>
+//             Reset
+//           </Button>
+//           <Button
+//             type="submit"
+//             className="bg-primary hover:bg-primary/90 transition-all"
+//             disabled={isSubmitting}
+//           >
+//             {isSubmitting ? (
+//               <>
+//                 <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+//                 Adding...
+//               </>
+//             ) : (
+//               'Add Company'
+//             )}
+//           </Button>
+//         </div>
+//       </form>
+//     </div>
+//   );
+// }
+'use client';
 
 import { useState } from 'react';
 import { Building2, Globe, Users, Briefcase, Loader2 } from 'lucide-react';
@@ -428,7 +625,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
                 >
                   <SelectValue placeholder="Select headcount range" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
                   {headcountOptions.map((option) => (
                     <SelectItem key={option} value={option} className="cursor-pointer">
                       {option}
@@ -451,7 +648,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
                 <SelectTrigger id="industry" className="transition-all focus-visible:ring-primary">
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
+                <SelectContent className="max-h-[300px] overflow-y-auto">
                   {industryOptions.map((option) => (
                     <SelectItem key={option} value={option} className="cursor-pointer">
                       {option}

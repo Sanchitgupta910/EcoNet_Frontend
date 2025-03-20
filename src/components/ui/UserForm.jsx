@@ -2,13 +2,35 @@
 
 // import { useState, useEffect } from 'react';
 // import axios from 'axios';
-// import { Button } from './Button';
-// import { Input } from './Input';
-// import { Label } from './Label';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
-// import { Eye, EyeOff } from 'lucide-react';
-// import { countryCodes } from './CountryCodes';
-// import { useToast } from '@/components/ui/ToastProvider';
+// import { Eye, EyeOff, User, Mail, Building2 } from 'lucide-react';
+
+// import { Button } from '@/components/ui/button';
+// import { Input } from '@/components/ui/input';
+// import { Label } from '@/components/ui/label';
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from '@/components/ui/select';
+// import { Checkbox } from '@/components/ui/checkbox';
+
+// // Country codes for phone selection
+// const countryCodes = [
+//   { country: 'United States', code: '+1' },
+//   { country: 'United Kingdom', code: '+44' },
+//   { country: 'Australia', code: '+61' },
+//   { country: 'Canada', code: '+1' },
+//   { country: 'China', code: '+86' },
+//   { country: 'France', code: '+33' },
+//   { country: 'Germany', code: '+49' },
+//   { country: 'India', code: '+91' },
+//   { country: 'Japan', code: '+81' },
+//   { country: 'New Zealand', code: '+64' },
+//   { country: 'Singapore', code: '+65' },
+//   { country: 'South Africa', code: '+27' },
+// ];
 
 // export function UserForm({ onSubmit, companyId, initialData }) {
 //   const [user, setUser] = useState({
@@ -24,11 +46,13 @@
 //     OrgUnit: initialData?.OrgUnit || '',
 //     notifyUser: false,
 //   });
+
 //   const [showPassword, setShowPassword] = useState(false);
 //   const [orgUnitOptions, setOrgUnitOptions] = useState([]);
-//   const { error: toastError } = useToast();
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [error, setError] = useState('');
 
-//   // Fetch OrgUnit options based on selected role.
+//   // Fetch OrgUnit options based on selected role
 //   useEffect(() => {
 //     let unitType = '';
 //     switch (user.role) {
@@ -42,9 +66,7 @@
 //         unitType = 'City';
 //         break;
 //       case 'OfficeAdmin':
-//         unitType = 'Branch';
 //       case 'EmployeeDashboardUser':
-//         unitType = 'Branch';
 //       case 'BinDisplayUser':
 //         unitType = 'Branch';
 //         break;
@@ -53,21 +75,26 @@
 //     }
 
 //     if (unitType) {
+//       setIsLoading(true);
+//       setError('');
+
 //       axios
 //         .get(`/api/v1/orgUnits/byType?type=${unitType}`, { withCredentials: true })
 //         .then((response) => {
-//           // Assume API returns data in response.data.data
 //           setOrgUnitOptions(response.data.data);
 //         })
 //         .catch((err) => {
 //           console.error('Error fetching OrgUnit options:', err);
 //           setOrgUnitOptions([]);
-//           toastError('Failed to load organizational units.');
+//           setError('Failed to load organizational units.');
+//         })
+//         .finally(() => {
+//           setIsLoading(false);
 //         });
 //     } else {
 //       setOrgUnitOptions([]);
 //     }
-//   }, [user.role, toastError]);
+//   }, [user.role]);
 
 //   const handleChange = (e) => {
 //     const { name, value, type, checked } = e.target;
@@ -119,7 +146,7 @@
 //   };
 
 //   return (
-//     <form onSubmit={handleSubmit} className="space-y-4">
+//     <form onSubmit={handleSubmit} className="space-y-4 p-4">
 //       {/* Associated Company */}
 //       <div className="space-y-2">
 //         <Label htmlFor="associatedCompany">Associated Company</Label>
@@ -128,37 +155,47 @@
 //           name="associatedCompany"
 //           value={companyId}
 //           disabled
-//           className="bg-gray-100"
+//           className="bg-muted"
 //         />
 //       </div>
 
 //       {/* Full Name */}
 //       <div className="space-y-2">
 //         <Label htmlFor="fullName">Full Name</Label>
-//         <Input
-//           id="fullName"
-//           name="fullName"
-//           value={user.fullName}
-//           onChange={handleChange}
-//           required
-//         />
+//         <div className="relative">
+//           <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+//           <Input
+//             id="fullName"
+//             name="fullName"
+//             placeholder="John Doe"
+//             className="pl-10"
+//             value={user.fullName}
+//             onChange={handleChange}
+//             required
+//           />
+//         </div>
 //       </div>
 
 //       {/* Email */}
 //       <div className="space-y-2">
 //         <Label htmlFor="email">Email</Label>
-//         <Input
-//           id="email"
-//           name="email"
-//           type="email"
-//           value={user.email}
-//           onChange={handleChange}
-//           disabled={!!initialData} // Email is disabled only in update mode.
-//           required
-//         />
+//         <div className="relative">
+//           <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+//           <Input
+//             id="email"
+//             name="email"
+//             type="email"
+//             placeholder="john.doe@example.com"
+//             className="pl-10"
+//             value={user.email}
+//             onChange={handleChange}
+//             disabled={!!initialData} // Email is disabled only in update mode
+//             required
+//           />
+//         </div>
 //       </div>
 
-//       {/* Password */}
+//       {/* Password - only shown for new users */}
 //       {!initialData && (
 //         <div className="space-y-2">
 //           <Label htmlFor="password">Password</Label>
@@ -167,6 +204,7 @@
 //               id="password"
 //               name="password"
 //               type={showPassword ? 'text' : 'password'}
+//               placeholder="••••••••"
 //               value={user.password}
 //               onChange={handleChange}
 //               required
@@ -175,10 +213,15 @@
 //               type="button"
 //               variant="ghost"
 //               size="icon"
-//               className="absolute right-2 top-1/2 -translate-y-1/2"
+//               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
 //               onClick={togglePasswordVisibility}
 //             >
-//               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+//               {showPassword ? (
+//                 <EyeOff className="h-4 w-4 text-muted-foreground" />
+//               ) : (
+//                 <Eye className="h-4 w-4 text-muted-foreground" />
+//               )}
+//               <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
 //             </Button>
 //           </div>
 //         </div>
@@ -243,35 +286,46 @@
 //       {/* Assigned Branch (Org Unit) Selection */}
 //       <div className="space-y-2">
 //         <Label htmlFor="OrgUnit">Assigned Branch (Org Unit)</Label>
-//         <Select
-//           name="OrgUnit"
-//           value={user.OrgUnit}
-//           onValueChange={(value) => handleOrgUnitChange(value)}
-//           required
-//         >
-//           <SelectTrigger>
-//             <SelectValue placeholder="Select a branch" />
-//           </SelectTrigger>
-//           <SelectContent>
-//             {orgUnitOptions.map((unit) => (
-//               <SelectItem key={unit._id} value={unit._id}>
-//                 {unit.name}
-//               </SelectItem>
-//             ))}
-//           </SelectContent>
-//         </Select>
+//         <div className="relative">
+//           <Building2 className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground z-10" />
+//           <Select
+//             name="OrgUnit"
+//             value={user.OrgUnit}
+//             onValueChange={handleOrgUnitChange}
+//             disabled={isLoading || orgUnitOptions.length === 0}
+//             required
+//           >
+//             <SelectTrigger className="pl-10">
+//               <SelectValue placeholder={isLoading ? 'Loading...' : 'Select a branch'} />
+//             </SelectTrigger>
+//             <SelectContent>
+//               {orgUnitOptions.map((unit) => (
+//                 <SelectItem key={unit._id} value={unit._id}>
+//                   {unit.name}
+//                 </SelectItem>
+//               ))}
+//             </SelectContent>
+//           </Select>
+//         </div>
+//         {error && <p className="text-sm text-destructive">{error}</p>}
 //       </div>
 
 //       {/* Notification Checkbox (Edit Mode Only) */}
 //       {initialData && (
 //         <div className="flex items-center space-x-2">
-//           <input
-//             type="checkbox"
+//           <Checkbox
 //             id="notifyUser"
 //             name="notifyUser"
 //             checked={user.notifyUser}
-//             onChange={handleChange}
-//             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+//             onCheckedChange={(checked) =>
+//               handleChange({
+//                 target: {
+//                   name: 'notifyUser',
+//                   type: 'checkbox',
+//                   checked,
+//                 },
+//               })
+//             }
 //           />
 //           <Label htmlFor="notifyUser" className="text-sm font-normal">
 //             Notify user about this update via email
@@ -279,12 +333,15 @@
 //         </div>
 //       )}
 
-//       <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white">
-//         {initialData ? 'Update User' : 'Add User'}
-//       </Button>
+//       <div className="pt-2">
+//         <Button type="submit" className="w-full">
+//           {initialData ? 'Update User' : 'Add User'}
+//         </Button>
+//       </div>
 //     </form>
 //   );
 // }
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -308,7 +365,7 @@ const countryCodes = [
   { country: 'United States', code: '+1' },
   { country: 'United Kingdom', code: '+44' },
   { country: 'Australia', code: '+61' },
-  { country: 'Canada', code: '+1' },
+
   { country: 'China', code: '+86' },
   { country: 'France', code: '+33' },
   { country: 'Germany', code: '+49' },
@@ -316,7 +373,6 @@ const countryCodes = [
   { country: 'Japan', code: '+81' },
   { country: 'New Zealand', code: '+64' },
   { country: 'Singapore', code: '+65' },
-  { country: 'South Africa', code: '+27' },
 ];
 
 export function UserForm({ onSubmit, companyId, initialData }) {
@@ -339,8 +395,10 @@ export function UserForm({ onSubmit, companyId, initialData }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch OrgUnit options based on selected role
+  // Fetch OrgUnit options based on selected role and associated company (companyId)
+  // Fetch OrgUnit options based on selected role and companyId
   useEffect(() => {
+    // Determine the OrgUnit type based on the selected role
     let unitType = '';
     switch (user.role) {
       case 'CountryAdmin':
@@ -361,14 +419,25 @@ export function UserForm({ onSubmit, companyId, initialData }) {
         unitType = '';
     }
 
-    if (unitType) {
+    // Only fetch if both unitType and companyId are provided
+    if (unitType && companyId) {
+      console.log(`Fetching OrgUnit options for type: ${unitType} and companyId: ${companyId}`);
       setIsLoading(true);
       setError('');
 
       axios
-        .get(`/api/v1/orgUnits/byType?type=${unitType}`, { withCredentials: true })
+        .get(`/api/v1/orgUnits/byType?type=${unitType}&companyId=${companyId}`, {
+          withCredentials: true,
+        })
         .then((response) => {
-          setOrgUnitOptions(response.data.data);
+          if (response.data && response.data.data) {
+            console.log('OrgUnit options fetched successfully:', response.data.data);
+            setOrgUnitOptions(response.data.data);
+          } else {
+            console.error('API returned no data for OrgUnit options:', response.data);
+            setError('No organizational units data received.');
+            setOrgUnitOptions([]);
+          }
         })
         .catch((err) => {
           console.error('Error fetching OrgUnit options:', err);
@@ -376,12 +445,14 @@ export function UserForm({ onSubmit, companyId, initialData }) {
           setError('Failed to load organizational units.');
         })
         .finally(() => {
+          console.log('Finished fetching OrgUnit options.');
           setIsLoading(false);
         });
     } else {
+      console.log('Unit type or companyId not provided; skipping OrgUnit fetch.');
       setOrgUnitOptions([]);
     }
-  }, [user.role]);
+  }, [user.role, companyId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

@@ -392,7 +392,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import SideMenu from '@/components/layouts/SideMenu';
+// import SideMenu from '@/components/layouts/SideMenu';
 import MySVG from '../assets/invite.svg';
 
 // Retrieve current logged-in user from sessionStorage (not localStorage)
@@ -534,8 +534,8 @@ export default function InviteUserPage() {
 
   return (
     <div className="flex min-h-screen bg-[#F9FAFB]">
-      {/* Always render SideMenu if not coming from dashboard */}
-      {!fromDashboard && <SideMenu />}
+      {/* Always render SideMenu if not coming from dashboard
+      {!fromDashboard && <SideMenu />} */}
       <div className="flex-1 flex flex-col">
         {/* Breadcrumbs */}
         <div className="p-6 md:p-8 max-w-7xl mx-auto w-full">

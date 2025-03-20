@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Home,
+  MapPin,
   ArrowLeft,
 } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
@@ -1250,13 +1251,24 @@ export default function CompanyInfo() {
                               >
                                 {branch.officeName}
                               </h3>
-                              <p
+
+                              {/* <p
                                 className={`text-sm mt-1 ${
                                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                                 }`}
                               >
                                 {branch.address}, {branch.city}
-                              </p>
+                              </p> */}
+                              <div
+                                className={`flex items-center mb-2 mt-2 ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                                }`}
+                              >
+                                <MapPin size={16} className="mr-2 flex-shrink-0" />
+                                <span className="text-sm">
+                                  {branch.address}, {branch.city}
+                                </span>
+                              </div>
                             </div>
                             <div
                               className={`p-3 rounded-lg ${

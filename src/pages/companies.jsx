@@ -20,14 +20,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/Dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/Dialog';
 import { Badge } from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/Spinner';
 import AddCompanyForm from '@/components/ui/CompanyForm';
@@ -260,7 +253,7 @@ export default function Companies() {
                   />
                 </div>
                 <Button
-                  onClick={() => exportToCSV(companies, 'EcoNet Registered_companies.csv')}
+                  onClick={() => exportToCSV(companies, 'companies.csv')}
                   variant="outline"
                   size="sm"
                   className={`h-9 ${
@@ -278,8 +271,16 @@ export default function Companies() {
                     <Plus className="mr-2 h-4 w-4" /> Add Company
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="p-0">
-                  <AddCompanyForm onCompanyAdded={handleAddCompany} />
+                <DialogContent
+                  className={`${theme === 'dark' ? 'bg-slate-800 border-slate-700/50' : ''} p-0`}
+                  style={{ maxWidth: '500px' }}
+                >
+                  <div className="sr-only">
+                    <DialogTitle>Add Company</DialogTitle>
+                  </div>
+                  <div className="max-h-[80vh] overflow-y-auto">
+                    <AddCompanyForm onCompanyAdded={handleAddCompany} />
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
@@ -446,7 +447,7 @@ export default function Companies() {
                             >
                               View
                             </Button>
-                            {/* <Button
+                            <Button
                               size="sm"
                               variant="destructive"
                               className="h-8"
@@ -456,7 +457,7 @@ export default function Companies() {
                               }}
                             >
                               Delete
-                            </Button> */}
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

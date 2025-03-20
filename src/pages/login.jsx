@@ -465,7 +465,7 @@ export default function Login() {
 
           // Redirect user based on their role
           if (user.role === 'SuperAdmin') {
-            navigate('/companies');
+            navigate('/dashboard');
           } else {
             navigate('/dashboard');
           }

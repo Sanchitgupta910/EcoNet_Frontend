@@ -1,192 +1,3 @@
-// 'use client';
-
-// import { useState, useEffect } from 'react';
-// import { Link, useLocation, useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { Bell, LogOut, Moon, Package2, Sun, UserPlus, User } from 'lucide-react';
-
-// import { cn } from '@/lib/Utils';
-// import { useTheme } from '@/components/ui/theme-provider';
-// import { Button } from '@/components/ui/Button';
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuGroup,
-//   DropdownMenuItem,
-//   DropdownMenuLabel,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from '@/components/ui/DropdownMenu';
-// import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
-// import { Badge } from '@/components/ui/Badge';
-
-// export default function Header({ user }) {
-//   const { theme, setTheme } = useTheme();
-//   const location = useLocation();
-//   const navigate = useNavigate();
-//   const [notificationCount, setNotificationCount] = useState(3);
-
-//   const handleLogout = async () => {
-//     try {
-//       await axios.post('/api/v1/auth/logout', {}, { withCredentials: true });
-//       navigate('/login');
-//     } catch (error) {
-//       console.error('Logout failed:', error);
-//     }
-//   };
-
-//   const getInitials = (name) => {
-//     return name
-//       .split(' ')
-//       .map((n) => n[0])
-//       .join('')
-//       .toUpperCase();
-//   };
-
-//   const isActive = (path) => {
-//     return location.pathname === path || location.pathname.startsWith(`${path}/`);
-//   };
-
-//   return (
-//     <header
-//       className={`sticky top-0 z-50 w-full border-b ${
-//         theme === 'dark' ? 'border-slate-700/50 bg-slate-900/95' : 'border-slate-200/70 bg-white/95'
-//       } backdrop-blur supports-[backdrop-filter]:bg-background/60`}
-//     >
-//       <div className="container flex h-16 items-center">
-//         <div className="mr-4 flex">
-//           <Link to="/" className="flex items-center space-x-2">
-//             <Package2
-//               className={`h-6 w-6 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}
-//             />
-//             <span className="hidden font-bold sm:inline-block">
-//               EcoNet
-//               <span className={theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}>
-//                 Admin
-//               </span>
-//             </span>
-//           </Link>
-//         </div>
-
-//         <nav className="flex flex-1 items-center justify-center space-x-1">
-//           <Link to="/dashboard">
-//             <Button
-//               variant={isActive('/dashboard') ? 'default' : 'ghost'}
-//               className={cn(
-//                 'h-9 px-4',
-//                 isActive('/dashboard') &&
-//                   `${theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-600'} text-white`,
-//               )}
-//             >
-//               Dashboard
-//             </Button>
-//           </Link>
-
-//           {user?.role === 'SuperAdmin' && (
-//             <Link to="/companies">
-//               <Button
-//                 variant={isActive('/companies') ? 'default' : 'ghost'}
-//                 className={cn(
-//                   'h-9 px-4',
-//                   isActive('/companies') &&
-//                     `${theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-600'} text-white`,
-//                 )}
-//               >
-//                 Company Management
-//               </Button>
-//             </Link>
-//           )}
-
-//           <Link to="/user-logs">
-//             <Button
-//               variant={isActive('/user-logs') ? 'default' : 'ghost'}
-//               className={cn(
-//                 'h-9 px-4',
-//                 isActive('/user-logs') &&
-//                   `${theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-600'} text-white`,
-//               )}
-//             >
-//               User Logs
-//             </Button>
-//           </Link>
-//         </nav>
-
-//         <div className="flex items-center space-x-4">
-//           <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-//             <Bell className="h-5 w-5" />
-//             {notificationCount > 0 && (
-//               <Badge
-//                 variant="destructive"
-//                 className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-//               >
-//                 {notificationCount}
-//               </Badge>
-//             )}
-//           </Button>
-
-//           <Button
-//             variant="ghost"
-//             size="icon"
-//             aria-label="Toggle theme"
-//             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-//           >
-//             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-//           </Button>
-
-//           <Button
-//             variant="outline"
-//             size="sm"
-//             className="hidden md:flex"
-//             onClick={() => navigate('/invite-user')}
-//           >
-//             <UserPlus className="mr-2 h-4 w-4" />
-//             Invite
-//           </Button>
-
-//           <DropdownMenu>
-//             <DropdownMenuTrigger asChild>
-//               <Button
-//                 variant="ghost"
-//                 className="relative h-8 w-8 rounded-full"
-//                 aria-label="User menu"
-//               >
-//                 <Avatar className="h-8 w-8">
-//                   <AvatarImage src={user?.avatar} alt={user?.fullName || 'User'} />
-//                   <AvatarFallback>
-//                     {user?.fullName ? getInitials(user.fullName) : <User className="h-4 w-4" />}
-//                   </AvatarFallback>
-//                 </Avatar>
-//               </Button>
-//             </DropdownMenuTrigger>
-//             <DropdownMenuContent className="w-56" align="end" forceMount>
-//               <DropdownMenuLabel className="font-normal">
-//                 <div className="flex flex-col space-y-1">
-//                   <p className="text-sm font-medium leading-none">{user?.fullName || 'User'}</p>
-//                   <p className="text-xs leading-none text-muted-foreground">
-//                     {user?.role || 'User'}
-//                   </p>
-//                 </div>
-//               </DropdownMenuLabel>
-//               <DropdownMenuSeparator />
-//               <DropdownMenuGroup>
-//                 <DropdownMenuItem>
-//                   <span className="text-xs text-muted-foreground">
-//                     {user?.email || 'user@example.com'}
-//                   </span>
-//                 </DropdownMenuItem>
-//               </DropdownMenuGroup>
-//               <DropdownMenuSeparator />
-//               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-//                 <LogOut className="mr-2 h-4 w-4" />
-//                 <span>Log out</span>
-//               </DropdownMenuItem>
-//             </DropdownMenuContent>
-//           </DropdownMenu>
-//         </div>
-//       </div>
-//     </header>
-//   );
-// }
 'use client';
 
 import { useState } from 'react';
@@ -207,6 +18,7 @@ import {
 
 import { useTheme } from '@/components/ui/theme-provider';
 import { Button } from '@/components/ui/Button';
+import NetnadaLogo from '@/assets/NetNada_logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -256,12 +68,17 @@ export default function Header({ user }) {
       icon: PieChart,
       current: location.pathname === '/dashboard',
     },
-    {
-      name: 'Company Management',
-      href: '/companies',
-      icon: Building2,
-      current: location.pathname.includes('/companies') || location.pathname.includes('/company/'),
-    },
+    ...(user?.role === 'SuperAdmin'
+      ? [
+          {
+            name: 'Company Management',
+            href: '/companies',
+            icon: Building2,
+            current:
+              location.pathname.includes('/companies') || location.pathname.includes('/company/'),
+          },
+        ]
+      : []),
     {
       name: 'User Logs',
       href: '/user-logs',
@@ -280,14 +97,7 @@ export default function Header({ user }) {
         {/* Logo */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
-            <img src="/logo.svg" alt="EcoNet Logo" className="h-8 w-auto" />
-            <span
-              className={`ml-2 text-xl font-bold ${
-                theme === 'dark' ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              EcoNet
-            </span>
+            <img src={NetnadaLogo || '/placeholder.svg'} alt="EcoNet Logo" className="h-8 w-auto" />
           </Link>
         </div>
 
@@ -351,7 +161,7 @@ export default function Header({ user }) {
               <DropdownMenuLabel className={theme === 'dark' ? 'text-slate-300' : ''}>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.fullName}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user?.role}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -359,7 +169,7 @@ export default function Header({ user }) {
                 className={theme === 'dark' ? 'text-slate-300 hover:bg-slate-700' : ''}
               >
                 <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+                <span>Account</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className={`text-red-500 ${theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
