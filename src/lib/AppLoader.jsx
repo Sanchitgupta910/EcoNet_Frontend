@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import axios from 'axios';
-import { setUser } from '../app/userSlice'; 
+import { setUser } from '../app/userSlice';
 
 /**
  * AppLoader is a top-level component responsible for loading
@@ -21,7 +21,6 @@ const AppLoader = ({ children }) => {
       axios
         .get('/api/v1/users/me', { withCredentials: true })
         .then((response) => {
-          console.log("User data fetched:", response.data);
           dispatch(setUser(response.data.data));
         })
         .catch((err) => {

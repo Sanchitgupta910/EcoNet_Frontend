@@ -405,8 +405,6 @@ try {
   currentUser = { role: '' };
 }
 
-console.log('Loaded currentUser:', currentUser);
-
 // Mapping of allowed roles based on the logged-in user's role.
 const allowedRolesMapping = {
   SuperAdmin: [
@@ -440,8 +438,6 @@ const allowedRoles =
   typeof currentUser.role === 'string' && Array.isArray(allowedRolesMapping[currentUser.role])
     ? allowedRolesMapping[currentUser.role]
     : [];
-
-console.log('Allowed roles:', allowedRoles);
 
 // Mapping for OrgUnit type based on the selected invite role.
 const roleToOrgUnitTypeMapping = {

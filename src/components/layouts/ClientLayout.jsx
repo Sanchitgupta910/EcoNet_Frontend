@@ -19,7 +19,7 @@ export default function ClientLayout({ children }) {
         const response = await axios.get('/api/v1/users/me', {
           withCredentials: true,
         });
-        console.log('Auth API Response:', response.data);
+
         if (response.data && response.data.data) {
           setUser(response.data.data);
         } else {

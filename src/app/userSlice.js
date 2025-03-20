@@ -12,10 +12,10 @@ const loadUserFromSession = () => {
   if (userData) {
     try {
       const parsedUser = JSON.parse(userData);
-      console.log('Loaded user from session storage:', parsedUser);
+      // console.log('Loaded user from session storage:', parsedUser);
       return parsedUser;
     } catch (error) {
-      console.error('Failed to parse user data from session storage:', error);
+      // console.error('Failed to parse user data from session storage:', error);
       return null;
     }
   }
@@ -44,7 +44,6 @@ const userSlice = createSlice({
       state.user = action.payload;
       try {
         sessionStorage.setItem('user', JSON.stringify(action.payload));
-        console.log('User saved to session storage:', action.payload);
       } catch (error) {
         console.error('Failed to save user data to session storage:', error);
       }
