@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   LayoutGrid,
   ChevronDown,
@@ -11,8 +11,8 @@ import {
   Award,
   Activity,
   Tv,
-  MapPin,
   Building,
+  MapPin,
   Filter,
   Users,
   ArrowUp,
@@ -34,40 +34,28 @@ import axios from 'axios';
 import { useTheme } from '@/components/ui/theme-provider';
 import { createPortal } from 'react-dom';
 
-// Main AdminDashboard component
 export default function AdminDashboard() {
   const { theme } = useTheme();
 
-  // Get user role from sessionStorage; default to 'SuperAdmin'
   const [userRole] = useState(sessionStorage.getItem('userRole') || 'SuperAdmin');
-
-  // Active tab: dashboard, leaderboard, offices
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  // Filter states: selected company, selected org unit, date filter
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedOrgUnit, setSelectedOrgUnit] = useState(null);
-  const [dateFilter, setDateFilter] = useState('month'); // 'week' or 'month'
+  const [dateFilter, setDateFilter] = useState('today');
 
-  // Dropdown open state for date, company, and org unit
   const [isDropdownOpen, setIsDropdownOpen] = useState({
     date: false,
     company: false,
     orgUnit: false,
   });
-
-  // API data states for dashboard cards and charts
   const [overviewData, setOverviewData] = useState(null);
   const [trendData, setTrendData] = useState([]);
   const [activityFeed, setActivityFeed] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [officesData, setOfficesData] = useState([]);
-
-  // States for companies and org units (dropdown data)
   const [companies, setCompanies] = useState([]);
   const [orgUnits, setOrgUnits] = useState([]);
 
-  // Loading and error state for each API call
   const [loading, setLoading] = useState({
     overview: true,
     trend: true,
@@ -87,13 +75,11 @@ export default function AdminDashboard() {
     orgUnits: null,
   });
 
-  // Refs for dropdown button elements (for positioning dropdowns via portal)
   const dateButtonRef = useRef(null);
   const companyButtonRef = useRef(null);
   const orgUnitButtonRef = useRef(null);
-
-  // Set up a portal container to render dropdowns with high z-index
   const [portalContainer, setPortalContainer] = useState(null);
+
   useEffect(() => {
     const portalDiv = document.createElement('div');
     portalDiv.style.position = 'absolute';
@@ -103,12 +89,9 @@ export default function AdminDashboard() {
     portalDiv.style.zIndex = '9999';
     document.body.appendChild(portalDiv);
     setPortalContainer(portalDiv);
-    return () => {
-      document.body.removeChild(portalDiv);
-    };
+    return () => document.body.removeChild(portalDiv);
   }, []);
 
-  // Utility function: Get dropdown position based on button ref
   const getDropdownPosition = (buttonRef) => {
     if (!buttonRef.current) return { top: 0, left: 0, width: 0 };
     const rect = buttonRef.current.getBoundingClientRect();
@@ -120,202 +103,256 @@ export default function AdminDashboard() {
   };
 
   // ---------------------------
-  // API CALLS
+  // API CALLS WITH DEBUG LOGGING
   // ---------------------------
-
-  // Fetch companies from backend (GET /api/v1/company/getCompany)
   const fetchCompanies = async () => {
     try {
+      console.log('Fetching companies...');
       setLoading((prev) => ({ ...prev, companies: true }));
       const response = await axios.get('/api/v1/company/getCompany', { withCredentials: true });
+      console.log('Companies response:', response.data);
       if (response.data.success) {
-        console.log('Fetched companies:', response.data.data);
         setCompanies(response.data.data);
       } else {
         console.error('Error fetching companies:', response.data.message);
         setError((prev) => ({ ...prev, companies: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchCompanies:', err);
+      console.error('Fetch companies error:', err);
       setError((prev) => ({ ...prev, companies: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, companies: false }));
     }
   };
 
-  // Fetch OrgUnits based on companyId (GET /api/v1/orgUnits/byType?companyId=...)
+  // Fetch grouped OrgUnits using new endpoint.
   const fetchOrgUnits = async (companyId) => {
     try {
+      console.log('Fetching grouped OrgUnits for companyId:', companyId);
       setLoading((prev) => ({ ...prev, orgUnits: true }));
-      const response = await axios.get(
-        `/api/v1/orgUnits/byType?companyId=${companyId}&type=Branch`,
-        {
-          withCredentials: true,
-        },
-      );
-      console.log('OrgUnits response:', response.data.data); // Log the data here
+      const response = await axios.get(`/api/v1/orgUnits/grouped?companyId=${companyId}`, {
+        withCredentials: true,
+      });
+      console.log('Grouped OrgUnits response:', response.data);
       if (response.data.success) {
-        setOrgUnits(response.data.data);
+        const flatUnits = response.data.data.reduce((acc, group) => acc.concat(group.units), []);
+        console.log('Flattened OrgUnits:', flatUnits);
+        setOrgUnits(flatUnits);
       } else {
+        console.error('Error fetching OrgUnits:', response.data.message);
         setError((prev) => ({ ...prev, orgUnits: response.data.message }));
       }
     } catch (err) {
+      console.error('Fetch OrgUnits error:', err);
       setError((prev) => ({ ...prev, orgUnits: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, orgUnits: false }));
     }
   };
 
-  // // Memoize filtered OrgUnits based on selected company
-  // const filteredOrgUnits = useMemo(() => {
-  //   if (!selectedCompany) return orgUnits;
-  //   return orgUnits.filter(
-  //     (unit) =>
-  //       unit.branchAddress &&
-  //       String(unit.branchAddress.associatedCompany) === String(selectedCompany._id),
-  //   );
-  // }, [selectedCompany, orgUnits]);
+  // Helper: recursively get descendant Branch OrgUnits.
+  const getDescendantBranchUnits = (selectedUnit, allUnits) => {
+    const children = allUnits.filter((unit) => String(unit.parent) === String(selectedUnit._id));
+    let branchUnits = [];
+    children.forEach((child) => {
+      if (child.type === 'Branch') {
+        branchUnits.push(child);
+      } else {
+        branchUnits = branchUnits.concat(getDescendantBranchUnits(child, allUnits));
+      }
+    });
+    return branchUnits;
+  };
 
-  // Fetch aggregated overview data (GET /api/v1/analytics/adminOverview)
+  // Helper: get branch IDs from the selected OrgUnit.
+  const getBranchIds = (selectedOrgUnit, allUnits) => {
+    if (!selectedOrgUnit) return [];
+    if (selectedOrgUnit.type === 'Branch') {
+      if (typeof selectedOrgUnit.branchAddress === 'string') return [selectedOrgUnit.branchAddress];
+      if (selectedOrgUnit.branchAddress && typeof selectedOrgUnit.branchAddress === 'object') {
+        return [selectedOrgUnit.branchAddress._id || selectedOrgUnit.branchAddress.id].filter(
+          Boolean,
+        );
+      }
+      return [];
+    }
+    const branchUnits = getDescendantBranchUnits(selectedOrgUnit, allUnits);
+    const ids = branchUnits
+      .map((unit) => {
+        if (typeof unit.branchAddress === 'string') return unit.branchAddress;
+        if (unit.branchAddress && typeof unit.branchAddress === 'object')
+          return unit.branchAddress._id || unit.branchAddress.id;
+        return null;
+      })
+      .filter(Boolean);
+    console.log('Extracted branch IDs from OrgUnit:', ids);
+    return ids;
+  };
+
   const fetchOverviewData = async () => {
     try {
+      console.log('Fetching overview data...');
       setLoading((prev) => ({ ...prev, overview: true }));
       let url = '/api/v1/analytics/adminOverview';
-      if (selectedCompany) {
-        url += `?companyId=${selectedCompany._id}`;
-      }
+      const params = [];
+      if (selectedCompany) params.push(`companyId=${selectedCompany._id}`);
+      if (selectedOrgUnit) params.push(`orgUnitId=${selectedOrgUnit._id}`);
+      params.push(`filter=${dateFilter}`);
+      if (params.length) url += '?' + params.join('&');
+      console.log('Overview URL:', url);
       const response = await axios.get(url, { withCredentials: true });
+      console.log('Overview response:', response.data);
       if (response.data.success) {
         setOverviewData(response.data.data);
       } else {
-        console.error('Error fetching admin overview:', response.data.message);
+        console.error('Overview error:', response.data.message);
         setError((prev) => ({ ...prev, overview: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchOverviewData:', err);
+      console.error('Fetch overview error:', err);
       setError((prev) => ({ ...prev, overview: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, overview: false }));
     }
   };
 
-  // Fetch waste trend chart data (GET /api/v1/analytics/wasteTrendChart)
-  // Uses selectedOrgUnit.branchAddress as the branchId
   const fetchTrendData = async () => {
-    const branchId = selectedOrgUnit && selectedOrgUnit.branchAddress;
-    if (!branchId || branchId === 'defaultBranchId') {
-      console.warn('No valid branchId available for fetchTrendData');
+    const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
+    let url = '';
+    if (branchIds.length > 0) {
+      url = `/api/v1/analytics/wasteTrendChart?branchId=${branchIds.join(
+        ',',
+      )}&days=7&filter=${dateFilter}`;
+    } else if (selectedCompany) {
+      url = `/api/v1/analytics/wasteTrendChart?companyId=${selectedCompany._id}&days=7&filter=${dateFilter}`;
+    } else {
+      console.warn('No valid branchIds or companyId available for fetchTrendData');
       return;
     }
+    console.log('Fetching trend data from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, trend: true }));
-      const url = `/api/v1/analytics/wasteTrendChart?branchId=${branchId}&days=7`;
       const response = await axios.get(url, { withCredentials: true });
+      console.log('Trend data response:', response.data);
       if (response.data.success) {
         setTrendData(response.data.data);
       } else {
-        console.error('Error fetching trend data:', response.data.message);
+        console.error('Trend data error:', response.data.message);
         setError((prev) => ({ ...prev, trend: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchTrendData:', err);
+      console.error('Fetch trend data error:', err);
       setError((prev) => ({ ...prev, trend: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, trend: false }));
     }
   };
 
-  // Fetch activity feed data (GET /api/v1/analytics/activityFeed)
   const fetchActivityFeed = async () => {
-    const branchId = selectedOrgUnit && selectedOrgUnit.branchAddress;
-    if (!branchId || branchId === 'defaultBranchId') {
-      console.warn('No valid branchId available for fetchActivityFeed');
+    const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
+    let url = '';
+    if (branchIds.length > 0) {
+      url = `/api/v1/analytics/activityFeed?branchId=${branchIds.join(',')}`;
+    } else if (selectedCompany) {
+      url = `/api/v1/analytics/activityFeed?companyId=${selectedCompany._id}`;
+    } else {
+      console.warn('No valid branchIds or companyId available for fetchActivityFeed');
       return;
     }
+    console.log('Fetching activity feed from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, activity: true }));
-      const url = `/api/v1/analytics/activityFeed?branchId=${branchId}`;
       const response = await axios.get(url, { withCredentials: true });
+      console.log('Activity feed response:', response.data);
       if (response.data.success) {
         setActivityFeed(response.data.data);
       } else {
-        console.error('Error fetching activity feed:', response.data.message);
+        console.error('Activity feed error:', response.data.message);
         setError((prev) => ({ ...prev, activity: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchActivityFeed:', err);
+      console.error('Fetch activity feed error:', err);
       setError((prev) => ({ ...prev, activity: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, activity: false }));
     }
   };
 
-  // Fetch leaderboard data (GET /api/v1/analytics/adminLeaderboard)
   const fetchLeaderboardData = async () => {
+    let url = '';
+    if (userRole === 'SuperAdmin') {
+      url = selectedCompany
+        ? `/api/v1/analytics/adminLeaderboard?companyId=${selectedCompany._id}`
+        : `/api/v1/analytics/adminLeaderboard?companyId=all`;
+    } else {
+      const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
+      if (branchIds.length > 0) {
+        url = `/api/v1/analytics/adminLeaderboard?branchId=${branchIds.join(',')}`;
+      } else {
+        console.warn('No valid branchIds available for fetchLeaderboardData');
+        return;
+      }
+    }
+    console.log('Fetching leaderboard data from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, leaderboard: true }));
-      let url = '';
-      if (userRole === 'SuperAdmin') {
-        url = selectedCompany
-          ? `/api/v1/analytics/adminLeaderboard?companyId=${selectedCompany._id}`
-          : `/api/v1/analytics/adminLeaderboard?companyId=all`;
-      } else {
-        const branchId = selectedOrgUnit && selectedOrgUnit.branchAddress;
-        if (!branchId || branchId === 'defaultBranchId') {
-          console.warn('No valid branchId available for fetchLeaderboardData');
-          return;
-        }
-        url = `/api/v1/analytics/adminLeaderboard?branchId=${branchId}`;
-      }
       const response = await axios.get(url, { withCredentials: true });
+      console.log('Leaderboard response:', response.data);
       if (response.data.success) {
         setLeaderboardData(response.data.data);
       } else {
-        console.error('Error fetching leaderboard data:', response.data.message);
+        console.error('Leaderboard error:', response.data.message);
         setError((prev) => ({ ...prev, leaderboard: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchLeaderboardData:', err);
+      console.error('Fetch leaderboard error:', err);
       setError((prev) => ({ ...prev, leaderboard: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, leaderboard: false }));
     }
   };
 
-  // Fetch offices data (GET /api/v1/analytics/offices)
   const fetchOfficesData = async () => {
     try {
       setLoading((prev) => ({ ...prev, offices: true }));
       let url = '/api/v1/analytics/offices';
-      if (selectedCompany) {
-        url += `?companyId=${selectedCompany._id}`;
+      const params = [];
+      if (selectedOrgUnit) {
+        const orgUnitId = selectedOrgUnit._id || selectedOrgUnit.id;
+        if (orgUnitId) {
+          params.push(`orgUnitId=${orgUnitId}`);
+        } else {
+          console.warn('selectedOrgUnit does not have _id or id:', selectedOrgUnit);
+        }
+      } else if (selectedCompany) {
+        params.push(`companyId=${selectedCompany._id}`);
+      }
+      if (params.length) {
+        url += '?' + params.join('&');
       }
       const response = await axios.get(url, { withCredentials: true });
       if (response.data.success) {
         setOfficesData(response.data.data);
       } else {
-        console.error('Error fetching offices data:', response.data.message);
+        console.error('Offices error:', response.data.message);
         setError((prev) => ({ ...prev, offices: response.data.message }));
       }
     } catch (err) {
-      console.error('Error in fetchOfficesData:', err);
+      console.error('Fetch offices error:', err);
       setError((prev) => ({ ...prev, offices: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, offices: false }));
     }
   };
 
-  // ---------------------------
-  // useEffect Hooks
-  // ---------------------------
-  // On mount, if user is SuperAdmin, fetch companies
   useEffect(() => {
-    if (userRole === 'SuperAdmin') {
-      fetchCompanies();
-    }
+    if (userRole === 'SuperAdmin') fetchCompanies();
   }, [userRole]);
 
-  // Fetch dashboard data when filters change
+  useEffect(() => {
+    if (selectedCompany) fetchOrgUnits(selectedCompany._id);
+  }, [selectedCompany]);
+
   useEffect(() => {
     fetchOverviewData();
     fetchTrendData();
@@ -324,50 +361,34 @@ export default function AdminDashboard() {
     fetchOfficesData();
   }, [selectedCompany, selectedOrgUnit, dateFilter]);
 
-  // Close dropdowns when clicking outside their buttons
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dateButtonRef.current &&
-        !dateButtonRef.current.contains(event.target) &&
-        companyButtonRef.current &&
-        !companyButtonRef.current.contains(event.target) &&
-        orgUnitButtonRef.current &&
-        !orgUnitButtonRef.current.contains(event.target)
-      ) {
-        setIsDropdownOpen({ date: false, company: false, orgUnit: false });
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // ---------------------------
-  // Dropdown Handlers
-  // ---------------------------
   const toggleDropdown = (dropdown) => {
+    // Only allow toggling if activeTab is 'dashboard' for date and org unit filters
+    if (dropdown === 'date' || dropdown === 'orgUnit') {
+      if (activeTab !== 'dashboard') return;
+    }
     setIsDropdownOpen((prev) => ({ ...prev, [dropdown]: !prev[dropdown] }));
   };
 
-  // When a company is selected, reset the OrgUnit and fetch its OrgUnits
   const handleCompanySelect = (company) => {
+    console.log('Company selected:', company);
     setSelectedCompany(company);
     setSelectedOrgUnit(null);
     setIsDropdownOpen((prev) => ({ ...prev, company: false }));
-    if (company && company._id) {
-      fetchOrgUnits(company._id);
-    }
+    if (company && company._id) fetchOrgUnits(company._id);
   };
 
   const handleOrgUnitSelect = (orgUnit) => {
+    console.log('OrgUnit selected:', orgUnit);
     setSelectedOrgUnit(orgUnit);
     setIsDropdownOpen((prev) => ({ ...prev, orgUnit: false }));
   };
 
   const handleDateFilterChange = (filter) => {
+    console.log('Date filter changed to:', filter);
     setDateFilter(filter);
     setIsDropdownOpen((prev) => ({ ...prev, date: false }));
   };
+
   return (
     <div
       className={`min-h-screen ${
@@ -422,26 +443,36 @@ export default function AdminDashboard() {
               Offices
             </button>
           </div>
-
           <div className="flex flex-wrap gap-3">
-            {/* Date Filter */}
+            {/* Date Filter - Always visible but disabled if not on dashboard */}
             <div className="relative">
               <button
                 ref={dateButtonRef}
-                onClick={() => toggleDropdown('date')}
+                onClick={() => activeTab === 'dashboard' && toggleDropdown('date')}
+                disabled={activeTab !== 'dashboard'}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
                   theme === 'dark'
                     ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white'
                     : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
-                }`}
+                } ${activeTab !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Calendar size={16} />
-                <span>{dateFilter === 'week' ? 'This Week' : 'This Month'}</span>
+                <span>
+                  {dateFilter === 'today'
+                    ? 'Today'
+                    : dateFilter === 'thisWeek'
+                    ? 'This Week'
+                    : dateFilter === 'thisMonth'
+                    ? 'This Month'
+                    : dateFilter === 'lastMonth'
+                    ? 'Last Month'
+                    : 'Filter'}
+                </span>
                 <ChevronDown size={16} />
               </button>
-
               {portalContainer &&
                 isDropdownOpen.date &&
+                activeTab === 'dashboard' &&
                 createPortal(
                   <div
                     onMouseDown={(e) => e.stopPropagation()}
@@ -458,27 +489,38 @@ export default function AdminDashboard() {
                     }}
                   >
                     <button
-                      onClick={() => handleDateFilterChange('week')}
+                      onClick={() => handleDateFilterChange('today')}
                       className={`w-full text-left px-4 py-2 rounded-t-lg text-sm ${
                         theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                       }`}
                     >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => handleDateFilterChange('thisWeek')}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
                       This Week
                     </button>
                     <button
-                      onClick={() => handleDateFilterChange('month')}
+                      onClick={() => handleDateFilterChange('thisMonth')}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
+                      This Month
+                    </button>
+                    <button
+                      onClick={() => handleDateFilterChange('lastMonth')}
                       className={`w-full text-left px-4 py-2 rounded-b-lg text-sm ${
                         theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                       }`}
                     >
-                      This Month
+                      Last Month
                     </button>
                   </div>,
                   portalContainer,
                 )}
             </div>
-
-            {/* Company Dropdown (Only for SuperAdmin) */}
+            {/* Company Dropdown: Always active */}
             {userRole === 'SuperAdmin' && (
               <div className="relative">
                 <button
@@ -494,7 +536,6 @@ export default function AdminDashboard() {
                   <span>{selectedCompany ? selectedCompany.CompanyName : 'All Organizations'}</span>
                   <ChevronDown size={16} />
                 </button>
-
                 {portalContainer &&
                   isDropdownOpen.company &&
                   createPortal(
@@ -542,12 +583,14 @@ export default function AdminDashboard() {
                   )}
               </div>
             )}
-
-            {/* Org Unit Dropdown */}
+            {/* OrgUnit Dropdown - Always visible but disabled if not on dashboard or if company not selected */}
             <div className="relative">
               <button
                 ref={orgUnitButtonRef}
-                onClick={() => toggleDropdown('orgUnit')}
+                onClick={() => activeTab === 'dashboard' && toggleDropdown('orgUnit')}
+                disabled={
+                  activeTab !== 'dashboard' || (userRole === 'SuperAdmin' && !selectedCompany)
+                }
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
                   userRole === 'SuperAdmin' && !selectedCompany
                     ? theme === 'dark'
@@ -556,16 +599,15 @@ export default function AdminDashboard() {
                     : theme === 'dark'
                     ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white'
                     : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
-                }`}
-                disabled={userRole === 'SuperAdmin' && !selectedCompany}
+                } ${activeTab !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Users size={16} />
                 <span>{selectedOrgUnit ? selectedOrgUnit.name : 'All Organization Units'}</span>
                 <ChevronDown size={16} />
               </button>
-
               {portalContainer &&
                 isDropdownOpen.orgUnit &&
+                activeTab === 'dashboard' &&
                 (userRole !== 'SuperAdmin' || selectedCompany) &&
                 createPortal(
                   <div
@@ -601,7 +643,8 @@ export default function AdminDashboard() {
                             theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
                           }`}
                         >
-                          {orgUnit.name}
+                          {orgUnit.name}{' '}
+                          <span className="text-xs text-gray-500">({orgUnit.type})</span>
                         </button>
                       ))
                     ) : (
@@ -613,12 +656,11 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Dashboard Tab Content */}
+        {/* Dashboard Content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           {activeTab === 'dashboard' && (
             <>
-              {/* Analytics Cards - First Row */}
+              {/* Analytics Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Total Bins Card */}
                 <div
@@ -655,20 +697,7 @@ export default function AdminDashboard() {
                       <Trash2 size={24} />
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center text-sm">
-                    <span className="text-emerald-500 flex items-center">
-                      <ArrowUp size={14} className="mr-1" />
-                      {/* You can integrate percentage change data if available */}
-                      12%
-                    </span>
-                    <span
-                      className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
-                    >
-                      from last month
-                    </span>
-                  </div>
                 </div>
-
                 {/* Landfill Diversion Card */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg transition-all group ${
@@ -691,7 +720,10 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-white' : 'text-slate-800'
                         }`}
                       >
-                        {overviewData ? Number(overviewData.landfillDiversion).toFixed(2) : '...'}
+                        {overviewData
+                          ? Number(overviewData.landfillDiversionPercentage).toFixed(2)
+                          : '...'}
+                        <span className="text-sm">%</span>
                       </h3>
                     </div>
                     <div
@@ -705,18 +737,36 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm">
-                    <span className="text-emerald-500 flex items-center">
-                      <ArrowUp size={14} className="mr-1" />
-                      8%
-                    </span>
+                    {overviewData?.landfillDiversionTrend != null ? (
+                      overviewData.landfillDiversionTrend >= 0 ? (
+                        <span className="text-emerald-500 flex items-center">
+                          <ArrowUp size={14} className="mr-1" />{' '}
+                          {overviewData.landfillDiversionTrend}%
+                        </span>
+                      ) : (
+                        <span className="text-red-500 flex items-center">
+                          <ArrowDown size={14} className="mr-1" />{' '}
+                          {Math.abs(overviewData.landfillDiversionTrend)}%
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-gray-500">--%</span>
+                    )}
                     <span
                       className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
                     >
-                      from last month
+                      {dateFilter === 'today'
+                        ? 'compared to yesterday'
+                        : dateFilter === 'thisWeek'
+                        ? 'compared to last week'
+                        : dateFilter === 'thisMonth'
+                        ? 'compared to last month'
+                        : dateFilter === 'lastMonth'
+                        ? 'compared to this month'
+                        : 'compared to previous period'}
                     </span>
                   </div>
                 </div>
-
                 {/* Total Waste Collected Card */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg transition-all group ${
@@ -740,6 +790,7 @@ export default function AdminDashboard() {
                         }`}
                       >
                         {overviewData ? Number(overviewData.totalWaste).toFixed(2) : '...'}
+                        <span className="text-sm ">kg</span>
                       </h3>
                     </div>
                     <div
@@ -753,20 +804,37 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm">
-                    <span className="text-emerald-500 flex items-center">
-                      <ArrowUp size={14} className="mr-1" />
-                      15%
-                    </span>
+                    {overviewData?.totalWasteTrend != null ? (
+                      overviewData.totalWasteTrend >= 0 ? (
+                        <span className="text-emerald-500 flex items-center">
+                          <ArrowUp size={14} className="mr-1" /> {overviewData.totalWasteTrend}%
+                        </span>
+                      ) : (
+                        <span className="text-red-500 flex items-center">
+                          <ArrowDown size={14} className="mr-1" />{' '}
+                          {Math.abs(overviewData.totalWasteTrend)}%
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-gray-500">--%</span>
+                    )}
                     <span
                       className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
                     >
-                      from last month
+                      {dateFilter === 'today'
+                        ? 'compared to yesterday'
+                        : dateFilter === 'thisWeek'
+                        ? 'compared to last week'
+                        : dateFilter === 'thisMonth'
+                        ? 'compared to last month'
+                        : dateFilter === 'lastMonth'
+                        ? 'compared to this month'
+                        : 'compared to previous period'}
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Waste Line Chart - Second Row */}
+              {/* Waste Trend Line Chart */}
               <div
                 className={`rounded-xl border p-6 shadow-lg mb-8 ${
                   theme === 'dark'
@@ -857,31 +925,29 @@ export default function AdminDashboard() {
                           }}
                         />
                         <Legend />
-                        {/* Dynamically render lines for each bin type */}
                         {trendData &&
                           trendData.length > 0 &&
-                          Object.keys(trendData[0])
-                            .filter((key) => key !== 'date')
-                            .map((binKey, idx) => (
-                              <Line
-                                key={idx}
-                                type="monotone"
-                                dataKey={binKey}
-                                stroke={idx % 2 === 0 ? '#ef4444' : '#3b82f6'} // Replace with dynamic color if needed
-                                strokeWidth={2.5}
-                                dot={{ r: 0 }}
-                                activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                              />
-                            ))}
+                          trendData.map((binData, idx) => (
+                            <Line
+                              key={idx}
+                              type="monotone"
+                              dataKey="weight"
+                              data={binData.data}
+                              name={binData.binName}
+                              stroke={idx % 2 === 0 ? '#ef4444' : '#3b82f6'}
+                              strokeWidth={2.5}
+                              dot={{ r: 0 }}
+                              activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+                            />
+                          ))}
                       </LineChart>
                     </ResponsiveContainer>
                   )}
                 </div>
               </div>
-
-              {/* Third Row - Activity Feed and Leaderboard */}
+              {/* Activity Feed & Leaderboard */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Activity Feed Card */}
+                {/* Activity Feed */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg ${
                     theme === 'dark'
@@ -915,7 +981,7 @@ export default function AdminDashboard() {
                     ) : activityFeed && activityFeed.length > 0 ? (
                       activityFeed.map((activity) => (
                         <div
-                          key={activity.id || activity._id}
+                          key={activity._id}
                           className={`flex items-start p-3 rounded-lg transition-colors ${
                             theme === 'dark'
                               ? 'bg-slate-700/30 hover:bg-slate-700/50'
@@ -978,8 +1044,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-
-                {/* Leaderboard Card */}
+                {/* Leaderboard */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg ${
                     theme === 'dark'
@@ -995,94 +1060,153 @@ export default function AdminDashboard() {
                     >
                       {userRole === 'SuperAdmin' ? 'Company Leaderboard' : 'Office Leaderboard'}
                     </h3>
-                    <div className="p-2 rounded-lg cursor-pointer transition-colors bg-slate-200/70 hover:bg-slate-300/70">
-                      <Award size={18} />
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
+                        <Filter size={18} />
+                      </button>
+                      <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
+                        <Award size={18} />
+                      </button>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    {loading.leaderboard ? (
-                      <p>Loading leaderboard...</p>
-                    ) : error.leaderboard ? (
-                      <p className="text-red-500">{error.leaderboard}</p>
-                    ) : leaderboardData && leaderboardData.length > 0 ? (
-                      leaderboardData.slice(0, 5).map((item, index) => (
-                        <div
-                          key={item.id || item._id}
-                          className={`flex items-center p-3 rounded-lg transition-colors ${
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr
+                          className={
                             theme === 'dark'
-                              ? 'bg-slate-700/30 hover:bg-slate-700/50'
-                              : 'bg-slate-100/70 hover:bg-slate-200/70'
-                          }`}
+                              ? 'border-b border-slate-700/50'
+                              : 'border-b border-slate-200/70'
+                          }
                         >
-                          <div
-                            className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 font-bold ${
-                              index === 0
-                                ? theme === 'dark'
-                                  ? 'bg-amber-500/20 text-amber-400'
-                                  : 'bg-amber-100 text-amber-600'
-                                : index === 1
-                                ? theme === 'dark'
-                                  ? 'bg-slate-400/20 text-slate-300'
-                                  : 'bg-slate-300/70 text-slate-600'
-                                : index === 2
-                                ? theme === 'dark'
-                                  ? 'bg-amber-700/20 text-amber-600'
-                                  : 'bg-amber-200/70 text-amber-700'
-                                : theme === 'dark'
-                                ? 'bg-slate-600/20 text-slate-400'
-                                : 'bg-slate-200/70 text-slate-500'
+                          <th
+                            className={`text-left py-3 px-4 font-medium ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                             }`}
                           >
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p
+                            Rank
+                          </th>
+                          <th
+                            className={`text-left py-3 px-4 font-medium ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            Name
+                          </th>
+                          <th
+                            className={`text-left py-3 px-4 font-medium ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            Diversion Rate
+                          </th>
+                          <th
+                            className={`text-left py-3 px-4 font-medium ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            Total Waste
+                          </th>
+                          <th
+                            className={`text-left py-3 px-4 font-medium ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            Performance
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading.leaderboard ? (
+                          <tr>
+                            <td colSpan="5" className="py-3 px-4">
+                              Loading leaderboard...
+                            </td>
+                          </tr>
+                        ) : error.leaderboard ? (
+                          <tr>
+                            <td colSpan="5" className="py-3 px-4 text-red-500">
+                              {error.leaderboard}
+                            </td>
+                          </tr>
+                        ) : leaderboardData && leaderboardData.length > 0 ? (
+                          leaderboardData.slice(0, 5).map((item, index) => (
+                            <tr
+                              key={item._id}
                               className={
                                 theme === 'dark'
-                                  ? 'text-white font-medium'
-                                  : 'text-slate-800 font-medium'
+                                  ? 'border-b border-slate-700/30 hover:bg-slate-700/20'
+                                  : 'border-b border-slate-200/50 hover:bg-slate-100/50'
                               }
                             >
-                              {item.name}
-                            </p>
-                            <div className="flex items-center mt-1 text-sm">
-                              <span className="text-emerald-500">Diversion: {item.diversion}</span>
-                              <span
-                                className={
-                                  theme === 'dark' ? 'mx-2 text-slate-500' : 'mx-2 text-slate-400'
-                                }
+                              <td className="py-3 px-4">
+                                <div
+                                  className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 font-bold ${
+                                    index === 0
+                                      ? theme === 'dark'
+                                        ? 'bg-amber-500/20 text-amber-400'
+                                        : 'bg-amber-100 text-amber-600'
+                                      : index === 1
+                                      ? theme === 'dark'
+                                        ? 'bg-slate-400/20 text-slate-300'
+                                        : 'bg-slate-300/70 text-slate-600'
+                                      : index === 2
+                                      ? theme === 'dark'
+                                        ? 'bg-amber-700/20 text-amber-600'
+                                        : 'bg-amber-200/70 text-amber-700'
+                                      : theme === 'dark'
+                                      ? 'bg-slate-600/20 text-slate-400'
+                                      : 'bg-slate-200/70 text-slate-500'
+                                  }`}
+                                >
+                                  {index + 1}
+                                </div>
+                              </td>
+                              <td
+                                className={`py-3 px-4 font-medium ${
+                                  theme === 'dark' ? 'text-white' : 'text-slate-800'
+                                }`}
                               >
-                                •
-                              </span>
-                              <span
-                                className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}
+                                {item.name}
+                              </td>
+                              <td className="py-3 px-4 text-emerald-500 font-medium">
+                                {item.diversion}
+                              </td>
+                              <td
+                                className={`py-3 px-4 ${
+                                  theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+                                }`}
                               >
-                                Waste: {item.waste}
-                              </span>
-                            </div>
-                          </div>
-                          <div
-                            className={`h-2 w-24 rounded-full overflow-hidden ${
-                              theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
-                            }`}
-                          >
-                            <div
-                              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                              style={{ width: item.diversion }}
-                            ></div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p>No leaderboard data available</p>
-                    )}
+                                {item.waste}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div
+                                  className={`h-2 w-full max-w-[150px] rounded-full overflow-hidden ${
+                                    theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
+                                  }`}
+                                >
+                                  <div
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
+                                    style={{ width: item.diversion }}
+                                  ></div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="5" className="py-3 px-4">
+                              No leaderboard data available
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
             </>
           )}
-
-          {/* Leaderboard Tab Content */}
           {activeTab === 'leaderboard' && (
             <div
               className={`rounded-xl border p-6 shadow-lg ${
@@ -1171,7 +1295,7 @@ export default function AdminDashboard() {
                     ) : leaderboardData && leaderboardData.length > 0 ? (
                       leaderboardData.slice(0, 5).map((item, index) => (
                         <tr
-                          key={item.id || item._id}
+                          key={item._id}
                           className={
                             theme === 'dark'
                               ? 'border-b border-slate-700/30 hover:bg-slate-700/20'
@@ -1244,8 +1368,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
-
-          {/* Offices Tab Content */}
+          {/* Offices Tab */}
           {activeTab === 'offices' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loading.offices ? (
@@ -1255,7 +1378,7 @@ export default function AdminDashboard() {
               ) : officesData && officesData.length > 0 ? (
                 officesData.map((office) => (
                   <div
-                    key={office.id || office._id}
+                    key={office._id}
                     className={`rounded-xl border p-6 shadow-lg transition-all group ${
                       theme === 'dark'
                         ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
@@ -1268,7 +1391,7 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-white' : 'text-slate-800'
                         }`}
                       >
-                        {office.name}
+                        {office.officeName || office.name}
                       </h3>
                       <button
                         className={`p-2 rounded-lg transition-colors ${
@@ -1287,7 +1410,9 @@ export default function AdminDashboard() {
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-slate-500">Diversion Rate</span>
-                        <span className="text-emerald-500 font-medium">{office.diversion}</span>
+                        <span className="text-emerald-500 font-medium">
+                          {office.diversion ? Number(office.diversion).toFixed(2) : '0.00'}%
+                        </span>
                       </div>
                       <div
                         className={`h-2 w-full rounded-full overflow-hidden ${
@@ -1296,31 +1421,31 @@ export default function AdminDashboard() {
                       >
                         <div
                           className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                          style={{ width: office.diversion }}
+                          style={{ width: office.diversion ? `${office.diversion}%` : '0%' }}
                         ></div>
                       </div>
                     </div>
                     <div>
                       <div className="text-sm mb-2 text-slate-500">Bin Configuration</div>
                       <div className="flex flex-wrap gap-2">
-                        {office.bins &&
-                          office.bins.map((bin, index) => (
+                        {office.bins && office.bins.length > 0 ? (
+                          office.bins.map((bin, idx) => (
                             <span
-                              key={index}
+                              key={idx}
                               className={`text-xs px-2 py-1 rounded-full ${
-                                bin === 'General Waste'
+                                bin.dustbinType === 'General Waste'
                                   ? theme === 'dark'
                                     ? 'bg-red-500/20 text-red-400'
                                     : 'bg-red-100 text-red-600'
-                                  : bin === 'Paper'
+                                  : bin.dustbinType === 'Paper & Cardboard'
                                   ? theme === 'dark'
                                     ? 'bg-blue-500/20 text-blue-400'
                                     : 'bg-blue-100 text-blue-600'
-                                  : bin === 'Plastic'
+                                  : bin.dustbinType === 'Commingled'
                                   ? theme === 'dark'
                                     ? 'bg-green-500/20 text-green-400'
                                     : 'bg-green-100 text-green-600'
-                                  : bin === 'Compost'
+                                  : bin.dustbinType === 'Organic'
                                   ? theme === 'dark'
                                     ? 'bg-amber-500/20 text-amber-400'
                                     : 'bg-amber-100 text-amber-600'
@@ -1329,9 +1454,12 @@ export default function AdminDashboard() {
                                   : 'bg-purple-100 text-purple-600'
                               }`}
                             >
-                              {bin}
+                              {bin.dustbinType}
                             </span>
-                          ))}
+                          ))
+                        ) : (
+                          <span className="text-xs text-red-500">No bin data</span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -1288,7 +1288,7 @@ export default function CompanyInfo() {
                                   theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                                 }`}
                               >
-                                Bin Types
+                                Bin Configuration
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {branch.dustbins.map((bin, index) => {

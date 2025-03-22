@@ -162,7 +162,7 @@ const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIc
             <p className={`text-xs ${colors.muted}`}>Current Weight</p>
             <div className="flex items-baseline">
               <span className={`text-2xl font-bold tracking-tight ${colors.text}`}>
-                {currentWeight}
+                {Number(currentWeight).toFixed(2)}
               </span>
               <span className="ml-1 text-sm text-gray-500">Kgs</span>
             </div>
