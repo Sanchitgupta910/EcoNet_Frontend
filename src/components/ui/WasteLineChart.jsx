@@ -273,23 +273,29 @@ export default function WasteLineChart({ branchId }) {
           {/* Trend Comparison Info on the right */}
           {trendComparison && (
             <div className="flex items-center">
-              <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
-                This week, total waste was {trendComparison.thisWeekWaste} KG, which is{' '}
-                {Math.abs(trendComparison.percentageChange)}%
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                This week's total waste generation [till today] is{' '}
+                {/* {Math.abs(trendComparison.percentageChange)}% */}
                 {trendComparison.trend === 'higher' ? (
                   <>
-                    <ArrowUpRight className="inline-block h-4 w-4 text-emerald-600 mx-1" />
+                    <span className="text-[16px] text-emerald-600 font-bold">
+                      {Math.abs(trendComparison.percentageChange)}%
+                      <ArrowUpRight className="inline-block  mx-1" />
+                    </span>
                     higher
                   </>
                 ) : trendComparison.trend === 'lower' ? (
                   <>
-                    <ArrowDownRight className="inline-block h-4 w-4 text-rose-600 mx-1" />
+                    <span className="text-[16px] text-rose-600 font-bold">
+                      {Math.abs(trendComparison.percentageChange)}%
+                      <ArrowDownRight className="inline-block  mx-1" />
+                    </span>
                     lower
                   </>
                 ) : (
                   'equal to'
                 )}{' '}
-                than last week ({trendComparison.lastWeekWaste}KG).
+                than last week's.
               </span>
             </div>
           )}
