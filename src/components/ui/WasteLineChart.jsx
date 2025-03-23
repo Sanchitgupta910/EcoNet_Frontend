@@ -275,7 +275,7 @@ export default function WasteLineChart({ branchId }) {
             <div className="flex items-center">
               <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
                 This week, total waste was {trendComparison.thisWeekWaste} KG, which is{' '}
-                {trendComparison.percentageChange}%
+                {Math.abs(trendComparison.percentageChange)}%
                 {trendComparison.trend === 'higher' ? (
                   <>
                     <ArrowUpRight className="inline-block h-4 w-4 text-emerald-600 mx-1" />
@@ -289,7 +289,7 @@ export default function WasteLineChart({ branchId }) {
                 ) : (
                   'equal to'
                 )}{' '}
-                than last week ({trendComparison.lastWeekWaste} KG).
+                than last week ({trendComparison.lastWeekWaste}KG).
               </span>
             </div>
           )}
