@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { clearUser } from '../app/userSlice';
+import { clearUser, setUser as updateUser } from '../app/userSlice';
 import axios from 'axios';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Bell,
@@ -20,34 +21,129 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Button } from '../components/ui/Button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/Tooltip';
 
-/**
- * BinStatusCard - Displays the status of a single bin with a modern, professional design.
- * Uses subtle colors and minimal gradients for a sleek appearance.
- *
- * @param binName - Name of the bin (determines color scheme)
- * @param currentWeight - Current weight in Kgs
- * @param isActive - Whether the bin is active
- * @param binCapacity - Capacity of the bin in liters
- * @param customIcon - Custom icon component (Lucide icon or custom SVG)
- *
- * CUSTOM SVG USAGE:
- * To use a custom SVG icon instead of the default Recycle icon:
- *
- * 1. Import your SVG as a React component:
- *    import { ReactComponent as MyCustomIcon } from './path-to-icon.svg';
- *    OR
- *    import MyCustomIcon from './my-custom-icon';
- *
- * 2. Pass it to the BinStatusCard:
- *    <BinStatusCard
- *      customIcon={<MyCustomIcon className="h-5 w-5 text-white" />}
- *      ...other props
- *    />
- *
- * Note: Make sure your SVG icon has appropriate size (h-5 w-5) and color (text-white)
- */
+/* -------------------------------------------------------------------------
+   DiversionRateCard Component
+   Retrieves and displays today's landfill diversion data.
+------------------------------------------------------------------------- */
+const DiversionRateCard = () => {
+  const [diversionData, setDiversionData] = useState({ diversionPercentage: 0, trendValue: 0 });
+  const [loading, setLoading] = useState(true);
+  const user = useSelector((state) => state.user.user);
+
+  // Determine OrgUnit ID from user state
+  const orgUnitId = user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null;
+
+  const fetchDiversionData = async () => {
+    if (!orgUnitId) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `/api/v1/analytics/adminOverview?filter=today&orgUnitId=${orgUnitId}`,
+        { withCredentials: true },
+      );
+      if (response.data.success) {
+        const { landfillDiversionPercentage, landfillDiversionTrend } = response.data.data;
+        setDiversionData({
+          diversionPercentage: landfillDiversionPercentage || 0,
+          trendValue: landfillDiversionTrend || 0,
+        });
+      }
+    } catch {
+      // Silently fail (or add proper error handling if needed)
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (orgUnitId) {
+      fetchDiversionData();
+    }
+  }, [orgUnitId]);
+
+  return (
+    <Card className="shadow-sm border bg-white flex flex-col h-full">
+      <CardHeader className="pb-2 border-b">
+        <CardTitle className="text-base font-medium text-gray-800">Landfill Diversion</CardTitle>
+        <CardDescription className="text-xs text-gray-500">
+          Waste diverted from landfill (Today)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
+        <div className="relative w-24 h-24 mb-2">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+            <circle
+              className="text-gray-200"
+              strokeWidth="8"
+              stroke="currentColor"
+              fill="transparent"
+              r="40"
+              cx="50"
+              cy="50"
+            />
+            <circle
+              className="text-green-500"
+              strokeWidth="8"
+              strokeDasharray={`${diversionData.diversionPercentage * 2.51} 251`}
+              strokeLinecap="round"
+              stroke="currentColor"
+              fill="transparent"
+              r="40"
+              cx="50"
+              cy="50"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <span className="text-sm font-bold text-gray-800">
+                {loading ? '...' : `${diversionData.diversionPercentage.toFixed(1)}%`}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          className="flex items-center text-xs font-medium"
+          style={{
+            color: loading
+              ? 'gray'
+              : diversionData.trendValue > 0
+              ? 'green'
+              : diversionData.trendValue < 0
+              ? 'red'
+              : 'gray',
+          }}
+        >
+          {loading ? (
+            <span>Loading trend...</span>
+          ) : diversionData.trendValue !== 0 ? (
+            diversionData.trendValue > 0 ? (
+              <span className="flex items-center">
+                <ArrowUpRight className="h-3 w-3 mr-1" /> {diversionData.trendValue.toFixed(2)}%
+                increase from yesterday
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <ArrowDownRight className="h-3 w-3 mr-1" />{' '}
+                {Math.abs(diversionData.trendValue).toFixed(2)}% decrease from yesterday
+              </span>
+            )
+          ) : (
+            <span>No change</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+/* -------------------------------------------------------------------------
+   BinStatusCard Component
+   Displays the status of a bin.
+------------------------------------------------------------------------- */
 const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIcon = null }) => {
-  // Refined color palette with more subtle, professional tones
   const getColors = (name) => {
     if (!name) {
       return {
@@ -59,9 +155,7 @@ const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIc
         muted: 'text-sky-600/70',
       };
     }
-
     const nameLower = name.toLowerCase();
-
     if (nameLower.includes('general') || nameLower.includes('waste')) {
       return {
         border: 'border-rose-200',
@@ -119,35 +213,26 @@ const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIc
     }
   };
 
-  // Use binName for the color lookup
   const colors = getColors(binName);
-
-  // Default icon if no customIcon is provided
   const defaultIcon = <Recycle className="h-5 w-5 text-white" />;
-
   return (
     <Card
       className={`overflow-hidden ${colors.bg} ${colors.border} border shadow-sm hover:shadow-md transition-shadow duration-200`}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
-          {/* Bin name with active indicator */}
           <div className="flex items-center">
             <h3 className={`text-base font-medium ${colors.text}`}>{binName}</h3>
             {isActive && (
               <div className="ml-2 h-2 w-2 bg-green-500 rounded-full shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-pulse"></div>
             )}
           </div>
-
-          {/* Icon */}
           <div
             className={`h-8 w-8 ${colors.accent} rounded-md flex items-center justify-center shadow-sm`}
           >
             {customIcon || defaultIcon}
           </div>
         </div>
-
-        {/* Combined info in a more compact layout */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <div className={`w-0.5 h-6 rounded-full ${colors.accent} mr-2`}></div>
@@ -157,8 +242,6 @@ const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIc
             </div>
           </div>
         </div>
-
-        {/* Weight display - more sleek and compact */}
         <div className={`p-3 ${colors.indicator} rounded-md mt-1`}>
           <div className="flex items-baseline justify-between">
             <p className={`text-xs ${colors.muted}`}>Current Weight</p>
@@ -174,10 +257,11 @@ const BinStatusCard = ({ binName, currentWeight, isActive, binCapacity, customIc
     </Card>
   );
 };
-/**
- * LineChart - Displays a multi-line chart for bin weights over time.
- * Replaced fixed heights with flex-based classes so it expands dynamically.
- */
+
+/* -------------------------------------------------------------------------
+   LineChart Component
+   Displays waste trend data.
+------------------------------------------------------------------------- */
 const LineChart = ({ data, bins }) => {
   if (!data || data.length === 0 || !bins || bins.length === 0) {
     return (
@@ -195,7 +279,6 @@ const LineChart = ({ data, bins }) => {
       </Card>
     );
   }
-
   return (
     <Card className="shadow-sm border border-gray-100/50 backdrop-blur-sm bg-white/80 flex flex-col h-full">
       <CardHeader className="pb-2 border-b border-gray-100/50">
@@ -216,132 +299,10 @@ const LineChart = ({ data, bins }) => {
   );
 };
 
-const DiversionRateCard = () => {
-  // State for diversion data and loading flag
-  const [diversionData, setDiversionData] = useState({
-    diversionPercentage: 0,
-    trendValue: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  // Get user data from Redux (expects branch OrgUnit to be in user.OrgUnit)
-  const user = useSelector((state) => state.user.user);
-
-  const fetchDiversionData = async () => {
-    const orgUnitId = user?.OrgUnit?._id;
-    if (!orgUnitId) {
-      console.error('OrgUnit ID is missing from user data.');
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      // Use the adminOverview endpoint with filter=today and orgUnitId to fetch today's overview data.
-      const response = await axios.get(
-        `/api/v1/analytics/adminOverview?filter=today&orgUnitId=${orgUnitId}`,
-        {
-          withCredentials: true,
-        },
-      );
-      if (response.data.success) {
-        const { landfillDiversionPercentage, landfillDiversionTrend } = response.data.data;
-        setDiversionData({
-          diversionPercentage: landfillDiversionPercentage || 0,
-          trendValue: landfillDiversionTrend || 0,
-        });
-      } else {
-        console.error('Error fetching diversion data:', response.data.message);
-      }
-    } catch (error) {
-      console.error('Fetch diversion data error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDiversionData();
-  }, [user]);
-
-  return (
-    <Card className="shadow-sm border bg-white flex flex-col h-full">
-      <CardHeader className="pb-2 border-b">
-        <CardTitle className="text-base font-medium text-gray-800">Landfill Diversion</CardTitle>
-        <CardDescription className="text-xs text-gray-500">
-          Waste diverted from landfill (Today)
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
-        <div className="relative w-24 h-24 mb-2">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            {/* Background circle */}
-            <circle
-              className="text-gray-200"
-              strokeWidth="8"
-              stroke="currentColor"
-              fill="transparent"
-              r="40"
-              cx="50"
-              cy="50"
-            />
-            {/* Data circle with dynamic strokeDasharray based on diversionPercentage */}
-            <circle
-              className="text-green-500"
-              strokeWidth="8"
-              strokeDasharray={`${diversionData.diversionPercentage * 2.51} 251`}
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="transparent"
-              r="40"
-              cx="50"
-              cy="50"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <span className="text-sm font-bold text-gray-800">
-                {loading ? '...' : `${diversionData.diversionPercentage.toFixed(1)}%`}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          className="flex items-center text-xs font-medium"
-          style={{
-            color: loading
-              ? 'gray'
-              : diversionData.trendValue > 0
-              ? 'green'
-              : diversionData.trendValue < 0
-              ? 'red'
-              : 'gray',
-          }}
-        >
-          {loading ? (
-            <span>Loading trend...</span>
-          ) : diversionData.trendValue !== 0 ? (
-            diversionData.trendValue > 0 ? (
-              <span className="flex items-center">
-                <ArrowUpRight className="h-3 w-3 mr-1" /> {diversionData.trendValue.toFixed(2)}%
-                increase from yesterday
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <ArrowDownRight className="h-3 w-3 mr-1" />{' '}
-                {Math.abs(diversionData.trendValue).toFixed(2)}% decrease from yesterday
-              </span>
-            )
-          ) : (
-            <span>No change</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-/**
- * BranchContributionCard - Displays the branch's contribution percentage.
- */
+/* -------------------------------------------------------------------------
+   BranchContributionCard Component
+   Displays the branch's contribution percentage.
+------------------------------------------------------------------------- */
 const BranchContributionCard = ({ percentage, branchName }) => {
   return (
     <Card className="shadow-sm border border-gray-100/50 backdrop-blur-sm bg-white/80 flex flex-col h-full">
@@ -387,22 +348,20 @@ const BranchContributionCard = ({ percentage, branchName }) => {
   );
 };
 
-/**
- * TipsCarousel - Compact carousel for waste management tips.
- * Auto-plays every 3 seconds while allowing manual scrolling.
- */
+/* -------------------------------------------------------------------------
+   TipsCarousel Component
+   Displays a carousel of tip images.
+------------------------------------------------------------------------- */
 const TipsCarousel = () => {
+  // Note: It's best to import assets so that the bundler resolves the paths.
   const slides = ['../src/assets/Tip1.png', '../src/assets/Tip2.png', '../src/assets/Tip3.png'];
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Auto-play effect: change slide every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length);
     }, 3000);
     return () => clearInterval(interval);
   }, [slides.length]);
-
   return (
     <Card className="shadow-sm border border-gray-100/50 backdrop-blur-sm bg-white/80 flex flex-col h-full rounded-lg overflow-hidden">
       <CardContent className="flex-1 p-0">
@@ -430,12 +389,22 @@ const TipsCarousel = () => {
   );
 };
 
-/**
- * EmployeeBinDisplayDashboard - Main dashboard component.
- * The grid layout for bin cards is dynamic and will adjust if the number of bins changes.
- */
+/* -------------------------------------------------------------------------
+   EmployeeBinDisplayDashboard Component
+   Main dashboard for displaying bin and analytics data.
+------------------------------------------------------------------------- */
 export default function EmployeeBinDisplayDashboard() {
-  const user = useSelector((state) => state.user.user);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromAdmin = location.state?.fromAdmin || false;
+  const selectedOffice = location.state?.office;
+  const storedUser = useSelector((state) => state.user.user);
+  const dispatch = useDispatch();
+
+  // Local state for user; using setUserState avoids conflict with updateUser.
+  const [user, setUserState] = useState(storedUser);
+  const [officeFromAdmin] = useState(selectedOffice || null);
+  const [orgUnitOverrideDone, setOrgUnitOverrideDone] = useState(false);
   const [binStatus, setBinStatus] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [branchContribution, setBranchContribution] = useState(0);
@@ -443,16 +412,65 @@ export default function EmployeeBinDisplayDashboard() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [nextUpdate, setNextUpdate] = useState(new Date(Date.now() + 3600000));
   const [isLoading, setIsLoading] = useState(true);
-  const dispatch = useDispatch();
+  const prevBinStatusRef = useRef([]);
 
-  const fetchBinStatus = useCallback(async () => {
-    const branchId = user?.OrgUnit?.branchAddress?._id;
-    if (!branchId) {
-      console.error('Branch ID is missing from the user data.');
-      return;
+  // OrgUnit override effect: when navigating from Admin, update user.OrgUnit (and company if provided)
+  useEffect(() => {
+    if (fromAdmin && officeFromAdmin && user && !orgUnitOverrideDone) {
+      const normalizedOffice = { ...officeFromAdmin, branchAddress: officeFromAdmin };
+      let updatedUser = { ...user, OrgUnit: normalizedOffice };
+      dispatch(updateUser(updatedUser));
+      setUserState(updatedUser);
+      const companyFromNav = location.state?.company;
+      if (companyFromNav && typeof companyFromNav === 'object') {
+        updatedUser = { ...updatedUser, company: companyFromNav };
+        dispatch(updateUser(updatedUser));
+        setUserState(updatedUser);
+        setOrgUnitOverrideDone(true);
+      } else {
+        const fetchCompany = async () => {
+          try {
+            const { data } = await axios.get(
+              `/api/v1/company/${officeFromAdmin.associatedCompany}`,
+              { withCredentials: true },
+            );
+            if (data.success && data.data) {
+              updatedUser = { ...updatedUser, company: data.data };
+            }
+          } catch {
+            // Fallback: use existing company data
+          } finally {
+            dispatch(updateUser(updatedUser));
+            setUserState(updatedUser);
+            setOrgUnitOverrideDone(true);
+          }
+        };
+        fetchCompany();
+      }
     }
+  }, [fromAdmin, officeFromAdmin, user, orgUnitOverrideDone, dispatch, location.state]);
+
+  // Helper to check deep equality of bin arrays.
+  const areBinsEqual = (bins1, bins2) => {
+    if (bins1.length !== bins2.length) return false;
+    for (let i = 0; i < bins1.length; i++) {
+      if (bins1[i]._id !== bins2[i]._id || bins1[i].currentWeight !== bins2[i].currentWeight) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Compute branchId once using useMemo.
+  const branchId = useMemo(
+    () => user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null,
+    [user],
+  );
+
+  // Fetch bin status for the branch.
+  const fetchBinStatus = useCallback(async () => {
+    if (!branchId) return;
     try {
-      setIsLoading(true);
       const response = await axios.get(`/api/v1/analytics/binStatus?branchId=${branchId}`, {
         withCredentials: true,
       });
@@ -463,9 +481,7 @@ export default function EmployeeBinDisplayDashboard() {
             try {
               const latestResponse = await axios.get(
                 `/api/v1/analytics/latestBinWeight?binId=${bin._id}`,
-                {
-                  withCredentials: true,
-                },
+                { withCredentials: true },
               );
               if (latestResponse.data.success && latestResponse.data.data) {
                 return {
@@ -475,28 +491,24 @@ export default function EmployeeBinDisplayDashboard() {
                 };
               }
               return { ...bin, binCapacity: bin.binCapacity || 20 };
-            } catch (err) {
-              console.error(`Error fetching latest weight for bin ${bin._id}:`, err);
+            } catch {
               return { ...bin, binCapacity: bin.binCapacity || 20 };
             }
           }),
         );
-        setBinStatus(updatedBins);
+        if (!areBinsEqual(prevBinStatusRef.current, updatedBins)) {
+          prevBinStatusRef.current = updatedBins;
+          setBinStatus(updatedBins);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching bin status:', error);
-      // Removed dummy data fallback
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // Silent error handling
     }
-  }, [user]);
+  }, [branchId]);
 
+  // Fetch minimal overview for the branch.
   const fetchMinimalOverview = useCallback(async () => {
-    const branchId = user?.OrgUnit?.branchAddress?._id;
-    if (!branchId) {
-      console.error('Branch ID is missing from the user data.');
-      return;
-    }
+    if (!branchId) return;
     try {
       const response = await axios.get(`/api/v1/analytics/minimalOverview?branchId=${branchId}`, {
         withCredentials: true,
@@ -508,8 +520,8 @@ export default function EmployeeBinDisplayDashboard() {
           setDiversionRate(response.data.data.diversionRate);
         }
       }
-    } catch (error) {
-      console.error('Error fetching minimal overview:', error);
+    } catch {
+      // Use default fallback values
       setTrendData([
         { hour: '00:00', weight: 2.1 },
         { hour: '01:00', weight: 1.5 },
@@ -517,38 +529,60 @@ export default function EmployeeBinDisplayDashboard() {
       ]);
       setBranchContribution(23);
     }
-  }, [user]);
+  }, [branchId]);
 
+  // Combined effect for periodic fetches.
+  useEffect(() => {
+    if (branchId) {
+      Promise.all([fetchBinStatus(), fetchMinimalOverview()]).finally(() => setIsLoading(false));
+    }
+    const interval = setInterval(() => {
+      if (branchId) {
+        fetchBinStatus();
+        fetchMinimalOverview();
+        setLastUpdate(new Date());
+        setNextUpdate(new Date(Date.now() + 3600000));
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [fetchBinStatus, fetchMinimalOverview, branchId]);
+
+  // Logout handler.
   const handleLogout = async () => {
     try {
       const response = await axios.post('/api/v1/users/logout', {}, { withCredentials: true });
       if (response.data.success) {
         dispatch(clearUser());
-        // sessionStorage.clear();
-
         window.location.href = '/login';
       }
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
+      // Silent error handling
     }
   };
 
-  useEffect(() => {
-    fetchBinStatus();
-    fetchMinimalOverview();
-    const intervalId = setInterval(() => {
-      fetchBinStatus();
-      fetchMinimalOverview();
-      setLastUpdate(new Date());
-      setNextUpdate(new Date(Date.now() + 3600000));
-    }, 3600000);
-    return () => clearInterval(intervalId);
-  }, [fetchBinStatus, fetchMinimalOverview]);
+  // Render back button if navigated from Admin.
+  const renderBackButton = () => {
+    if (location.state?.fromAdmin) {
+      return (
+        <div className="p-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            ← Back to Admin Dashboard
+          </Button>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
+  // Header details.
+  const branchAddress = user?.OrgUnit?.branchAddress || user?.OrgUnit || {};
+  const companyName = user?.company?.CompanyName || 'Company Name';
+
+  // Determine grid columns for bin cards.
   const getGridCols = (binCount) => {
     if (binCount <= 2) return 'grid-cols-1 md:grid-cols-2';
     if (binCount === 3) return 'grid-cols-1 md:grid-cols-3';
@@ -564,41 +598,47 @@ export default function EmployeeBinDisplayDashboard() {
           <div className="flex items-center">
             <img src={user.company?.logo || NetNada_logo} alt="Company Logo" className="h-8" />
             <div className="ml-3 border-l border-gray-200 pl-3">
-              <h1 className="text-sm font-medium text-gray-800">
-                {user.company?.CompanyName || 'Company Name'}
-              </h1>
+              <h1 className="text-sm font-medium text-gray-800">{companyName}</h1>
               <p className="text-xs text-gray-500">
-                {user?.OrgUnit?.branchAddress?.address || 'Branch Address'},{' '}
-                {user?.OrgUnit?.branchAddress?.city}, {user?.OrgUnit?.branchAddress?.country}
+                {branchAddress.address || 'Branch Address'}, {branchAddress.city || ''},{' '}
+                {branchAddress.country || ''}
               </p>
             </div>
           </div>
+          {/* Show extra header items only if not navigated from Admin */}
           <div className="flex items-center space-x-2">
-            <div className="flex items-center text-xs text-gray-500 mr-2">
-              <RefreshCw className="h-3 w-3 mr-1" />
-              <span>Updated: {format(lastUpdate, 'h:mm a')}</span>
-            </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Bell className="h-4 w-4 text-gray-600" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Notifications</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleLogout}>
-              <LogOut className="h-3 w-3 mr-1" />
-              Logout
-            </Button>
+            {fromAdmin ? (
+              renderBackButton()
+            ) : (
+              <>
+                <div className="flex items-center text-xs text-gray-500 mr-2">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  <span>Updated: {format(lastUpdate, 'h:mm a')}</span>
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Bell className="h-4 w-4 text-gray-600" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Notifications</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {renderBackButton()}
+                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleLogout}>
+                  <LogOut className="h-3 w-3 mr-1" />
+                  Logout
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main content centered vertically */}
+      {/* Main Content */}
       <main className="flex-1 container mx-auto p-4 flex flex-col space-y-4 justify-center md:overflow-hidden overflow-auto">
-        {/* First Row: Bin Status Cards */}
+        {/* Bin Status Cards */}
         {isLoading ? (
           <div className="flex justify-center items-center h-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -611,24 +651,27 @@ export default function EmployeeBinDisplayDashboard() {
                 binName={bin.binName}
                 currentWeight={bin.currentWeight}
                 isActive={bin.isActive}
-                binType={bin.binType}
                 binCapacity={bin.binCapacity}
               />
             ))}
           </div>
         )}
 
-        {/* Mid Row: Full-width Line Chart with dynamic height */}
+        {/* Waste Trend Chart */}
         <div className="h-[300px] md:h-[calc(38vh)]">
-          <WasteLineChart branchId={user?.OrgUnit?.branchAddress?._id} />
+          <WasteLineChart
+            branchId={user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null}
+          />
         </div>
 
-        {/* Last Row: Three Columns with fixed height and bottom margin */}
+        {/* Diversion, Branch Contribution, and Tips */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-auto md:h-[220px] mb-4">
           <DiversionRateCard rate={diversionRate} />
           <BranchContributionCard
             percentage={branchContribution}
-            branchName={user?.OrgUnit?.branchAddress?.officeName || 'Your Branch'}
+            branchName={
+              user?.OrgUnit?.branchAddress?.officeName || user?.OrgUnit?.officeName || 'Your Branch'
+            }
           />
           <TipsCarousel />
         </div>
