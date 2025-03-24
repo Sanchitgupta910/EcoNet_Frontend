@@ -1131,7 +1131,7 @@ export default function AdminDashboard() {
                       Top 3 Leaderboard
                     </h3>
                   </div>
-                  <p className="mb-6 text-xs text-gray-500">
+                  <p className="mb-4 text-xs text-gray-500">
                     {leaderboardPeriod ? `${leaderboardPeriod} Leaderboard` : 'Leaderboard'}
                   </p>
 
@@ -1233,7 +1233,7 @@ export default function AdminDashboard() {
                                   theme === 'dark' ? 'text-white' : 'text-slate-800'
                                 }`}
                               >
-                                {item.branchName || item.companyName}
+                                {item.name || item.name}
                               </td>
                               <td className="py-3 px-4 text-emerald-500 font-medium">
                                 {item.diversionPercentage
@@ -1290,7 +1290,7 @@ export default function AdminDashboard() {
                   : 'backdrop-blur-md bg-white border-slate-200/70'
               }`}
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-2">
                 <h3
                   className={`text-xl font-semibold ${
                     theme === 'dark' ? 'text-white' : 'text-slate-800'
@@ -1298,15 +1298,11 @@ export default function AdminDashboard() {
                 >
                   {userRole === 'SuperAdmin' ? 'Leaderboard' : 'Office Leaderboard'}
                 </h3>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
-                    <Filter size={18} />
-                  </button>
-                  <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
-                    <Award size={18} />
-                  </button>
-                </div>
               </div>
+              <p className="mb-4 text-xs text-gray-500">
+                {leaderboardPeriod ? `${leaderboardPeriod} Leaderboard` : 'Leaderboard'}
+              </p>
+
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -1405,7 +1401,7 @@ export default function AdminDashboard() {
                               theme === 'dark' ? 'text-white' : 'text-slate-800'
                             }`}
                           >
-                            {item.branchName || item.companyName}
+                            {item.name || item.name}
                           </td>
                           <td className="py-3 px-4 text-emerald-500 font-medium">
                             {item.diversionPercentage
