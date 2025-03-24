@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   LayoutGrid,
   ChevronDown,
@@ -10,52 +10,55 @@ import {
   Recycle,
   Award,
   Activity,
-  Tv,
+  ShuffleIcon,
   Building,
   MapPin,
   Filter,
-  Users,
-  ArrowUp,
-  ArrowDown,
+  TvMinimalIcon,
+  ArrowUpRight,
+  ArrowDownRight,
   ChevronLeft,
   ChevronRight,
+  GitBranchIcon,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/components/ui/theme-provider';
 import { createPortal } from 'react-dom';
+import AdminWasteLineChart from '@/components/ui/WasteLineChartAdmin';
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
-
+  const navigate = useNavigate();
+  // Get user role from session storage.
   const [userRole] = useState(sessionStorage.getItem('userRole') || 'SuperAdmin');
+  // Tabs state.
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedCompany, setSelectedCompany] = useState(null);
-  const [selectedOrgUnit, setSelectedOrgUnit] = useState(null);
-  const [dateFilter, setDateFilter] = useState('today');
-
+  // Filter sections state.
   const [isDropdownOpen, setIsDropdownOpen] = useState({
     date: false,
     company: false,
     orgUnit: false,
   });
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedOrgUnit, setSelectedOrgUnit] = useState(null);
+  const [dateFilter, setDateFilter] = useState('today');
+
+  // Data counts and overview.
+  const [officesCount, setOfficesCount] = useState(0);
   const [overviewData, setOverviewData] = useState(null);
   const [trendData, setTrendData] = useState([]);
   const [activityFeed, setActivityFeed] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState('');
   const [officesData, setOfficesData] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [orgUnits, setOrgUnits] = useState([]);
 
+  const [recyclingOverview, setRecyclingOverview] = useState(null);
+  const [loadingRecycling, setLoadingRecycling] = useState(true);
+
+  // Loading and error states.
   const [loading, setLoading] = useState({
     overview: true,
     trend: true,
@@ -75,11 +78,22 @@ export default function AdminDashboard() {
     orgUnits: null,
   });
 
+  // Dropdown references.
   const dateButtonRef = useRef(null);
   const companyButtonRef = useRef(null);
   const orgUnitButtonRef = useRef(null);
   const [portalContainer, setPortalContainer] = useState(null);
 
+  // Sort offices by name (case-insensitive)
+  const sortedOfficesData = useMemo(() => {
+    return officesData.slice().sort((a, b) => {
+      const nameA = (a.officeName || a.name || '').toLowerCase();
+      const nameB = (b.officeName || b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [officesData]);
+
+  // Create a portal container for dropdowns.
   useEffect(() => {
     const portalDiv = document.createElement('div');
     portalDiv.style.position = 'absolute';
@@ -92,6 +106,41 @@ export default function AdminDashboard() {
     return () => document.body.removeChild(portalDiv);
   }, []);
 
+  // ---------------------------
+  // Helper Functions
+  // ---------------------------
+  const fetchOfficesCount = async () => {
+    try {
+      // Construct the API URL based on selected filters.
+      let url = '/api/v1/analytics/offices';
+      const params = [];
+      // If an OrgUnit is selected, use its ID.
+      if (selectedOrgUnit) {
+        const orgUnitId = selectedOrgUnit._id || selectedOrgUnit.id;
+        if (orgUnitId) {
+          params.push(`orgUnitId=${orgUnitId}`);
+        }
+      }
+      // Otherwise, if a company is selected, use its ID.
+      else if (selectedCompany) {
+        params.push(`companyId=${selectedCompany._id}`);
+      }
+      // Append query parameters if any.
+      if (params.length) {
+        url += '?' + params.join('&');
+      }
+      // Make the API request.
+      const response = await axios.get(url, { withCredentials: true });
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setOfficesCount(response.data.data.length);
+      } else {
+        console.error('Error fetching offices count:', response.data.message);
+      }
+    } catch (err) {
+      console.error('Fetch offices count error:', err);
+    }
+  };
+
   const getDropdownPosition = (buttonRef) => {
     if (!buttonRef.current) return { top: 0, left: 0, width: 0 };
     const rect = buttonRef.current.getBoundingClientRect();
@@ -103,54 +152,43 @@ export default function AdminDashboard() {
   };
 
   // ---------------------------
-  // API CALLS WITH DEBUG LOGGING
+  // API Request Functions (Defined Outside useEffect)
   // ---------------------------
   const fetchCompanies = async () => {
     try {
-      console.log('Fetching companies...');
       setLoading((prev) => ({ ...prev, companies: true }));
       const response = await axios.get('/api/v1/company/getCompany', { withCredentials: true });
-      console.log('Companies response:', response.data);
       if (response.data.success) {
         setCompanies(response.data.data);
       } else {
-        console.error('Error fetching companies:', response.data.message);
         setError((prev) => ({ ...prev, companies: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch companies error:', err);
       setError((prev) => ({ ...prev, companies: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, companies: false }));
     }
   };
 
-  // Fetch grouped OrgUnits using new endpoint.
   const fetchOrgUnits = async (companyId) => {
     try {
-      console.log('Fetching grouped OrgUnits for companyId:', companyId);
       setLoading((prev) => ({ ...prev, orgUnits: true }));
       const response = await axios.get(`/api/v1/orgUnits/grouped?companyId=${companyId}`, {
         withCredentials: true,
       });
-      console.log('Grouped OrgUnits response:', response.data);
       if (response.data.success) {
         const flatUnits = response.data.data.reduce((acc, group) => acc.concat(group.units), []);
-        console.log('Flattened OrgUnits:', flatUnits);
         setOrgUnits(flatUnits);
       } else {
-        console.error('Error fetching OrgUnits:', response.data.message);
         setError((prev) => ({ ...prev, orgUnits: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch OrgUnits error:', err);
       setError((prev) => ({ ...prev, orgUnits: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, orgUnits: false }));
     }
   };
 
-  // Helper: recursively get descendant Branch OrgUnits.
   const getDescendantBranchUnits = (selectedUnit, allUnits) => {
     const children = allUnits.filter((unit) => String(unit.parent) === String(selectedUnit._id));
     let branchUnits = [];
@@ -164,7 +202,6 @@ export default function AdminDashboard() {
     return branchUnits;
   };
 
-  // Helper: get branch IDs from the selected OrgUnit.
   const getBranchIds = (selectedOrgUnit, allUnits) => {
     if (!selectedOrgUnit) return [];
     if (selectedOrgUnit.type === 'Branch') {
@@ -185,13 +222,11 @@ export default function AdminDashboard() {
         return null;
       })
       .filter(Boolean);
-    console.log('Extracted branch IDs from OrgUnit:', ids);
     return ids;
   };
 
   const fetchOverviewData = async () => {
     try {
-      console.log('Fetching overview data...');
       setLoading((prev) => ({ ...prev, overview: true }));
       let url = '/api/v1/analytics/adminOverview';
       const params = [];
@@ -199,17 +234,13 @@ export default function AdminDashboard() {
       if (selectedOrgUnit) params.push(`orgUnitId=${selectedOrgUnit._id}`);
       params.push(`filter=${dateFilter}`);
       if (params.length) url += '?' + params.join('&');
-      console.log('Overview URL:', url);
       const response = await axios.get(url, { withCredentials: true });
-      console.log('Overview response:', response.data);
       if (response.data.success) {
         setOverviewData(response.data.data);
       } else {
-        console.error('Overview error:', response.data.message);
         setError((prev) => ({ ...prev, overview: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch overview error:', err);
       setError((prev) => ({ ...prev, overview: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, overview: false }));
@@ -217,8 +248,8 @@ export default function AdminDashboard() {
   };
 
   const fetchTrendData = async () => {
-    const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
     let url = '';
+    const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
     if (branchIds.length > 0) {
       url = `/api/v1/analytics/wasteTrendChart?branchId=${branchIds.join(
         ',',
@@ -226,25 +257,46 @@ export default function AdminDashboard() {
     } else if (selectedCompany) {
       url = `/api/v1/analytics/wasteTrendChart?companyId=${selectedCompany._id}&days=7&filter=${dateFilter}`;
     } else {
-      console.warn('No valid branchIds or companyId available for fetchTrendData');
-      return;
+      url = `/api/v1/analytics/wasteTrendChart?companyId=all&days=7&filter=${dateFilter}`;
     }
-    console.log('Fetching trend data from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, trend: true }));
       const response = await axios.get(url, { withCredentials: true });
-      console.log('Trend data response:', response.data);
       if (response.data.success) {
         setTrendData(response.data.data);
       } else {
-        console.error('Trend data error:', response.data.message);
         setError((prev) => ({ ...prev, trend: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch trend data error:', err);
       setError((prev) => ({ ...prev, trend: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, trend: false }));
+    }
+  };
+
+  const fetchRecyclingOverview = async () => {
+    try {
+      setLoadingRecycling(true);
+      const params = new URLSearchParams();
+      params.append('filter', dateFilter);
+      if (selectedCompany) {
+        params.append('companyId', selectedCompany._id);
+      }
+      if (selectedOrgUnit) {
+        params.append('orgUnitId', selectedOrgUnit._id);
+      }
+      const response = await axios.get(`/api/v1/analytics/recyclingOverview?${params.toString()}`, {
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setRecyclingOverview(response.data.data);
+      } else {
+        console.error('Recycling overview error:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching recycling overview:', error);
+    } finally {
+      setLoadingRecycling(false);
     }
   };
 
@@ -256,22 +308,18 @@ export default function AdminDashboard() {
     } else if (selectedCompany) {
       url = `/api/v1/analytics/activityFeed?companyId=${selectedCompany._id}`;
     } else {
-      console.warn('No valid branchIds or companyId available for fetchActivityFeed');
+      console.warn('No valid branchIds or companyId available for activity feed');
       return;
     }
-    console.log('Fetching activity feed from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, activity: true }));
       const response = await axios.get(url, { withCredentials: true });
-      console.log('Activity feed response:', response.data);
       if (response.data.success) {
         setActivityFeed(response.data.data);
       } else {
-        console.error('Activity feed error:', response.data.message);
         setError((prev) => ({ ...prev, activity: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch activity feed error:', err);
       setError((prev) => ({ ...prev, activity: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, activity: false }));
@@ -279,33 +327,22 @@ export default function AdminDashboard() {
   };
 
   const fetchLeaderboardData = async () => {
-    let url = '';
-    if (userRole === 'SuperAdmin') {
-      url = selectedCompany
-        ? `/api/v1/analytics/adminLeaderboard?companyId=${selectedCompany._id}`
-        : `/api/v1/analytics/adminLeaderboard?companyId=all`;
-    } else {
-      const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
-      if (branchIds.length > 0) {
-        url = `/api/v1/analytics/adminLeaderboard?branchId=${branchIds.join(',')}`;
-      } else {
-        console.warn('No valid branchIds available for fetchLeaderboardData');
-        return;
-      }
+    let url = '/api/v1/analytics/leaderboard';
+    // When a company filter is applied, pass companyId to get branch-level leaderboard.
+    if (userRole === 'SuperAdmin' && selectedCompany) {
+      url += `?companyId=${selectedCompany._id}`;
     }
-    console.log('Fetching leaderboard data from URL:', url);
     try {
       setLoading((prev) => ({ ...prev, leaderboard: true }));
       const response = await axios.get(url, { withCredentials: true });
-      console.log('Leaderboard response:', response.data);
       if (response.data.success) {
-        setLeaderboardData(response.data.data);
+        // The response contains an object with "leaderboard" and "period"
+        setLeaderboardData(response.data.data.leaderboard);
+        setLeaderboardPeriod(response.data.data.period);
       } else {
-        console.error('Leaderboard error:', response.data.message);
         setError((prev) => ({ ...prev, leaderboard: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch leaderboard error:', err);
       setError((prev) => ({ ...prev, leaderboard: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, leaderboard: false }));
@@ -321,79 +358,87 @@ export default function AdminDashboard() {
         const orgUnitId = selectedOrgUnit._id || selectedOrgUnit.id;
         if (orgUnitId) {
           params.push(`orgUnitId=${orgUnitId}`);
-        } else {
-          console.warn('selectedOrgUnit does not have _id or id:', selectedOrgUnit);
         }
       } else if (selectedCompany) {
         params.push(`companyId=${selectedCompany._id}`);
       }
-      if (params.length) {
-        url += '?' + params.join('&');
-      }
+      if (params.length) url += '?' + params.join('&');
       const response = await axios.get(url, { withCredentials: true });
       if (response.data.success) {
         setOfficesData(response.data.data);
       } else {
-        console.error('Offices error:', response.data.message);
         setError((prev) => ({ ...prev, offices: response.data.message }));
       }
     } catch (err) {
-      console.error('Fetch offices error:', err);
       setError((prev) => ({ ...prev, offices: err.message }));
     } finally {
       setLoading((prev) => ({ ...prev, offices: false }));
     }
   };
 
+  // ---------------------------
+  // Combined useEffect for fetching data on filter changes
+  // ---------------------------
   useEffect(() => {
-    if (userRole === 'SuperAdmin') fetchCompanies();
+    if (userRole === 'SuperAdmin') {
+      fetchCompanies();
+    }
   }, [userRole]);
 
   useEffect(() => {
-    if (selectedCompany) fetchOrgUnits(selectedCompany._id);
+    if (selectedCompany) {
+      fetchOrgUnits(selectedCompany._id);
+    }
   }, [selectedCompany]);
+  useEffect(() => {
+    fetchOfficesCount();
+  }, [selectedCompany, selectedOrgUnit]);
 
   useEffect(() => {
+    // When any filter changes, fetch all analytics data
     fetchOverviewData();
     fetchTrendData();
+    fetchRecyclingOverview();
     fetchActivityFeed();
     fetchLeaderboardData();
     fetchOfficesData();
   }, [selectedCompany, selectedOrgUnit, dateFilter]);
 
+  // ---------------------------
+  // Dropdown toggle and selection handlers
+  // ---------------------------
   const toggleDropdown = (dropdown) => {
-    // Only allow toggling if activeTab is 'dashboard' for date and org unit filters
-    if (dropdown === 'date' || dropdown === 'orgUnit') {
-      if (activeTab !== 'dashboard') return;
-    }
+    if ((dropdown === 'date' || dropdown === 'orgUnit') && activeTab !== 'dashboard') return;
     setIsDropdownOpen((prev) => ({ ...prev, [dropdown]: !prev[dropdown] }));
   };
 
   const handleCompanySelect = (company) => {
-    console.log('Company selected:', company);
     setSelectedCompany(company);
     setSelectedOrgUnit(null);
     setIsDropdownOpen((prev) => ({ ...prev, company: false }));
-    if (company && company._id) fetchOrgUnits(company._id);
+    if (company && company._id) {
+      fetchOrgUnits(company._id);
+    }
   };
 
   const handleOrgUnitSelect = (orgUnit) => {
-    console.log('OrgUnit selected:', orgUnit);
     setSelectedOrgUnit(orgUnit);
     setIsDropdownOpen((prev) => ({ ...prev, orgUnit: false }));
   };
 
   const handleDateFilterChange = (filter) => {
-    console.log('Date filter changed to:', filter);
     setDateFilter(filter);
     setIsDropdownOpen((prev) => ({ ...prev, date: false }));
   };
 
+  // ---------------------------
+  // Render UI
+  // ---------------------------
   return (
     <div
-      className={`min-h-screen ${
+      className={`${
         theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'
-      }`}
+      } min-h-screen`}
     >
       <div className="container mx-auto px-4 py-6">
         {/* Tabs and Filters */}
@@ -444,7 +489,7 @@ export default function AdminDashboard() {
             </button>
           </div>
           <div className="flex flex-wrap gap-3">
-            {/* Date Filter - Always visible but disabled if not on dashboard */}
+            {/* Date Filter */}
             <div className="relative">
               <button
                 ref={dateButtonRef}
@@ -520,7 +565,7 @@ export default function AdminDashboard() {
                   portalContainer,
                 )}
             </div>
-            {/* Company Dropdown: Always active */}
+            {/* Company Dropdown */}
             {userRole === 'SuperAdmin' && (
               <div className="relative">
                 <button
@@ -583,7 +628,7 @@ export default function AdminDashboard() {
                   )}
               </div>
             )}
-            {/* OrgUnit Dropdown - Always visible but disabled if not on dashboard or if company not selected */}
+            {/* OrgUnit Dropdown */}
             <div className="relative">
               <button
                 ref={orgUnitButtonRef}
@@ -601,7 +646,7 @@ export default function AdminDashboard() {
                     : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
                 } ${activeTab !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Users size={16} />
+                <GitBranchIcon size={16} />
                 <span>{selectedOrgUnit ? selectedOrgUnit.name : 'All Organization Units'}</span>
                 <ChevronDown size={16} />
               </button>
@@ -656,12 +701,13 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
         {/* Dashboard Content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           {activeTab === 'dashboard' && (
             <>
               {/* Analytics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 {/* Total Bins Card */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg transition-all group ${
@@ -684,8 +730,24 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-white' : 'text-slate-800'
                         }`}
                       >
-                        {overviewData ? overviewData.totalBins : '...'}
+                        {overviewData && overviewData.totalBins !== undefined
+                          ? overviewData.totalBins
+                          : 'No data found'}
                       </h3>
+                      <p
+                        className={`text-sm text-gray-500 mt-5  ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Configured across
+                        <span className="font-bold">
+                          {' '}
+                          {overviewData && overviewData.totalBins !== undefined
+                            ? ` ${officesCount}`
+                            : ''}
+                        </span>{' '}
+                        offices
+                      </p>
                     </div>
                     <div
                       className={`p-3 rounded-lg transition-colors ${
@@ -720,9 +782,78 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-white' : 'text-slate-800'
                         }`}
                       >
-                        {overviewData
+                        {overviewData && overviewData.landfillDiversionPercentage !== undefined
                           ? Number(overviewData.landfillDiversionPercentage).toFixed(2)
-                          : '...'}
+                          : 'No data found'}
+                        <span className="text-sm">%</span>
+                      </h3>
+                    </div>
+                    <div
+                      className={`p-3 rounded-lg transition-colors ${
+                        theme === 'dark'
+                          ? 'bg-lime-500/20 text-lime-400'
+                          : 'bg-lime-100 text-lime-600'
+                      }`}
+                    >
+                      <ShuffleIcon size={24} />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center text-sm">
+                    {overviewData && overviewData.landfillDiversionTrend != null ? (
+                      overviewData.landfillDiversionTrend >= 0 ? (
+                        <span className="text-emerald-500 flex items-center font-bold">
+                          <ArrowUpRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
+                          {overviewData.landfillDiversionTrend}%
+                        </span>
+                      ) : (
+                        <span className="text-red-500 flex items-center font-bold">
+                          <ArrowDownRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
+                          {Math.abs(overviewData.landfillDiversionTrend)}%
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-gray-500">No data found</span>
+                    )}
+                    <span
+                      className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
+                    >
+                      {dateFilter === 'today'
+                        ? 'compared to yesterday'
+                        : dateFilter === 'thisWeek'
+                        ? 'compared to last week'
+                        : dateFilter === 'thisMonth'
+                        ? 'compared to last month'
+                        : dateFilter === 'lastMonth'
+                        ? 'compared to this month'
+                        : 'compared to previous period'}
+                    </span>
+                  </div>
+                </div>
+                {/* Recycling Rate Card */}
+                <div
+                  className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                    theme === 'dark'
+                      ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                      : 'backdrop-blur-md bg-white border-slate-200/70'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p
+                        className={`text-sm font-medium mb-1 ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Recycling Rate
+                      </p>
+                      <h3
+                        className={`text-3xl font-bold ${
+                          theme === 'dark' ? 'text-white' : 'text-slate-800'
+                        }`}
+                      >
+                        {recyclingOverview && recyclingOverview.recyclingRate !== undefined
+                          ? Number(recyclingOverview.recyclingRate).toFixed(2)
+                          : 'No data found'}
                         <span className="text-sm">%</span>
                       </h3>
                     </div>
@@ -737,20 +868,20 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm">
-                    {overviewData?.landfillDiversionTrend != null ? (
-                      overviewData.landfillDiversionTrend >= 0 ? (
-                        <span className="text-emerald-500 flex items-center">
-                          <ArrowUp size={14} className="mr-1" />{' '}
-                          {overviewData.landfillDiversionTrend}%
+                    {recyclingOverview && recyclingOverview.recyclingTrend != null ? (
+                      recyclingOverview.recyclingTrend >= 0 ? (
+                        <span className="text-emerald-500 flex items-center font-bold">
+                          <ArrowUpRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
+                          {recyclingOverview.recyclingTrend}%
                         </span>
                       ) : (
-                        <span className="text-red-500 flex items-center">
-                          <ArrowDown size={14} className="mr-1" />{' '}
-                          {Math.abs(overviewData.landfillDiversionTrend)}%
+                        <span className="text-red-500 flex items-center font-bold">
+                          <ArrowDownRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
+                          {Math.abs(recyclingOverview.recyclingTrend)}%
                         </span>
                       )
                     ) : (
-                      <span className="text-gray-500">--%</span>
+                      <span className="text-gray-500">No data found</span>
                     )}
                     <span
                       className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
@@ -789,8 +920,10 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-white' : 'text-slate-800'
                         }`}
                       >
-                        {overviewData ? Number(overviewData.totalWaste).toFixed(2) : '...'}
-                        <span className="text-sm ">kg</span>
+                        {overviewData && overviewData.totalWaste !== undefined
+                          ? Number(overviewData.totalWaste).toFixed(2)
+                          : 'No data found'}
+                        <span className="text-sm">kg</span>
                       </h3>
                     </div>
                     <div
@@ -804,19 +937,20 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm">
-                    {overviewData?.totalWasteTrend != null ? (
+                    {overviewData && overviewData.totalWasteTrend != null ? (
                       overviewData.totalWasteTrend >= 0 ? (
-                        <span className="text-emerald-500 flex items-center">
-                          <ArrowUp size={14} className="mr-1" /> {overviewData.totalWasteTrend}%
+                        <span className="text-emerald-500 flex items-center font-bold">
+                          <ArrowUpRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
+                          {overviewData.totalWasteTrend}%
                         </span>
                       ) : (
-                        <span className="text-red-500 flex items-center">
-                          <ArrowDown size={14} className="mr-1" />{' '}
+                        <span className="text-red-500 flex items-center font-bold">
+                          <ArrowDownRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
                           {Math.abs(overviewData.totalWasteTrend)}%
                         </span>
                       )
                     ) : (
-                      <span className="text-gray-500">--%</span>
+                      <span className="text-gray-500">No data found</span>
                     )}
                     <span
                       className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
@@ -834,6 +968,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+
               {/* Waste Trend Line Chart */}
               <div
                 className={`rounded-xl border p-6 shadow-lg mb-8 ${
@@ -871,83 +1006,17 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 </div>
-                <div className="h-80">
-                  {loading.trend ? (
-                    <div className="flex justify-center items-center h-full">
-                      <p>Loading trend data...</p>
-                    </div>
-                  ) : error.trend ? (
-                    <div className="flex justify-center items-center h-full">
-                      <p className="text-red-500">{error.trend}</p>
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={trendData}
-                        margin={{ top: 20, right: 20, left: 5, bottom: 20 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke={theme === 'dark' ? '#f0f0f0' : '#f0f0f0'}
-                        />
-                        <XAxis
-                          dataKey="date"
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={10}
-                          fontSize={12}
-                          stroke={theme === 'dark' ? '#9CA3AF' : '#9CA3AF'}
-                        />
-                        <YAxis
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={10}
-                          fontSize={12}
-                          stroke={theme === 'dark' ? '#9CA3AF' : '#9CA3AF'}
-                          tickCount={5}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor:
-                              theme === 'dark'
-                                ? 'rgba(15, 23, 42, 0.9)'
-                                : 'rgba(255, 255, 255, 0.9)',
-                            borderColor:
-                              theme === 'dark'
-                                ? 'rgba(148, 163, 184, 0.2)'
-                                : 'rgba(148, 163, 184, 0.3)',
-                            borderRadius: '0.5rem',
-                          }}
-                          itemStyle={{ color: theme === 'dark' ? '#f8fafc' : '#1e293b' }}
-                          labelStyle={{
-                            color: theme === 'dark' ? '#f8fafc' : '#1e293b',
-                            fontWeight: 'bold',
-                          }}
-                        />
-                        <Legend />
-                        {trendData &&
-                          trendData.length > 0 &&
-                          trendData.map((binData, idx) => (
-                            <Line
-                              key={idx}
-                              type="monotone"
-                              dataKey="weight"
-                              data={binData.data}
-                              name={binData.binName}
-                              stroke={idx % 2 === 0 ? '#ef4444' : '#3b82f6'}
-                              strokeWidth={2.5}
-                              dot={{ r: 0 }}
-                              activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
-                            />
-                          ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
+                <AdminWasteLineChart
+                  trendData={trendData}
+                  loading={loading.trend}
+                  error={error.trend}
+                  dateFilter={dateFilter}
+                />
               </div>
-              {/* Activity Feed & Leaderboard */}
+
+              {/* Combined Activity Feed & Top 3 Leaderboard in 2 Columns */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Activity Feed */}
+                {/* Activity Feed Column */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg ${
                     theme === 'dark'
@@ -1000,9 +1069,9 @@ export default function AdminDashboard() {
                             }`}
                           >
                             {activity.trend === 'up' ? (
-                              <ArrowUp size={16} />
+                              <ArrowUpRight size={16} />
                             ) : (
-                              <ArrowDown size={16} />
+                              <ArrowDownRight size={16} />
                             )}
                           </div>
                           <div>
@@ -1044,7 +1113,8 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-                {/* Leaderboard */}
+
+                {/* Top 3 Leaderboard Column */}
                 <div
                   className={`rounded-xl border p-6 shadow-lg ${
                     theme === 'dark'
@@ -1052,23 +1122,19 @@ export default function AdminDashboard() {
                       : 'backdrop-blur-md bg-white border-slate-200/70'
                   }`}
                 >
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-2">
                     <h3
                       className={`text-xl font-semibold ${
                         theme === 'dark' ? 'text-white' : 'text-slate-800'
                       }`}
                     >
-                      {userRole === 'SuperAdmin' ? 'Company Leaderboard' : 'Office Leaderboard'}
+                      Top 3 Leaderboard
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
-                        <Filter size={18} />
-                      </button>
-                      <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
-                        <Award size={18} />
-                      </button>
-                    </div>
                   </div>
+                  <p className="mb-6 text-xs text-gray-500">
+                    {leaderboardPeriod ? `${leaderboardPeriod} Leaderboard` : 'Leaderboard'}
+                  </p>
+
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -1130,7 +1196,7 @@ export default function AdminDashboard() {
                             </td>
                           </tr>
                         ) : leaderboardData && leaderboardData.length > 0 ? (
-                          leaderboardData.slice(0, 5).map((item, index) => (
+                          leaderboardData.slice(0, 3).map((item, index) => (
                             <tr
                               key={item._id}
                               className={
@@ -1167,17 +1233,20 @@ export default function AdminDashboard() {
                                   theme === 'dark' ? 'text-white' : 'text-slate-800'
                                 }`}
                               >
-                                {item.name}
+                                {item.branchName || item.companyName}
                               </td>
                               <td className="py-3 px-4 text-emerald-500 font-medium">
-                                {item.diversion}
+                                {item.diversionPercentage
+                                  ? Number(item.diversionPercentage).toFixed(2)
+                                  : '0.00'}
+                                %
                               </td>
                               <td
                                 className={`py-3 px-4 ${
                                   theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
                                 }`}
                               >
-                                {item.waste}
+                                {item.totalWaste ? Number(item.totalWaste).toFixed(2) : '0'}
                               </td>
                               <td className="py-3 px-4">
                                 <div
@@ -1187,7 +1256,11 @@ export default function AdminDashboard() {
                                 >
                                   <div
                                     className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                                    style={{ width: item.diversion }}
+                                    style={{
+                                      width: item.diversionPercentage
+                                        ? `${item.diversionPercentage}%`
+                                        : '0%',
+                                    }}
                                   ></div>
                                 </div>
                               </td>
@@ -1207,6 +1280,8 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {/* Leaderboard Tab (Full List) */}
           {activeTab === 'leaderboard' && (
             <div
               className={`rounded-xl border p-6 shadow-lg ${
@@ -1221,7 +1296,7 @@ export default function AdminDashboard() {
                     theme === 'dark' ? 'text-white' : 'text-slate-800'
                   }`}
                 >
-                  {userRole === 'SuperAdmin' ? 'Company Leaderboard' : 'Office Leaderboard'}
+                  {userRole === 'SuperAdmin' ? 'Leaderboard' : 'Office Leaderboard'}
                 </h3>
                 <div className="flex items-center gap-2">
                   <button className="p-2 rounded-lg transition-colors bg-slate-200/70 hover:bg-slate-300/70">
@@ -1293,7 +1368,7 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ) : leaderboardData && leaderboardData.length > 0 ? (
-                      leaderboardData.slice(0, 5).map((item, index) => (
+                      leaderboardData.map((item, index) => (
                         <tr
                           key={item._id}
                           className={
@@ -1330,17 +1405,20 @@ export default function AdminDashboard() {
                               theme === 'dark' ? 'text-white' : 'text-slate-800'
                             }`}
                           >
-                            {item.name}
+                            {item.branchName || item.companyName}
                           </td>
                           <td className="py-3 px-4 text-emerald-500 font-medium">
-                            {item.diversion}
+                            {item.diversionPercentage
+                              ? Number(item.diversionPercentage).toFixed(2)
+                              : '0.00'}
+                            %
                           </td>
                           <td
                             className={`py-3 px-4 ${
                               theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
                             }`}
                           >
-                            {item.waste}
+                            {item.totalWaste ? Number(item.totalWaste).toFixed(2) : '0'}
                           </td>
                           <td className="py-3 px-4">
                             <div
@@ -1350,7 +1428,11 @@ export default function AdminDashboard() {
                             >
                               <div
                                 className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                                style={{ width: item.diversion }}
+                                style={{
+                                  width: item.diversionPercentage
+                                    ? `${item.diversionPercentage}%`
+                                    : '0%',
+                                }}
                               ></div>
                             </div>
                           </td>
@@ -1368,6 +1450,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
           {/* Offices Tab */}
           {activeTab === 'offices' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1375,95 +1458,126 @@ export default function AdminDashboard() {
                 <p>Loading offices...</p>
               ) : error.offices ? (
                 <p className="text-red-500">{error.offices}</p>
-              ) : officesData && officesData.length > 0 ? (
-                officesData.map((office) => (
-                  <div
-                    key={office._id}
-                    className={`rounded-xl border p-6 shadow-lg transition-all group ${
-                      theme === 'dark'
-                        ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
-                        : 'backdrop-blur-md bg-white border-slate-200/70'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <h3
-                        className={`text-lg font-semibold ${
-                          theme === 'dark' ? 'text-white' : 'text-slate-800'
-                        }`}
-                      >
-                        {office.officeName || office.name}
-                      </h3>
-                      <button
-                        className={`p-2 rounded-lg transition-colors ${
-                          theme === 'dark'
-                            ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
-                            : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
-                        }`}
-                      >
-                        <Tv size={18} />
-                      </button>
-                    </div>
-                    <div className="flex items-center mb-4 text-sm text-slate-500">
-                      <MapPin size={16} className="mr-2" />
-                      <span>{office.location}</span>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-slate-500">Diversion Rate</span>
-                        <span className="text-emerald-500 font-medium">
-                          {office.diversion ? Number(office.diversion).toFixed(2) : '0.00'}%
-                        </span>
+              ) : sortedOfficesData && sortedOfficesData.length > 0 ? (
+                sortedOfficesData.map((office) => {
+                  // Sort bin configuration by fixed order.
+                  const binOrder = [
+                    'General Waste',
+                    'Organic',
+                    'Glass',
+                    'Paper & Cardboard',
+                    'Commingled',
+                  ];
+                  const sortedBins =
+                    office.bins && office.bins.length > 0
+                      ? office.bins.slice().sort((a, b) => {
+                          const orderA = binOrder.indexOf(a.dustbinType);
+                          const orderB = binOrder.indexOf(b.dustbinType);
+                          return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+                        })
+                      : [];
+                  return (
+                    <div
+                      key={office._id}
+                      className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                        theme === 'dark'
+                          ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                          : 'backdrop-blur-md bg-white border-slate-200/70'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <h3
+                          className={`text-lg font-semibold ${
+                            theme === 'dark' ? 'text-white' : 'text-slate-800'
+                          }`}
+                        >
+                          {office.officeName || office.name}
+                        </h3>
+                        <button
+                          onClick={() => {
+                            const companyToPass = selectedCompany
+                              ? selectedCompany
+                              : office.associatedCompany;
+                            navigate('/dashboard', {
+                              state: { fromAdmin: true, office, company: companyToPass },
+                            });
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${
+                            theme === 'dark'
+                              ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                              : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                          }`}
+                        >
+                          <TvMinimalIcon size={18} />
+                        </button>
                       </div>
-                      <div
-                        className={`h-2 w-full rounded-full overflow-hidden ${
-                          theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
-                        }`}
-                      >
+                      <div className="flex items-center mb-4 text-sm text-slate-500">
+                        <MapPin size={16} className="mr-2" />
+                        <span>{office.location}</span>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-slate-500">Diversion Rate</span>
+                          <span className="text-emerald-500 font-medium">
+                            {office.diversion
+                              ? Number(office.diversion).toFixed(2)
+                              : 'No data found'}
+                            %
+                          </span>
+                        </div>
                         <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                          style={{ width: office.diversion ? `${office.diversion}%` : '0%' }}
-                        ></div>
+                          className={`h-2 w-full rounded-full overflow-hidden ${
+                            theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
+                          }`}
+                        >
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
+                            style={{ width: office.diversion ? `${office.diversion}%` : '0%' }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm mb-2 text-slate-500">Bin Configuration</div>
+                        <div className="flex flex-wrap gap-1">
+                          {sortedBins.length > 0 ? (
+                            sortedBins.map((bin, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-[11px] px-2 py-1 rounded-full ${
+                                  bin.dustbinType === 'General Waste'
+                                    ? theme === 'dark'
+                                      ? 'bg-red-500/20 text-red-400'
+                                      : 'bg-red-100 text-red-600'
+                                    : bin.dustbinType === 'Paper & Cardboard'
+                                    ? theme === 'dark'
+                                      ? 'bg-blue-500/20 text-blue-400'
+                                      : 'bg-blue-100 text-blue-600'
+                                    : bin.dustbinType === 'Commingled'
+                                    ? theme === 'dark'
+                                      ? 'bg-green-500/20 text-green-400'
+                                      : 'bg-green-100 text-green-600'
+                                    : bin.dustbinType === 'Organic'
+                                    ? theme === 'dark'
+                                      ? 'bg-amber-500/20 text-amber-400'
+                                      : 'bg-amber-100 text-amber-600'
+                                    : bin.dustbinType === 'Glass'
+                                    ? theme === 'dark'
+                                      ? 'bg-purple-500/20 text-purple-400'
+                                      : 'bg-purple-100 text-purple-600'
+                                    : ''
+                                }`}
+                              >
+                                {bin.dustbinType}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-red-500">No bin data</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-sm mb-2 text-slate-500">Bin Configuration</div>
-                      <div className="flex flex-wrap gap-2">
-                        {office.bins && office.bins.length > 0 ? (
-                          office.bins.map((bin, idx) => (
-                            <span
-                              key={idx}
-                              className={`text-xs px-2 py-1 rounded-full ${
-                                bin.dustbinType === 'General Waste'
-                                  ? theme === 'dark'
-                                    ? 'bg-red-500/20 text-red-400'
-                                    : 'bg-red-100 text-red-600'
-                                  : bin.dustbinType === 'Paper & Cardboard'
-                                  ? theme === 'dark'
-                                    ? 'bg-blue-500/20 text-blue-400'
-                                    : 'bg-blue-100 text-blue-600'
-                                  : bin.dustbinType === 'Commingled'
-                                  ? theme === 'dark'
-                                    ? 'bg-green-500/20 text-green-400'
-                                    : 'bg-green-100 text-green-600'
-                                  : bin.dustbinType === 'Organic'
-                                  ? theme === 'dark'
-                                    ? 'bg-amber-500/20 text-amber-400'
-                                    : 'bg-amber-100 text-amber-600'
-                                  : theme === 'dark'
-                                  ? 'bg-purple-500/20 text-purple-400'
-                                  : 'bg-purple-100 text-purple-600'
-                              }`}
-                            >
-                              {bin.dustbinType}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-red-500">No bin data</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p>No offices found</p>
               )}
