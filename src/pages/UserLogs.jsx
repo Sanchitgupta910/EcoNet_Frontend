@@ -214,15 +214,16 @@ export default function UserLogs() {
                     <TableHead className="font-medium">Full Name</TableHead>
                     <TableHead className="font-medium">Email</TableHead>
                     <TableHead className="font-medium">Role</TableHead>
-                    <TableHead className="font-medium">Phone</TableHead>
-                    <TableHead className="font-medium">Branch</TableHead>
+                    {/* <TableHead className="font-medium">Phone</TableHead> */}
+                    <TableHead className="font-medium">SubDivision</TableHead>
                     <TableHead className="font-medium">Company</TableHead>
+                    <TableHead className="font-medium">Added by</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className={theme === 'dark' ? 'bg-slate-900' : ''}>
                   {paginatedUsers.length === 0 ? (
                     <TableRow className={theme === 'dark' ? 'border-slate-700/50' : ''}>
-                      <TableCell colSpan={7} className="h-24 text-center">
+                      <TableCell colSpan={8} className="h-24 text-center">
                         No users found.
                       </TableCell>
                     </TableRow>
@@ -236,7 +237,9 @@ export default function UserLogs() {
                             : 'hover:bg-slate-100/50'
                         }
                       >
-                        <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                        <TableCell className="text-xs font-bold text-slate-500 text-center">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-3">
                             <div
@@ -257,9 +260,27 @@ export default function UserLogs() {
                             {user.role}
                           </Badge>
                         </TableCell>
-                        <TableCell>{user.phone || 'N/A'}</TableCell>
-                        <TableCell>{user.branchAddress?.officeName || 'N/A'}</TableCell>
+                        {/* <TableCell>{user.phone || 'N/A'}</TableCell> */}
+                        <TableCell>
+                          <span className="text-xs font-bold text-slate-500">
+                            {' '}
+                            {user.OrgUnit?.type || 'N/A'}:
+                          </span>{' '}
+                          {user.OrgUnit?.name || 'N/A'}
+                        </TableCell>
                         <TableCell>{user.company?.CompanyName || 'N/A'}</TableCell>
+                        <TableCell>
+                          {user.createdby ? (
+                            <>
+                              {user.createdby.fullName}{' '}
+                              <span className="font-bold text-slate-500 text-sm">
+                                ({user.createdby.role})
+                              </span>
+                            </>
+                          ) : (
+                            'N/A'
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
