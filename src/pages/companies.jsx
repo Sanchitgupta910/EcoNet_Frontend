@@ -267,7 +267,13 @@ export default function Companies() {
               </div>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="h-9">
+                  <Button
+                    className={`h-9 ${
+                      theme === 'dark'
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    }`}
+                  >
                     <Plus className="mr-2 h-4 w-4" /> Add Company
                   </Button>
                 </DialogTrigger>
@@ -510,7 +516,7 @@ export default function Companies() {
                         onClick={() => setCurrentPage(pageNum)}
                         className={`h-8 w-8 p-0 ${
                           currentPage === pageNum
-                            ? 'bg-indigo-600 text-primary-foreground'
+                            ? 'bg-indigo-600 text-primary-foreground hover:bg-indigo-700'
                             : theme === 'dark'
                             ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white border-slate-600'
                             : ''
@@ -520,6 +526,7 @@ export default function Companies() {
                       </Button>
                     );
                   })}
+
                   <Button
                     variant="outline"
                     size="sm"

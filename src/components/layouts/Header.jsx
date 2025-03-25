@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -94,14 +92,11 @@ export default function Header({ user }) {
       }`}
     >
       <div className="container mx-auto px-4 flex h-16 items-center justify-between">
-        {/* Logo */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
             <img src={NetnadaLogo || '/placeholder.svg'} alt="EcoNet Logo" className="h-8 w-auto" />
           </Link>
         </div>
-
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
           {navigation.map((item) => (
             <Link
@@ -121,16 +116,11 @@ export default function Header({ user }) {
             </Link>
           ))}
         </nav>
-
-        {/* Right side actions */}
         <div className="flex items-center space-x-4">
-          {/* Notification Bell */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className={`h-5 w-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} />
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
           </Button>
-
-          {/* Theme Toggle */}
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? (
               <Sun className="h-5 w-5 text-slate-400" />
@@ -138,13 +128,20 @@ export default function Header({ user }) {
               <Moon className="h-5 w-5 text-slate-600" />
             )}
           </Button>
-
-          {/* Invite Button */}
-          <Button size="sm" className="hidden md:flex">
-            <Plus className="mr-1 h-4 w-4" /> Invite
-          </Button>
-
-          {/* User Menu */}
+          {/* Updated Invite Button: Wrap with Link to navigate to invite page.
+              Using user.company (assumed to be the company id) */}
+          <Link to={`/invite-user/${user?.company}`}>
+            <Button
+              size="sm"
+              className={`hidden md:flex ${
+                theme === 'dark'
+                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Invite
+            </Button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -180,8 +177,6 @@ export default function Header({ user }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Mobile menu button */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -196,7 +191,11 @@ export default function Header({ user }) {
             >
               <div className="flex items-center justify-between">
                 <Link to="/" className="flex items-center" onClick={() => setMobileMenuOpen(false)}>
-                  <img src="/logo.svg" alt="EcoNet Logo" className="h-8 w-auto" />
+                  <img
+                    src={NetnadaLogo || '/placeholder.svg'}
+                    alt="EcoNet Logo"
+                    className="h-8 w-auto"
+                  />
                   <span
                     className={`ml-2 text-xl font-bold ${
                       theme === 'dark' ? 'text-white' : 'text-slate-900'

@@ -747,7 +747,11 @@ export default function CompanyInfo() {
                           setIsAddressDialogOpen(true);
                         }}
                         size="sm"
-                        className="h-9"
+                        className={`h-9 ${
+                          theme === 'dark'
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        }`}
                       >
                         <Plus className="mr-2 h-4 w-4" /> Add Office
                       </Button>
@@ -778,9 +782,6 @@ export default function CompanyInfo() {
                     </DialogContent>
                   </Dialog>
                 </div>
-
-                {/* Now update the Office Locations table to match the leaderboard style */}
-                {/* Replace the existing table in the Office Locations TabsContent with this: */}
 
                 {company.branchAddresses &&
                 company.branchAddresses.filter((branch) => !branch.isdeleted).length === 0 ? (
@@ -970,7 +971,11 @@ export default function CompanyInfo() {
                               setSelectedUser(null);
                               setIsUserDialogOpen(true);
                             }}
-                            className="h-9"
+                            className={`h-9 ${
+                              theme === 'dark'
+                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            }`}
                             disabled={
                               !company.branchAddresses || company.branchAddresses.length === 0
                             }
@@ -1159,7 +1164,11 @@ export default function CompanyInfo() {
                           <Button
                             size="sm"
                             onClick={() => setIsDustbinDialogOpen(true)}
-                            className="h-9"
+                            className={`h-9 ${
+                              theme === 'dark'
+                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            }`}
                             disabled={
                               !company.branchAddresses || company.branchAddresses.length === 0
                             }
