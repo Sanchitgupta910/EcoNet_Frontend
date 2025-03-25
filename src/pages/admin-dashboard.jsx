@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   GitBranchIcon,
+  Info,
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -1128,12 +1129,32 @@ export default function AdminDashboard() {
                         theme === 'dark' ? 'text-white' : 'text-slate-800'
                       }`}
                     >
-                      Top 3 Leaderboard
+                      Leaderboard
                     </h3>
                   </div>
-                  <p className="mb-4 text-xs text-gray-500">
-                    {leaderboardPeriod ? `${leaderboardPeriod} Leaderboard` : 'Leaderboard'}
-                  </p>
+                  <div
+                    className={`p-2 rounded-lg mb-4 ${
+                      theme === 'dark'
+                        ? 'bg-slate-700/70 hover:bg-slate-600/70'
+                        : 'bg-slate-200/70 hover:bg-slate-300/70'
+                    }`}
+                  >
+                    <p
+                      className={`text-xs text-gray-500 font-regular flex items-center ${
+                        theme === 'dark' ? 'text-slate-200' : 'text-slate-600'
+                      }`}
+                    >
+                      {' '}
+                      <Info className="mr-3" />
+                      {''}
+                      <i>
+                        This leaderboard highlights the Top 3 performing companies in waste
+                        diversion for {''}
+                        {leaderboardPeriod ? `${leaderboardPeriod}` : ''}, recognizing their
+                        commitment to sustainable waste management and landfill reduction.
+                      </i>
+                    </p>
+                  </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -1299,10 +1320,27 @@ export default function AdminDashboard() {
                   {userRole === 'SuperAdmin' ? 'Leaderboard' : 'Office Leaderboard'}
                 </h3>
               </div>
-              <p className="mb-4 text-xs text-gray-500">
-                {leaderboardPeriod ? `${leaderboardPeriod} Leaderboard` : 'Leaderboard'}
-              </p>
-
+              <div
+                className={`p-2 rounded-lg mb-4 ${
+                  theme === 'dark'
+                    ? 'bg-slate-700/70 hover:bg-slate-600/70'
+                    : 'bg-slate-200/70 hover:bg-slate-300/70'
+                }`}
+              >
+                <p
+                  className={`ml-4 text-xs text-gray-500 font-medium flex items-center ${
+                    theme === 'dark' ? 'text-slate-200' : 'text-slate-600'
+                  }`}
+                >
+                  {''}
+                  <i>
+                    This leaderboard highlights the Top performing companies in waste diversion for{' '}
+                    {''}
+                    {leaderboardPeriod ? `${leaderboardPeriod}` : ''}, recognizing their commitment
+                    to sustainable waste management and landfill reduction.
+                  </i>
+                </p>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
