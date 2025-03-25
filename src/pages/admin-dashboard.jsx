@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   // Data counts and overview.
   const [officesCount, setOfficesCount] = useState(0);
   const [overviewData, setOverviewData] = useState(null);
-  const [trendData, setTrendData] = useState([]);
+
   const [activityFeed, setActivityFeed] = useState([]);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('');
@@ -59,6 +59,11 @@ export default function AdminDashboard() {
 
   const [recyclingOverview, setRecyclingOverview] = useState(null);
   const [loadingRecycling, setLoadingRecycling] = useState(true);
+
+  // Trend data to pass to the line chart.
+  const [trendData, setTrendData] = useState([]);
+  const [loadingTrend, setLoadingTrend] = useState(true);
+  const [trendError, setTrendError] = useState('');
 
   // Loading and error states.
   const [loading, setLoading] = useState({
@@ -250,30 +255,35 @@ export default function AdminDashboard() {
   };
 
   const fetchTrendData = async () => {
-    let url = '';
-    const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
-    if (branchIds.length > 0) {
-      url = `/api/v1/analytics/wasteTrendChart?branchId=${branchIds.join(
-        ',',
-      )}&days=7&filter=${dateFilter}`;
+    // Remove extra parameter "days" (if any) and build URL based on filters.
+    let url = '/api/v1/analytics/wasteTrendChart';
+    const params = { filter: dateFilter };
+    // For orgUnit filtering, get branch IDs from selectedOrgUnit and use that.
+    if (selectedOrgUnit) {
+      // For simplicity, assume backend handles selectedOrgUnit via orgUnitId.
+      params.orgUnitId = selectedOrgUnit._id;
     } else if (selectedCompany) {
-      url = `/api/v1/analytics/wasteTrendChart?companyId=${selectedCompany._id}&days=7&filter=${dateFilter}`;
+      params.companyId = selectedCompany._id;
     } else {
-      url = `/api/v1/analytics/wasteTrendChart?companyId=all&days=7&filter=${dateFilter}`;
+      // If neither selected, you could send no companyId so that the backend uses all organizations.
     }
+    // Log parameters for debugging.
+    console.log('Fetching trend data with params:', params);
     try {
-      setLoading((prev) => ({ ...prev, trend: true }));
-      const response = await axios.get(url, { withCredentials: true });
+      setLoadingTrend(true);
+      const response = await axios.get(url, { params, withCredentials: true });
+      console.log('Trend data response:', response.data);
       if (response.data.success) {
         setTrendData(response.data.data);
+        setTrendError('');
       } else {
-        setError((prev) => ({ ...prev, trend: response.data.message }));
+        setTrendError(response.data.message);
       }
     } catch (err) {
-      setError((prev) => ({ ...prev, trend: err.message }));
-    } finally {
-      setLoading((prev) => ({ ...prev, trend: false }));
+      console.error('Error fetching trend data:', err);
+      setTrendError('An error occurred while fetching trend data');
     }
+    setLoadingTrend(false);
   };
 
   const fetchRecyclingOverview = async () => {
@@ -398,6 +408,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // When any filter changes, fetch all analytics data
+    console.log('Dashboard filters changed:', { selectedCompany, selectedOrgUnit, dateFilter });
     fetchOverviewData();
     fetchTrendData();
     fetchRecyclingOverview();
@@ -987,26 +998,6 @@ export default function AdminDashboard() {
                   >
                     Waste Collection Trends
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        theme === 'dark'
-                          ? 'bg-slate-700/70 hover:bg-slate-600/70'
-                          : 'bg-slate-200/70 hover:bg-slate-300/70'
-                      }`}
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        theme === 'dark'
-                          ? 'bg-slate-700/70 hover:bg-slate-600/70'
-                          : 'bg-slate-200/70 hover:bg-slate-300/70'
-                      }`}
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
                 </div>
                 <AdminWasteLineChart
                   trendData={trendData}
@@ -1045,9 +1036,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    {loading.activity ? (
-                      <p>Loading activity feed...</p>
-                    ) : error.activity ? (
+                    {error.activity ? (
                       <p className="text-red-500">{error.activity}</p>
                     ) : activityFeed && activityFeed.length > 0 ? (
                       activityFeed.map((activity) => (

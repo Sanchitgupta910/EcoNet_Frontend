@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -15,32 +15,36 @@ import {
 import { ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
 
-// Sample hourly data generator – creates 24 hourly data points for a given date.
-const generateHourlyData = (date, bins) => {
-  const hours = [];
-  for (let i = 0; i < 24; i++) {
-    const hourStr = i < 10 ? `0${i}:00` : `${i}:00`;
-    const hourData = {
-      hour: hourStr,
-      date: `${date} ${hourStr}`,
-    };
-
-    bins.forEach((bin) => {
-      // Calculate base value from first reading and adjust for work hours.
-      const baseValue = bin.data[0].weight * 0.05;
-      const workHourMultiplier = i >= 8 && i <= 17 ? 1.5 : 0.7;
-      const randomVariation = Math.random() * 0.4 + 0.8;
-      hourData[bin.binName] = Number((baseValue * workHourMultiplier * randomVariation).toFixed(2));
-    });
-
-    hours.push(hourData);
-  }
-  return hours;
-};
-
-// Custom tooltip for the chart.
-const CustomTooltip = ({ active, payload, label, theme }) => {
+const CustomTooltip = ({ active, payload, label, theme, dateFilter }) => {
   if (!active || !payload || !payload.length) return null;
+
+  // Format the label based on the active filter.
+  let formattedLabel = label;
+  if (dateFilter === 'today') {
+    // Assume label is the hour (number); format as "10:00 hrs"
+    formattedLabel = `${label}:00 hrs`;
+  } else {
+    // Assume label is a date string "YYYY-MM-DD"
+    const date = new Date(label);
+    const day = date.getDate();
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const month = monthNames[date.getMonth()];
+    formattedLabel = `${day} ${month}`;
+  }
+
   return (
     <div
       className={`p-3 rounded-lg shadow-md border ${
@@ -48,7 +52,7 @@ const CustomTooltip = ({ active, payload, label, theme }) => {
       }`}
     >
       <p className={`font-medium mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-        {label}
+        {formattedLabel}
       </p>
       <div className="space-y-1.5">
         {payload.map((entry, index) => (
@@ -57,7 +61,12 @@ const CustomTooltip = ({ active, payload, label, theme }) => {
             <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>
               {entry.name}:
             </span>
-            <span className="font-medium">{entry.value} kg</span>
+            <span className="font-medium">
+              {typeof entry.value === 'number'
+                ? entry.value.toFixed(2)
+                : Number(entry.value).toFixed(2)}{' '}
+              kg
+            </span>
           </div>
         ))}
       </div>
@@ -65,13 +74,26 @@ const CustomTooltip = ({ active, payload, label, theme }) => {
   );
 };
 
-// Custom legend for the chart.
-const CustomLegend = ({ payload, theme }) => (
-  <div className="flex flex-wrap gap-4 justify-center mt-2">
+const CustomLegend = ({ payload, theme, hiddenLines, onLegendClick }) => (
+  <div className="flex flex-wrap gap-4 justify-center mt-[-12px]">
     {payload.map((entry, index) => (
-      <div key={index} className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-        <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+      <div
+        key={index}
+        className="flex items-center gap-2 cursor-pointer"
+        onClick={() => onLegendClick(entry.value)}
+      >
+        <div
+          className="w-3 h-3 rounded-full"
+          style={{
+            backgroundColor: entry.color,
+            opacity: hiddenLines[entry.value] ? 0.3 : 1,
+          }}
+        />
+        <span
+          className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} ${
+            hiddenLines[entry.value] ? 'line-through opacity-50' : ''
+          }`}
+        >
           {entry.value}
         </span>
       </div>
@@ -79,31 +101,48 @@ const CustomLegend = ({ payload, theme }) => (
   </div>
 );
 
-// Main WasteLineChart component, receiving dateFilter as a prop along with trendData, loading and error.
+const getBinColor = (index) => {
+  const colors = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
+  ];
+  return colors[index % colors.length];
+};
+
 export default function EnhancedWasteChart({ trendData, loading, error, dateFilter }) {
   const { theme } = useTheme();
+
+  const [transformedData, setTransformedData] = useState([]);
   const [zoomData, setZoomData] = useState(null);
   const [refAreaLeft, setRefAreaLeft] = useState('');
   const [refAreaRight, setRefAreaRight] = useState('');
   const [isZooming, setIsZooming] = useState(false);
-  const chartRef = useRef(null);
+  const [hiddenLines, setHiddenLines] = useState({});
 
-  // Determine if the current filter is "today" to set XAxis data key and formatting.
-  const isToday = dateFilter === 'today';
+  useEffect(() => {
+    const transformed = trendData.map((record) => {
+      const obj = { time: record.time };
+      record.values.forEach((item) => {
+        obj[item.binType] = item.weight;
+      });
+      return obj;
+    });
+    console.log('WasteLineChartAdmin transformed data:', transformed);
+    setTransformedData(transformed);
+  }, [trendData]);
 
-  // Helper to get color for bin lines.
-  const getBinColor = (index) => {
-    const colors = [
-      'hsl(var(--chart-1))', // Primary
-      'hsl(var(--chart-2))', // Secondary
-      'hsl(var(--chart-3))', // Tertiary
-      'hsl(var(--chart-4))', // Quaternary
-      'hsl(var(--chart-5))', // Quinary
-    ];
-    return colors[index % colors.length];
-  };
+  // Zoom logic can be kept as before.
 
-  // Zoom in: Generate hourly data for the selected date range.
+  const handleLegendClick = useCallback((dataKey) => {
+    setHiddenLines((prev) => ({
+      ...prev,
+      [dataKey]: !prev[dataKey],
+    }));
+  }, []);
+
   const handleZoomIn = () => {
     if (refAreaLeft === refAreaRight || refAreaRight === '') {
       setIsZooming(false);
@@ -117,13 +156,9 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
       left = refAreaRight;
       right = refAreaLeft;
     }
-    // Find selected date from trend data.
-    const selectedDate = trendData
-      .find((bin) => bin.data.some((point) => point.date === left || point.date === right))
-      ?.data.find((point) => point.date === left || point.date === right)?.date;
-    if (selectedDate) {
-      const hourlyData = generateHourlyData(selectedDate.split(' ')[0], trendData);
-      setZoomData(hourlyData);
+    const selectedData = transformedData.filter((d) => d.time >= left && d.time <= right);
+    if (selectedData.length) {
+      setZoomData(selectedData);
     }
     setIsZooming(false);
     setRefAreaLeft('');
@@ -134,29 +169,27 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
     setZoomData(null);
   };
 
-  const handleMouseDown = useCallback((e) => {
+  const handleMouseDown = (e) => {
     if (!e || !e.activeLabel) return;
     setIsZooming(true);
     setRefAreaLeft(e.activeLabel);
-  }, []);
+  };
 
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isZooming || !e || !e.activeLabel) return;
-      setRefAreaRight(e.activeLabel);
-    },
-    [isZooming],
-  );
+  const handleMouseMove = (e) => {
+    if (!isZooming || !e || !e.activeLabel) return;
+    setRefAreaRight(e.activeLabel);
+  };
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     if (isZooming) {
       handleZoomIn();
     }
-  }, [isZooming, refAreaLeft, refAreaRight]);
+  };
+  const xAxisDataKey = 'time';
 
-  // Prepare data for rendering: use zoomData if available, else flatten trendData.
-  const chartData = zoomData || trendData.flatMap((bin) => bin.data);
-
+  const dataToRender = zoomData || transformedData;
+  // console.log(`data to render ${JSON.stringify(dataToRender)}`);
+  loading = false;
   return (
     <div className="h-80 relative">
       {loading ? (
@@ -184,8 +217,8 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
           )}
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              ref={chartRef}
-              data={chartData}
+              key={`${dateFilter}`}
+              data={dataToRender}
               margin={{ top: 20, right: 20, left: 5, bottom: 20 }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -195,71 +228,82 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
                 horizontal={true}
                 vertical={false}
                 strokeDasharray="3 3"
-                stroke={theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}
+                stroke={theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
               />
               <XAxis
-                // Use "hour" for today (hourly data) or "date" for other filters.
-                dataKey={isToday ? 'hour' : 'date'}
+                dataKey={xAxisDataKey}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={10}
                 fontSize={12}
-                stroke={theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'}
+                stroke={theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                 tickFormatter={(value) => {
-                  if (isToday) {
-                    // For hourly data, return as is (e.g., "07:00")
-                    return value;
+                  if (dateFilter === 'today') {
+                    return `${value}:00 hrs`;
                   } else {
-                    // For daily data, format the date
-                    const dateObj = new Date(value);
-                    return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const date = new Date(value);
+                    const day = date.getDate();
+                    const monthNames = [
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec',
+                    ];
+                    const month = monthNames[date.getMonth()];
+                    return `${day} ${month}`;
                   }
                 }}
+                tick={{ style: { pointerEvents: 'none', userSelect: 'none' } }}
                 interval={0}
               />
+
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={10}
                 fontSize={12}
-                stroke={theme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'}
+                stroke={theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                 tickCount={5}
+                tick={{ style: { pointerEvents: 'none', userSelect: 'none' } }}
               />
+
               <Tooltip
-                content={<CustomTooltip theme={theme} />}
+                content={<CustomTooltip theme={theme} dateFilter={dateFilter} />}
                 cursor={{
-                  stroke: theme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                  stroke: theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                   strokeWidth: 1,
                   strokeDasharray: '5 5',
                 }}
               />
-              <Legend content={<CustomLegend theme={theme} />} verticalAlign="bottom" height={36} />
-              {zoomData
-                ? // Render multiple lines for hourly zoomed data.
-                  trendData.map((bin, index) => (
+              <Legend
+                content={
+                  <CustomLegend
+                    theme={theme}
+                    hiddenLines={hiddenLines}
+                    onLegendClick={handleLegendClick}
+                  />
+                }
+                verticalAlign="bottom"
+                height={36}
+              />
+              {dataToRender.length > 0 &&
+                // Get unique keys from the first data record (excluding "time").
+                Object.keys(dataToRender[0])
+                  .filter((key) => key !== 'time')
+                  .map((binType, index) => (
                     <Line
-                      key={bin.binName}
+                      key={binType}
                       type="monotone"
-                      dataKey={bin.binName}
-                      name={bin.binName}
-                      stroke={getBinColor(index)}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: getBinColor(index), strokeWidth: 0 }}
-                      activeDot={{
-                        r: 6,
-                        stroke: theme === 'dark' ? '#1e293b' : '#ffffff',
-                        strokeWidth: 2,
-                      }}
-                    />
-                  ))
-                : // Render lines for daily aggregated data.
-                  trendData.map((bin, index) => (
-                    <Line
-                      key={bin.binName}
-                      type="monotone"
-                      dataKey="weight"
-                      data={bin.data}
-                      name={bin.binName}
+                      dataKey={binType}
+                      name={binType}
                       stroke={getBinColor(index)}
                       strokeWidth={2.5}
                       dot={{ r: 0 }}
@@ -268,6 +312,8 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
                         stroke: theme === 'dark' ? '#1e293b' : '#ffffff',
                         strokeWidth: 2,
                       }}
+                      hide={hiddenLines[binType]}
+                      opacity={hiddenLines[binType] ? 0.3 : 1}
                     />
                   ))}
               {isZooming && refAreaLeft && refAreaRight && (
@@ -275,7 +321,7 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
                   x1={refAreaLeft}
                   x2={refAreaRight}
                   strokeOpacity={0.3}
-                  fill={theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}
+                  fill={theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
                 />
               )}
             </LineChart>

@@ -648,7 +648,10 @@ export default function AddCompanyForm({ onCompanyAdded }) {
                 <SelectTrigger id="industry" className="transition-all focus-visible:ring-primary">
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px] overflow-y-auto">
+                <SelectContent
+                  className="max-h-[200px]"
+                  style={{ overflowY: 'auto', position: 'relative' }}
+                >
                   {industryOptions.map((option) => (
                     <SelectItem key={option} value={option} className="cursor-pointer">
                       {option}

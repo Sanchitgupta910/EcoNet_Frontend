@@ -20,7 +20,13 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/Dialog';
 import { Badge } from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/Spinner';
 import AddCompanyForm from '@/components/ui/CompanyForm';
@@ -267,12 +273,12 @@ export default function Companies() {
                 </DialogTrigger>
                 <DialogContent
                   className={`${theme === 'dark' ? 'bg-slate-800 border-slate-700/50' : ''} p-0`}
-                  style={{ maxWidth: '500px' }}
                 >
                   <div className="sr-only">
                     <DialogTitle>Add Company</DialogTitle>
+                    <DialogDescription>Some desc</DialogDescription>
                   </div>
-                  <div className="max-h-[80vh] overflow-y-auto">
+                  <div style={{ overflow: 'visible' }}>
                     <AddCompanyForm onCompanyAdded={handleAddCompany} />
                   </div>
                 </DialogContent>
