@@ -15,6 +15,7 @@ import {
   MapPin,
   Filter,
   TvMinimalIcon,
+  Tv,
   ArrowUpRight,
   ArrowDownRight,
   ChevronLeft,
@@ -1267,8 +1268,36 @@ export default function AdminDashboard() {
                                   theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
                                 }`}
                               >
-                                {item.totalWaste ? Number(item.totalWaste).toFixed(2) : '0'}
+                                {item.totalWaste ? (
+                                  Number(item.totalWaste) > 1000 ? (
+                                    <>
+                                      <span className="text-sm font-bold">
+                                        {(Number(item.totalWaste) / 1000).toFixed(2)}
+                                      </span>
+                                      <span className="text-slate-400 text-sm font-regular">
+                                        {' '}
+                                        tonnes
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-sm font-bold">
+                                        {Number(item.totalWaste).toFixed(1)}
+                                      </span>
+                                      <span className="text-slate-400 text-sm font-regular">
+                                        {' '}
+                                        kg
+                                      </span>
+                                    </>
+                                  )
+                                ) : (
+                                  <>
+                                    <span className="text-sm font-bold">0</span>
+                                    <span className="text-slate-400 text-sm font-regular"> kg</span>
+                                  </>
+                                )}
                               </td>
+
                               <td className="py-3 px-4">
                                 <div
                                   className={`h-2 w-full max-w-[150px] rounded-full overflow-hidden ${
@@ -1452,7 +1481,31 @@ export default function AdminDashboard() {
                               theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
                             }`}
                           >
-                            {item.totalWaste ? Number(item.totalWaste).toFixed(2) : '0'}
+                            {item.totalWaste ? (
+                              Number(item.totalWaste) > 1000 ? (
+                                <>
+                                  <span className="text-sm font-bold">
+                                    {(Number(item.totalWaste) / 1000).toFixed(2)}
+                                  </span>
+                                  <span className="text-slate-400 text-sm font-regular">
+                                    {' '}
+                                    tonnes
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-sm font-bold">
+                                    {Number(item.totalWaste).toFixed(1)}
+                                  </span>
+                                  <span className="text-slate-400 text-sm font-regular"> kg</span>
+                                </>
+                              )
+                            ) : (
+                              <>
+                                <span className="text-sm font-bold">0</span>
+                                <span className="text-slate-400 text-sm font-regular"> kg</span>
+                              </>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <div
@@ -1542,7 +1595,7 @@ export default function AdminDashboard() {
                               : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
                           }`}
                         >
-                          <TvMinimalIcon size={18} />
+                          <Tv size={18} />
                         </button>
                       </div>
                       <div className="flex items-center mb-4 text-sm text-slate-500">
