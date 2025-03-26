@@ -14,6 +14,8 @@ import Companies from './src/pages/Companies';
 import CompanyInfo from './src/pages/CompanyInfo';
 import UserLogs from './src/pages/UserLogs';
 import InviteUserPage from './src/pages/InviteUser';
+import CleanerScreen from './src/pages/CleanerScreen';
+import WasteLoggingScreen from './src/pages/WasteLoggingScreen';
 
 // Dashboard pages:
 import DashboardContent from './src/components/layouts/DashboardContent'; // Decides between admin & employee dashboards.
@@ -53,7 +55,9 @@ function App() {
             <Route path="/user-setup" element={<UserSetupPage />} />
             <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
             <Route path="/password-reset" element={<PasswordResetPage />} />
-
+            <Route path="/cleaner-screen" element={<CleanerScreen />} />
+            <Route path="/waste-logging-screen" element={<WasteLoggingScreen />} />
+            
             {/* Protected Routes: All children render within ProtectedLayout */}
             <Route element={<ProtectedLayout />}>
               {/* Dashboard route */}
