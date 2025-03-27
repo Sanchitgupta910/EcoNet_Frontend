@@ -67,7 +67,22 @@ export default function UserLogs() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentUser, setCurrentUser] = useState(null);
   const itemsPerPage = 15;
+
+  // Fetch current loggedin user
+  useEffect(() => {
+    const fetchCurrentuser = async () => {
+      try {
+        const response = await axios.get('/api/v1/users/me');
+        setCurrentUser(response.data.data);
+        console.log(' Current user details', response);
+      } catch (err) {
+        console.log('Error getting current user:', err);
+      }
+    };
+    fetchCurrentuser();
+  }, []);
 
   // Fetch users from API
   useEffect(() => {
@@ -251,7 +266,11 @@ export default function UserLogs() {
                             >
                               <User className="h-4 w-4" />
                             </div>
-                            <span className="font-medium">{user.fullName}</span>
+                            <span className="font-medium">
+                              {currentUser && user._id === currentUser._id
+                                ? `${user.fullName} (you)`
+                                : user.fullName}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
@@ -272,7 +291,9 @@ export default function UserLogs() {
                         <TableCell>
                           {user.createdby ? (
                             <>
-                              {user.createdby.fullName}{' '}
+                              {currentUser && user.createdby._id === currentUser._id
+                                ? `${user.createdby.fullName} (you)`
+                                : user.createdby.fullName}{' '}
                               <span className="font-bold text-slate-500 text-sm">
                                 ({user.createdby.role})
                               </span>
