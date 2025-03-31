@@ -131,7 +131,7 @@ const LandfillRecyclingChart = ({
   };
 
   return (
-    <div className="w-full h-[270px]">
+    <div className="w-full h-[270px] relative">
       {loading ? (
         <div className="h-full flex justify-center items-center">
           <p

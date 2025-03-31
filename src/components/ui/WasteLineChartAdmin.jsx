@@ -191,7 +191,7 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
   // console.log(`data to render ${JSON.stringify(dataToRender)}`);
   loading = false;
   return (
-    <div className="h-80 relative">
+    <div className="w-full h-80 relative">
       {loading ? (
         <div className="flex justify-center items-center h-full">
           <p>Loading trend data...</p>
