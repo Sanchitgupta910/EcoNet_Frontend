@@ -28,7 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/components/ui/theme-provider';
 import { createPortal } from 'react-dom';
 import AdminWasteLineChart from '@/components/ui/WasteLineChartAdmin';
-
+import LandfillRecyclingChart from '@/components/ui/LandfillvsRecyclingChart';
 export default function AdminDashboard() {
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
       <div className="container mx-auto px-4 py-6">
         {/* Tabs and Filters */}
         <div
-          className={`mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 rounded-xl border ${
+          className={`mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 rounded-md border ${
             theme === 'dark'
               ? 'backdrop-blur-sm bg-slate-800/30 border-slate-700/50'
               : 'backdrop-blur-sm bg-white/50 border-slate-200/70'
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                 createPortal(
                   <div
                     onMouseDown={(e) => e.stopPropagation()}
-                    className={`w-40 rounded-lg shadow-lg ${
+                    className={`w-40 rounded-lg shadow-sm ${
                       theme === 'dark'
                         ? 'bg-slate-800 border border-slate-700'
                         : 'bg-white border border-slate-200'
@@ -599,7 +599,7 @@ export default function AdminDashboard() {
                   createPortal(
                     <div
                       onMouseDown={(e) => e.stopPropagation()}
-                      className={`w-64 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
+                      className={`w-64 rounded-lg shadow-sm max-h-60 overflow-y-auto ${
                         theme === 'dark'
                           ? 'bg-slate-800 border border-slate-700'
                           : 'bg-white border border-slate-200'
@@ -670,7 +670,7 @@ export default function AdminDashboard() {
                 createPortal(
                   <div
                     onMouseDown={(e) => e.stopPropagation()}
-                    className={`w-64 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
+                    className={`w-64 rounded-lg shadow-sm max-h-60 overflow-y-auto ${
                       theme === 'dark'
                         ? 'bg-slate-800 border border-slate-700'
                         : 'bg-white border border-slate-200'
@@ -720,10 +720,10 @@ export default function AdminDashboard() {
           {activeTab === 'dashboard' && (
             <>
               {/* Analytics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 {/* Total Bins Card */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                  className={`rounded-md border p-6 shadow-sm transition-all group ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -775,7 +775,7 @@ export default function AdminDashboard() {
                 </div>
                 {/* Landfill Diversion Card */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                  className={`rounded-md border p-6 shadow-sm transition-all group ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -844,7 +844,7 @@ export default function AdminDashboard() {
                 </div>
                 {/* Recycling Rate Card */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                  className={`rounded-md border p-6 shadow-sm transition-all group ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -913,7 +913,7 @@ export default function AdminDashboard() {
                 </div>
                 {/* Total Waste Collected Card */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                  className={`rounded-md border p-6 shadow-sm transition-all group ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -984,13 +984,13 @@ export default function AdminDashboard() {
 
               {/* Waste Trend Line Chart */}
               <div
-                className={`rounded-xl border p-6 shadow-lg mb-8 ${
+                className={`rounded-md border p-6 shadow-sm mb-4 ${
                   theme === 'dark'
                     ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                     : 'backdrop-blur-md bg-white border-slate-200/70'
                 }`}
               >
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-4">
                   <h3
                     className={`text-xl font-semibold ${
                       theme === 'dark' ? 'text-white' : 'text-slate-800'
@@ -1007,17 +1007,48 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              {/* landfill vs recycling Card */}
+              <div
+                className={`rounded-md border p-6 shadow-sm mb-4 ${
+                  theme === 'dark'
+                    ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
+                    : 'backdrop-blur-md bg-white border-slate-200/70'
+                }`}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3
+                    className={`text-xl font-semibold ${
+                      theme === 'dark' ? 'text-white' : 'text-slate-800'
+                    }`}
+                  >
+                    Landfill Diversion vs Recycling
+                  </h3>
+                </div>
+                <div className="h-64 w-full flex items-center justify-center">
+                  {/* Placeholder for chart component */}
+                  <div className="text-center">
+                    <p
+                      className={`text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                     <LandfillRecyclingChart loading={loadingRecycling} dateFilter={dateFilter} />
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Combined Activity Feed & Top 3 Leaderboard in 2 Columns */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
                 {/* Activity Feed Column */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg ${
+                  className={`rounded-md border p-6 shadow-sm ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
                   }`}
                 >
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-4">
                     <h3
                       className={`text-xl font-semibold ${
                         theme === 'dark' ? 'text-white' : 'text-slate-800'
@@ -1107,7 +1138,7 @@ export default function AdminDashboard() {
 
                 {/* Top 3 Leaderboard Column */}
                 <div
-                  className={`rounded-xl border p-6 shadow-lg ${
+                  className={`rounded-md border p-6 shadow-sm ${
                     theme === 'dark'
                       ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                       : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -1323,7 +1354,7 @@ export default function AdminDashboard() {
           {/* Leaderboard Tab (Full List) */}
           {activeTab === 'leaderboard' && (
             <div
-              className={`rounded-xl border p-6 shadow-lg ${
+              className={`rounded-md border p-6 shadow-sm ${
                 theme === 'dark'
                   ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                   : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -1555,7 +1586,7 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={office._id}
-                      className={`rounded-xl border p-6 shadow-lg transition-all group ${
+                      className={`rounded-md border p-6 shadow-sm transition-all group ${
                         theme === 'dark'
                           ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
                           : 'backdrop-blur-md bg-white border-slate-200/70'
@@ -1664,8 +1695,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-
-
-
-
