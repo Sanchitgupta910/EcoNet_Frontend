@@ -29,6 +29,7 @@ import { useTheme } from '@/components/ui/theme-provider';
 import { createPortal } from 'react-dom';
 import AdminWasteLineChart from '@/components/ui/WasteLineChartAdmin';
 import LandfillRecyclingChart from '@/components/ui/LandfillvsRecyclingChart';
+
 export default function AdminDashboard() {
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -64,6 +65,10 @@ export default function AdminDashboard() {
   const [trendData, setTrendData] = useState([]);
   const [loadingTrend, setLoadingTrend] = useState(true);
   const [trendError, setTrendError] = useState('');
+
+  const [landfillVsRecyclingData, setLandfillVsRecyclingData] = useState([]);
+  const [loadingLandfillVsRecycling, setLoadingLandfillVsRecycling] = useState(true);
+  const [landfillVsRecyclingError, setLandfillVsRecyclingError] = useState('');
 
   // Loading and error states.
   const [loading, setLoading] = useState({
@@ -230,6 +235,31 @@ export default function AdminDashboard() {
       })
       .filter(Boolean);
     return ids;
+  };
+
+  const fetchLandfillVsRecyclingData = async () => {
+    try {
+      const url = '/api/v1/analytics/landfillVsRecyclingRates';
+      // Build query parameters similar to other endpoints.
+      const params = { filter: dateFilter };
+      if (selectedOrgUnit) {
+        params.orgUnitId = selectedOrgUnit._id;
+      } else if (selectedCompany) {
+        params.companyId = selectedCompany._id;
+      }
+      setLoadingLandfillVsRecycling(true);
+      const response = await axios.get(url, { params, withCredentials: true });
+      if (response.data.success) {
+        setLandfillVsRecyclingData(response.data.data);
+        setLandfillVsRecyclingError('');
+      } else {
+        setLandfillVsRecyclingError(response.data.message);
+      }
+    } catch (err) {
+      console.error('Error fetching landfill vs recycling data:', err);
+      setLandfillVsRecyclingError(err.message);
+    }
+    setLoadingLandfillVsRecycling(false);
   };
 
   const fetchOverviewData = async () => {
@@ -415,6 +445,7 @@ export default function AdminDashboard() {
     fetchActivityFeed();
     fetchLeaderboardData();
     fetchOfficesData();
+    fetchLandfillVsRecyclingData();
   }, [selectedCompany, selectedOrgUnit, dateFilter]);
 
   // ---------------------------
@@ -1024,17 +1055,13 @@ export default function AdminDashboard() {
                     Landfill Diversion vs Recycling
                   </h3>
                 </div>
-                <div className="h-64 w-full flex items-center justify-center">
-                  {/* Placeholder for chart component */}
-                  <div className="text-center">
-                    <p
-                      className={`text-sm ${
-                        theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
-                      }`}
-                    >
-                     <LandfillRecyclingChart loading={loadingRecycling} dateFilter={dateFilter} />
-                    </p>
-                  </div>
+                <div className="h-80 w-full flex items-center justify-center">
+                  <LandfillRecyclingChart
+                    data={landfillVsRecyclingData}
+                    loading={loadingLandfillVsRecycling}
+                    error={landfillVsRecyclingError}
+                    dateFilter={dateFilter}
+                  />
                 </div>
               </div>
 
