@@ -32,6 +32,7 @@ import {
   Shield,
   CheckCircle,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
 
@@ -90,6 +91,14 @@ const roleToOrgUnitTypeMapping = {
   BinDisplayUser: 'Branch',
 };
 
+// Toast types
+const TOAST_TYPES = {
+  SUCCESS: 'success',
+  ERROR: 'error',
+  INFO: 'info',
+  WARNING: 'warning',
+};
+
 export default function InviteUserPage() {
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -109,6 +118,38 @@ export default function InviteUserPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // Toast state
+  const [toasts, setToasts] = useState([]);
+
+  // Toast functionality integrated directly into the component
+  const addToast = (title, message, type = TOAST_TYPES.INFO, duration = 3000) => {
+    const id = Date.now();
+    setToasts((prevToasts) => [...prevToasts, { id, title, message, type }]);
+
+    // Auto remove toast after duration
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+
+    return id;
+  };
+
+  const removeToast = (id) => {
+    // Find the toast element and add the removing class for animation
+    const toastElement = document.getElementById(`toast-${id}`);
+    if (toastElement) {
+      toastElement.classList.add('removing');
+
+      // Wait for animation to complete before removing from state
+      setTimeout(() => {
+        setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+      }, 400); // Match this with the animation duration
+    } else {
+      // Fallback if element not found
+      setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+    }
+  };
 
   // When role changes, fetch OrgUnit options filtered by unit type and companyId.
   useEffect(() => {
@@ -159,10 +200,30 @@ export default function InviteUserPage() {
         { withCredentials: true },
       );
       setIsSuccess(true);
-      navigate('/companies');
+
+      // Show success toast notification
+      addToast(
+        'Invitation Sent',
+        `Successfully sent invitation to ${formData.email}`,
+        TOAST_TYPES.SUCCESS,
+        5000,
+      );
+
+      // Navigate after a short delay to ensure toast is visible
+      setTimeout(() => {
+        navigate('/companies');
+      }, 1000);
     } catch (error) {
       console.error('Error sending invitation:', error);
       setError(error.response?.data?.message || 'Failed to send invitation. Please try again.');
+
+      // Show error toast
+      addToast(
+        'Invitation Failed',
+        error.response?.data?.message || 'Failed to send invitation. Please try again.',
+        TOAST_TYPES.ERROR,
+        5000,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -461,6 +522,97 @@ export default function InviteUserPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Container */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            id={`toast-${toast.id}`}
+            className={`p-4 rounded-lg shadow-sm max-w-xs toast-item pointer-events-auto ${
+              toast.type === TOAST_TYPES.SUCCESS
+                ? 'bg-green-100 border-l-4 border-green-500'
+                : toast.type === TOAST_TYPES.ERROR
+                ? 'bg-red-100 border-l-4 border-red-500'
+                : toast.type === TOAST_TYPES.WARNING
+                ? 'bg-amber-100 border-l-4 border-amber-500'
+                : 'bg-indigo-100 border-l-4 border-indigo-500'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h4
+                  className={`font-medium text-sm ${
+                    toast.type === TOAST_TYPES.SUCCESS
+                      ? 'text-green-800'
+                      : toast.type === TOAST_TYPES.ERROR
+                      ? 'text-red-800'
+                      : toast.type === TOAST_TYPES.WARNING
+                      ? 'text-amber-800'
+                      : 'text-indigo-800'
+                  }`}
+                >
+                  {toast.title}
+                </h4>
+                <p
+                  className={`text-xs mt-1 ${
+                    toast.type === TOAST_TYPES.SUCCESS
+                      ? 'text-green-600'
+                      : toast.type === TOAST_TYPES.ERROR
+                      ? 'text-red-600'
+                      : toast.type === TOAST_TYPES.WARNING
+                      ? 'text-amber-600'
+                      : 'text-indigo-600'
+                  }`}
+                >
+                  {toast.message}
+                </p>
+              </div>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Inline CSS for animations */}
+      <style jsx>{`
+        @keyframes toast-enter {
+          from {
+            transform: translateX(100%) translateY(10%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0) translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes toast-exit {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+
+        .toast-item {
+          animation: toast-enter 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+          transform-origin: top right;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .toast-item.removing {
+          animation: toast-exit 0.4s cubic-bezier(0.06, 0.71, 0.55, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 }

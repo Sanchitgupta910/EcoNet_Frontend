@@ -130,7 +130,7 @@ export default function Header({ user }) {
           </Button>
           {/* Updated Invite Button: Wrap with Link to navigate to invite page.
               Using user.company (assumed to be the company id) */}
-          <Link to={`/invite-user/${user?.company}`}>
+          <Link to={`/invite-user/${user?.company?._id || user?.company}`}>
             <Button
               size="sm"
               className={`hidden md:flex ${
@@ -142,6 +142,7 @@ export default function Header({ user }) {
               <Plus className="mr-1 h-4 w-4" /> Invite
             </Button>
           </Link>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">

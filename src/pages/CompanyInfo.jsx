@@ -1207,7 +1207,7 @@ export default function CompanyInfo() {
                                   {user.role}
                                 </Badge>
                               </TableCell>
-                              <TableCell>{user.OrgUnit?.name || 'N/A'}</TableCell>
+                              <TableCell>{ user.OrgUnit?.name || 'N/A'}</TableCell>
                               <TableCell className="text-right">
                                 <Button
                                   variant="ghost"
