@@ -1503,6 +1503,7 @@ export default function AdminDashboard() {
                             const companyToPass = selectedCompany
                               ? selectedCompany
                               : office.associatedCompany;
+
                             navigate('/dashboard', {
                               state: { fromAdmin: true, office, company: companyToPass },
                             });
