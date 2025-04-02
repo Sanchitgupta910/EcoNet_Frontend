@@ -13,15 +13,18 @@ import {
   CartesianGrid,
 } from 'recharts';
 
-// Custom tooltip component
+// Custom tooltip component for Waste Disposition Chart
 const CustomTooltip = ({ active, payload, label, theme, dateFilter }) => {
   if (!active || !payload || !payload.length) return null;
 
-  // Format label: if filter is today, assume label is hour (e.g., 10 becomes "10:00 hrs").
-  // Otherwise, format as "day Month" (e.g., "25 Mar").
+  // Format label: if filter is today, assume label is hour; otherwise, format as "day Month"
   let formattedLabel = label;
   if (dateFilter === 'today') {
-    formattedLabel = `${label}:00 hrs`;
+    // Convert 24-hour format to AM/PM
+    const hour = parseInt(label, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12; // Convert 0 to 12
+    formattedLabel = `${hour12} ${ampm}`;
   } else {
     const date = new Date(label);
     const day = date.getDate();
@@ -64,7 +67,7 @@ const CustomTooltip = ({ active, payload, label, theme, dateFilter }) => {
               {typeof entry.value === 'number'
                 ? entry.value.toFixed(2)
                 : Number(entry.value).toFixed(2)}{' '}
-              %
+              kg
             </span>
           </div>
         ))}
@@ -73,29 +76,39 @@ const CustomTooltip = ({ active, payload, label, theme, dateFilter }) => {
   );
 };
 
-// Custom legend component
-const CustomLegend = ({ payload, theme, visibleSeries, onToggleSeries }) => (
-  <div className="flex justify-center gap-6 mt-2">
-    {payload.map((entry, index) => (
-      <div
-        key={index}
-        className="flex items-center gap-2 cursor-pointer"
-        onClick={() => onToggleSeries(entry.dataKey)}
-      >
-        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-        <span
-          className={`text-sm  ${
-            theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
-          } ${!visibleSeries[entry.dataKey] ? 'line-through opacity-50' : ''}`}
-        >
-          {entry.value}
-        </span>
-      </div>
-    ))}
-  </div>
-);
+// Custom legend component for Waste Disposition Chart
+const CustomLegend = ({ payload, theme, visibleSeries, onToggleSeries }) => {
+  if (!payload || !payload.length) return null;
 
-const LandfillRecyclingChart = ({
+  return (
+    <div className="flex justify-center gap-6 mt-2">
+      {payload.map((entry, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => onToggleSeries(entry.dataKey)}
+        >
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{
+              backgroundColor: entry.color,
+              opacity: visibleSeries[entry.dataKey] ? 1 : 0.3,
+            }}
+          />
+          <span
+            className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} ${
+              !visibleSeries[entry.dataKey] ? 'line-through opacity-50' : ''
+            }`}
+          >
+            {entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const WasteDispositionChart = ({
   data,
   loading = false,
   error = null,
@@ -103,14 +116,12 @@ const LandfillRecyclingChart = ({
 }) => {
   const { theme } = useTheme();
   const [chartData, setChartData] = useState([]);
-  const [hoveredData, setHoveredData] = useState(null);
-  const tooltipRef = useRef(null);
   const [visibleSeries, setVisibleSeries] = useState({
-    landfillDiversionPercentage: true,
-    recyclingRate: true,
+    landfillWaste: true,
+    divertedWaste: true,
   });
 
-  // Update chart data when the data prop changes.
+  // Update chart data when new data is received.
   useEffect(() => {
     if (data && data.length > 0) {
       setChartData(data);
@@ -119,10 +130,10 @@ const LandfillRecyclingChart = ({
     }
   }, [data]);
 
-  // Determine X-axis key based on the date filter: 'time' for "today", 'day' otherwise.
-  const xAxisDataKey = dateFilter === 'today' ? 'time' : 'day';
+  // X-axis key is always 'time' (returned by our backend).
+  const xAxisDataKey = 'time';
 
-  // Function to toggle visibility of a data series
+  // Toggle visibility of a series.
   const toggleSeriesVisibility = (dataKey) => {
     setVisibleSeries((prev) => ({
       ...prev,
@@ -148,42 +159,12 @@ const LandfillRecyclingChart = ({
         </div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            onMouseMove={(e) => {
-              if (e && e.activePayload) {
-                setHoveredData(e.activePayload[0]?.payload);
-              }
-            }}
-            onMouseLeave={() => setHoveredData(null)}
-          >
-            <defs>
-              <linearGradient id="landfillDiversionGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor={theme === 'dark' ? '#3b82f6' : '#60a5fa'}
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor={theme === 'dark' ? '#3b82f6' : '#60a5fa'}
-                  stopOpacity={0.2}
-                />
-              </linearGradient>
-              <linearGradient id="recyclingGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor={theme === 'dark' ? '#10b981' : '#34d399'}
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor={theme === 'dark' ? '#10b981' : '#34d399'}
-                  stopOpacity={0.2}
-                />
-              </linearGradient>
-            </defs>
+          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={theme === 'dark' ? '#334155' : '#e2e8f0'}
+            />
             <XAxis
               dataKey={xAxisDataKey}
               tickLine={false}
@@ -193,7 +174,11 @@ const LandfillRecyclingChart = ({
               stroke={theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
               tickFormatter={(value) => {
                 if (dateFilter === 'today') {
-                  return `${value}:00 hrs`;
+                  // Convert 24-hour format to AM/PM
+                  const hour = parseInt(value, 10);
+                  const ampm = hour >= 12 ? 'PM' : 'AM';
+                  const hour12 = hour % 12 || 12; // Convert 0 to 12
+                  return `${hour12} ${ampm}`;
                 } else {
                   const date = new Date(value);
                   const day = date.getDate();
@@ -224,13 +209,8 @@ const LandfillRecyclingChart = ({
               tickMargin={10}
               fontSize={12}
               stroke={theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
-              tickFormatter={(value) => `${value}%`}
+              tickFormatter={(value) => `${value} kg`}
               dx={-10}
-            />
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke={theme === 'dark' ? '#334155' : '#e2e8f0'}
             />
             <Tooltip content={<CustomTooltip theme={theme} dateFilter={dateFilter} />} />
             <Legend
@@ -244,32 +224,62 @@ const LandfillRecyclingChart = ({
             />
             <Area
               type="monotone"
-              dataKey="landfillDiversionPercentage"
-              name="Landfill Diversion"
+              dataKey="landfillWaste"
+              name="Landfill Waste"
               stroke={theme === 'dark' ? '#3b82f6' : '#2563eb'}
-              fillOpacity={visibleSeries.landfillDiversionPercentage ? 1 : 0}
-              strokeOpacity={visibleSeries.landfillDiversionPercentage ? 1 : 0}
+              fillOpacity={visibleSeries.landfillWaste ? 0.8 : 0}
+              strokeOpacity={visibleSeries.landfillWaste ? 1 : 0}
               fill="url(#landfillDiversionGradient)"
-              strokeWidth={2}
               activeDot={{
                 r: 6,
-                strokeWidth: 0,
-                opacity: visibleSeries.landfillDiversionPercentage ? 1 : 0,
+                stroke: theme === 'dark' ? '#1e293b' : '#ffffff',
+                strokeWidth: 2,
+                opacity: visibleSeries.landfillWaste ? 1 : 0,
               }}
-              hide={!visibleSeries.landfillDiversionPercentage}
+              hide={!visibleSeries.landfillWaste}
             />
             <Area
               type="monotone"
-              dataKey="recyclingRate"
-              name="Recycling"
+              dataKey="divertedWaste"
+              name="Diverted Waste"
               stroke={theme === 'dark' ? '#10b981' : '#059669'}
-              fillOpacity={visibleSeries.recyclingRate ? 0.8 : 0}
-              strokeOpacity={visibleSeries.recyclingRate ? 1 : 0}
+              fillOpacity={visibleSeries.divertedWaste ? 0.8 : 0}
+              strokeOpacity={visibleSeries.divertedWaste ? 1 : 0}
               fill="url(#recyclingGradient)"
-              strokeWidth={2}
-              activeDot={{ r: 6, strokeWidth: 0, opacity: visibleSeries.recyclingRate ? 1 : 0 }}
-              hide={!visibleSeries.recyclingRate}
+              activeDot={{
+                r: 6,
+                stroke: theme === 'dark' ? '#1e293b' : '#ffffff',
+                strokeWidth: 2,
+                opacity: visibleSeries.divertedWaste ? 1 : 0,
+              }}
+              hide={!visibleSeries.divertedWaste}
             />
+            <defs>
+              <linearGradient id="landfillDiversionGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor={theme === 'dark' ? '#3b82f6' : '#60a5fa'}
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={theme === 'dark' ? '#3b82f6' : '#60a5fa'}
+                  stopOpacity={0.2}
+                />
+              </linearGradient>
+              <linearGradient id="recyclingGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor={theme === 'dark' ? '#10b981' : '#34d399'}
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={theme === 'dark' ? '#10b981' : '#34d399'}
+                  stopOpacity={0.2}
+                />
+              </linearGradient>
+            </defs>
           </AreaChart>
         </ResponsiveContainer>
       )}
@@ -277,4 +287,4 @@ const LandfillRecyclingChart = ({
   );
 };
 
-export default LandfillRecyclingChart;
+export default WasteDispositionChart;

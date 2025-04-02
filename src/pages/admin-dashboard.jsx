@@ -7,19 +7,14 @@ import {
   Calendar,
   TrendingUp,
   Trash2,
-  Recycle,
   Award,
+  Recycle,
   Activity,
-  ShuffleIcon,
   Building,
   MapPin,
-  Filter,
-  TvMinimalIcon,
   Tv,
   ArrowUpRight,
   ArrowDownRight,
-  ChevronLeft,
-  ChevronRight,
   GitBranchIcon,
   Info,
 } from 'lucide-react';
@@ -28,7 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/components/ui/theme-provider';
 import { createPortal } from 'react-dom';
 import AdminWasteLineChart from '@/components/ui/WasteLineChartAdmin';
-import LandfillRecyclingChart from '@/components/ui/LandfillvsRecyclingChart';
+import WasteDispositionChart from '@/components/ui/WasteDispositionChart';
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
@@ -58,17 +53,15 @@ export default function AdminDashboard() {
   const [companies, setCompanies] = useState([]);
   const [orgUnits, setOrgUnits] = useState([]);
 
-  const [recyclingOverview, setRecyclingOverview] = useState(null);
-  const [loadingRecycling, setLoadingRecycling] = useState(true);
-
-  // Trend data to pass to the line chart.
+  // Trend data for the line chart.
   const [trendData, setTrendData] = useState([]);
   const [loadingTrend, setLoadingTrend] = useState(true);
   const [trendError, setTrendError] = useState('');
 
-  const [landfillVsRecyclingData, setLandfillVsRecyclingData] = useState([]);
-  const [loadingLandfillVsRecycling, setLoadingLandfillVsRecycling] = useState(true);
-  const [landfillVsRecyclingError, setLandfillVsRecyclingError] = useState('');
+  // New state for waste disposition data.
+  const [wasteDispositionData, setWasteDispositionData] = useState([]);
+  const [loadingWasteDisposition, setLoadingWasteDisposition] = useState(true);
+  const [wasteDispositionError, setWasteDispositionError] = useState('');
 
   // Loading and error states.
   const [loading, setLoading] = useState({
@@ -123,25 +116,19 @@ export default function AdminDashboard() {
   // ---------------------------
   const fetchOfficesCount = async () => {
     try {
-      // Construct the API URL based on selected filters.
       let url = '/api/v1/analytics/offices';
       const params = [];
-      // If an OrgUnit is selected, use its ID.
       if (selectedOrgUnit) {
         const orgUnitId = selectedOrgUnit._id || selectedOrgUnit.id;
         if (orgUnitId) {
           params.push(`orgUnitId=${orgUnitId}`);
         }
-      }
-      // Otherwise, if a company is selected, use its ID.
-      else if (selectedCompany) {
+      } else if (selectedCompany) {
         params.push(`companyId=${selectedCompany._id}`);
       }
-      // Append query parameters if any.
       if (params.length) {
         url += '?' + params.join('&');
       }
-      // Make the API request.
       const response = await axios.get(url, { withCredentials: true });
       if (response.data.success && Array.isArray(response.data.data)) {
         setOfficesCount(response.data.data.length);
@@ -164,7 +151,7 @@ export default function AdminDashboard() {
   };
 
   // ---------------------------
-  // API Request Functions (Defined Outside useEffect)
+  // API Request Functions
   // ---------------------------
   const fetchCompanies = async () => {
     try {
@@ -237,31 +224,6 @@ export default function AdminDashboard() {
     return ids;
   };
 
-  const fetchLandfillVsRecyclingData = async () => {
-    try {
-      const url = '/api/v1/analytics/landfillVsRecyclingRates';
-      // Build query parameters similar to other endpoints.
-      const params = { filter: dateFilter };
-      if (selectedOrgUnit) {
-        params.orgUnitId = selectedOrgUnit._id;
-      } else if (selectedCompany) {
-        params.companyId = selectedCompany._id;
-      }
-      setLoadingLandfillVsRecycling(true);
-      const response = await axios.get(url, { params, withCredentials: true });
-      if (response.data.success) {
-        setLandfillVsRecyclingData(response.data.data);
-        setLandfillVsRecyclingError('');
-      } else {
-        setLandfillVsRecyclingError(response.data.message);
-      }
-    } catch (err) {
-      console.error('Error fetching landfill vs recycling data:', err);
-      setLandfillVsRecyclingError(err.message);
-    }
-    setLoadingLandfillVsRecycling(false);
-  };
-
   const fetchOverviewData = async () => {
     try {
       setLoading((prev) => ({ ...prev, overview: true }));
@@ -285,63 +247,52 @@ export default function AdminDashboard() {
   };
 
   const fetchTrendData = async () => {
-    // Remove extra parameter "days" (if any) and build URL based on filters.
-    let url = '/api/v1/analytics/wasteTrendChart';
-    const params = { filter: dateFilter };
-    // For orgUnit filtering, get branch IDs from selectedOrgUnit and use that.
-    if (selectedOrgUnit) {
-      // For simplicity, assume backend handles selectedOrgUnit via orgUnitId.
-      params.orgUnitId = selectedOrgUnit._id;
-    } else if (selectedCompany) {
-      params.companyId = selectedCompany._id;
-    } else {
-      // If neither selected, you could send no companyId so that the backend uses all organizations.
-    }
-    // Log parameters for debugging.
-    console.log('Fetching trend data with params:', params);
     try {
       setLoadingTrend(true);
+      let url = '/api/v1/analytics/wasteTrendChart'; // New endpoint
+      const params = { filter: dateFilter };
+      if (selectedOrgUnit) params.orgUnitId = selectedOrgUnit._id;
+      else if (selectedCompany) params.companyId = selectedCompany._id;
       const response = await axios.get(url, { params, withCredentials: true });
-      console.log('Trend data response:', response.data);
       if (response.data.success) {
+        // Now expecting an array of { time, data: { <binType>: <weight>, ... } }
         setTrendData(response.data.data);
         setTrendError('');
       } else {
         setTrendError(response.data.message);
       }
-    } catch (err) {
-      console.error('Error fetching trend data:', err);
-      setTrendError('An error occurred while fetching trend data');
+    } catch (error) {
+      console.error('Error fetching trend data:', error);
+      setTrendError('Error fetching trend data');
+    } finally {
+      setLoadingTrend(false);
     }
-    setLoadingTrend(false);
   };
 
-  const fetchRecyclingOverview = async () => {
+  const fetchWasteDispositionData = async () => {
     try {
-      setLoadingRecycling(true);
-      const params = new URLSearchParams();
-      params.append('filter', dateFilter);
-      if (selectedCompany) {
-        params.append('companyId', selectedCompany._id);
-      }
+      setLoadingWasteDisposition(true);
+      let url = '/api/v1/analytics/wasteDisposition';
+      const params = { filter: dateFilter };
       if (selectedOrgUnit) {
-        params.append('orgUnitId', selectedOrgUnit._id);
+        params.orgUnitId = selectedOrgUnit._id;
+      } else if (selectedCompany) {
+        params.companyId = selectedCompany._id;
       }
-      const response = await axios.get(`/api/v1/analytics/recyclingOverview?${params.toString()}`, {
-        withCredentials: true,
-      });
+      const response = await axios.get(url, { params, withCredentials: true });
       if (response.data.success) {
-        setRecyclingOverview(response.data.data);
+        setWasteDispositionData(response.data.data);
+        setWasteDispositionError('');
       } else {
-        console.error('Recycling overview error:', response.data.message);
+        setWasteDispositionError(response.data.message);
       }
     } catch (error) {
-      console.error('Error fetching recycling overview:', error);
+      console.error('Error fetching waste disposition data:', error);
+      setWasteDispositionError('Error fetching waste disposition data');
     } finally {
-      setLoadingRecycling(false);
+      setLoadingWasteDisposition(false);
     }
   };
-
   const fetchActivityFeed = async () => {
     const branchIds = getBranchIds(selectedOrgUnit, orgUnits);
     let url = '';
@@ -370,7 +321,6 @@ export default function AdminDashboard() {
 
   const fetchLeaderboardData = async () => {
     let url = '/api/v1/analytics/leaderboard';
-    // When a company filter is applied, pass companyId to get branch-level leaderboard.
     if (userRole === 'SuperAdmin' && selectedCompany) {
       url += `?companyId=${selectedCompany._id}`;
     }
@@ -378,7 +328,6 @@ export default function AdminDashboard() {
       setLoading((prev) => ({ ...prev, leaderboard: true }));
       const response = await axios.get(url, { withCredentials: true });
       if (response.data.success) {
-        // The response contains an object with "leaderboard" and "period"
         setLeaderboardData(response.data.data.leaderboard);
         setLeaderboardPeriod(response.data.data.period);
       } else {
@@ -432,20 +381,19 @@ export default function AdminDashboard() {
       fetchOrgUnits(selectedCompany._id);
     }
   }, [selectedCompany]);
+
   useEffect(() => {
     fetchOfficesCount();
   }, [selectedCompany, selectedOrgUnit]);
 
   useEffect(() => {
-    // When any filter changes, fetch all analytics data
     console.log('Dashboard filters changed:', { selectedCompany, selectedOrgUnit, dateFilter });
     fetchOverviewData();
     fetchTrendData();
-    fetchRecyclingOverview();
     fetchActivityFeed();
     fetchLeaderboardData();
     fetchOfficesData();
-    fetchLandfillVsRecyclingData();
+    fetchWasteDispositionData();
   }, [selectedCompany, selectedOrgUnit, dateFilter]);
 
   // ---------------------------
@@ -751,7 +699,7 @@ export default function AdminDashboard() {
           {activeTab === 'dashboard' && (
             <>
               {/* Analytics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Total Bins Card */}
                 <div
                   className={`rounded-md border p-6 shadow-sm transition-all group ${
@@ -779,13 +727,12 @@ export default function AdminDashboard() {
                           : 'No data found'}
                       </h3>
                       <p
-                        className={`text-sm text-gray-500 mt-5  ${
+                        className={`text-sm text-gray-500 mt-5 ${
                           theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                         }`}
                       >
                         Configured across
                         <span className="font-bold">
-                          {' '}
                           {overviewData && overviewData.totalBins !== undefined
                             ? ` ${officesCount}`
                             : ''}
@@ -819,7 +766,7 @@ export default function AdminDashboard() {
                           theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
                         }`}
                       >
-                        Landfill Diversion
+                        Waste Diverted
                       </p>
                       <h3
                         className={`text-3xl font-bold ${
@@ -839,7 +786,7 @@ export default function AdminDashboard() {
                           : 'bg-lime-100 text-lime-600'
                       }`}
                     >
-                      <ShuffleIcon size={24} />
+                      <Recycle size={24} />
                     </div>
                   </div>
                   <div className="mt-4 flex items-center text-sm">
@@ -853,75 +800,6 @@ export default function AdminDashboard() {
                         <span className="text-red-500 flex items-center font-bold">
                           <ArrowDownRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
                           {Math.abs(overviewData.landfillDiversionTrend)}%
-                        </span>
-                      )
-                    ) : (
-                      <span className="text-gray-500">No data found</span>
-                    )}
-                    <span
-                      className={`ml-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
-                    >
-                      {dateFilter === 'today'
-                        ? 'compared to yesterday'
-                        : dateFilter === 'thisWeek'
-                        ? 'compared to last week'
-                        : dateFilter === 'thisMonth'
-                        ? 'compared to last month'
-                        : dateFilter === 'lastMonth'
-                        ? 'compared to this month'
-                        : 'compared to previous period'}
-                    </span>
-                  </div>
-                </div>
-                {/* Recycling Rate Card */}
-                <div
-                  className={`rounded-md border p-6 shadow-sm transition-all group ${
-                    theme === 'dark'
-                      ? 'backdrop-blur-md bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50'
-                      : 'backdrop-blur-md bg-white border-slate-200/70'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p
-                        className={`text-sm font-medium mb-1 ${
-                          theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
-                        }`}
-                      >
-                        Recycling Rate
-                      </p>
-                      <h3
-                        className={`text-3xl font-bold ${
-                          theme === 'dark' ? 'text-white' : 'text-slate-800'
-                        }`}
-                      >
-                        {recyclingOverview && recyclingOverview.recyclingRate !== undefined
-                          ? Number(recyclingOverview.recyclingRate).toFixed(2)
-                          : 'No data found'}
-                        <span className="text-sm">%</span>
-                      </h3>
-                    </div>
-                    <div
-                      className={`p-3 rounded-lg transition-colors ${
-                        theme === 'dark'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-emerald-100 text-emerald-600'
-                      }`}
-                    >
-                      <Recycle size={24} />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-sm">
-                    {recyclingOverview && recyclingOverview.recyclingTrend != null ? (
-                      recyclingOverview.recyclingTrend >= 0 ? (
-                        <span className="text-emerald-500 flex items-center font-bold">
-                          <ArrowUpRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
-                          {recyclingOverview.recyclingTrend}%
-                        </span>
-                      ) : (
-                        <span className="text-red-500 flex items-center font-bold">
-                          <ArrowDownRight strokeWidth={2.75} size={14} className="mr-1" />{' '}
-                          {Math.abs(recyclingOverview.recyclingTrend)}%
                         </span>
                       )
                     ) : (
@@ -1033,12 +911,12 @@ export default function AdminDashboard() {
                 <AdminWasteLineChart
                   trendData={trendData}
                   loading={loading.trend}
-                  error={error.trend}
+                  error={trendError}
                   dateFilter={dateFilter}
                 />
               </div>
 
-              {/* landfill vs recycling Card */}
+              {/* Waste Disposition Chart */}
               <div
                 className={`rounded-md border p-6 shadow-sm mb-4 ${
                   theme === 'dark'
@@ -1052,20 +930,20 @@ export default function AdminDashboard() {
                       theme === 'dark' ? 'text-white' : 'text-slate-800'
                     }`}
                   >
-                    Landfill Diversion vs Recycling
+                    Waste Disposition
                   </h3>
                 </div>
                 <div className="h-80 w-full flex items-center justify-center">
-                  <LandfillRecyclingChart
-                    data={landfillVsRecyclingData}
-                    loading={loadingLandfillVsRecycling}
-                    error={landfillVsRecyclingError}
+                  <WasteDispositionChart
+                    data={wasteDispositionData}
+                    loading={loadingWasteDisposition}
+                    error={wasteDispositionError}
                     dateFilter={dateFilter}
                   />
                 </div>
               </div>
 
-              {/* Combined Activity Feed & Top 3 Leaderboard in 2 Columns */}
+              {/* Combined Activity Feed & Top 3 Leaderboard */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
                 {/* Activity Feed Column */}
                 <div
@@ -1177,7 +1055,7 @@ export default function AdminDashboard() {
                         theme === 'dark' ? 'text-white' : 'text-slate-800'
                       }`}
                     >
-                      Leaderboard
+                      {userRole === 'SuperAdmin' ? 'Leaderboard' : 'Office Leaderboard'}
                     </h3>
                   </div>
                   <div
@@ -1192,18 +1070,14 @@ export default function AdminDashboard() {
                         theme === 'dark' ? 'text-slate-200' : 'text-slate-600'
                       }`}
                     >
-                      {' '}
                       <Info className="mr-3" />
-                      {''}
                       <i>
-                        This leaderboard highlights the Top 3 performing companies in waste
-                        diversion for {''}
-                        {leaderboardPeriod ? `${leaderboardPeriod}` : ''}, recognizing their
-                        commitment to sustainable waste management and landfill reduction.
+                        This leaderboard highlights the Top performing companies in waste diversion
+                        for {leaderboardPeriod ? `${leaderboardPeriod}` : ''}, recognizing their
+                        commitment to sustainable waste management.
                       </i>
                     </p>
                   </div>
-
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
@@ -1302,7 +1176,7 @@ export default function AdminDashboard() {
                                   theme === 'dark' ? 'text-white' : 'text-slate-800'
                                 }`}
                               >
-                                {item.name || item.name}
+                                {item.name}
                               </td>
                               <td className="py-3 px-4 text-emerald-500 font-medium">
                                 {item.diversionPercentage
@@ -1344,7 +1218,6 @@ export default function AdminDashboard() {
                                   </>
                                 )}
                               </td>
-
                               <td className="py-3 px-4">
                                 <div
                                   className={`h-2 w-full max-w-[150px] rounded-full overflow-hidden ${
@@ -1378,7 +1251,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* Leaderboard Tab (Full List) */}
+          {/* Leaderboard Tab */}
           {activeTab === 'leaderboard' && (
             <div
               className={`rounded-md border p-6 shadow-sm ${
@@ -1408,12 +1281,11 @@ export default function AdminDashboard() {
                     theme === 'dark' ? 'text-slate-200' : 'text-slate-600'
                   }`}
                 >
-                  {''}
+                  <Info className="mr-3" />
                   <i>
                     This leaderboard highlights the Top performing companies in waste diversion for{' '}
-                    {''}
                     {leaderboardPeriod ? `${leaderboardPeriod}` : ''}, recognizing their commitment
-                    to sustainable waste management and landfill reduction.
+                    to sustainable waste management.
                   </i>
                 </p>
               </div>
@@ -1515,7 +1387,7 @@ export default function AdminDashboard() {
                               theme === 'dark' ? 'text-white' : 'text-slate-800'
                             }`}
                           >
-                            {item.name || item.name}
+                            {item.name}
                           </td>
                           <td className="py-3 px-4 text-emerald-500 font-medium">
                             {item.diversionPercentage
@@ -1594,7 +1466,6 @@ export default function AdminDashboard() {
                 <p className="text-red-500">{error.offices}</p>
               ) : sortedOfficesData && sortedOfficesData.length > 0 ? (
                 sortedOfficesData.map((office) => {
-                  // Sort bin configuration by fixed order.
                   const binOrder = [
                     'General Waste',
                     'Organic',

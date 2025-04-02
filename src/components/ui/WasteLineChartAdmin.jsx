@@ -18,13 +18,14 @@ import { useTheme } from '@/components/ui/theme-provider';
 const CustomTooltip = ({ active, payload, label, theme, dateFilter }) => {
   if (!active || !payload || !payload.length) return null;
 
-  // Format the label based on the active filter.
   let formattedLabel = label;
   if (dateFilter === 'today') {
-    // Assume label is the hour (number); format as "10:00 hrs"
-    formattedLabel = `${label}:00 hrs`;
+    // Convert 24-hour format to AM/PM
+    const hour = Number.parseInt(label, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12; // Convert 0 to 12
+    formattedLabel = `${hour12} ${ampm}`;
   } else {
-    // Assume label is a date string "YYYY-MM-DD"
     const date = new Date(label);
     const day = date.getDate();
     const monthNames = [
@@ -112,7 +113,7 @@ const getBinColor = (index) => {
   return colors[index % colors.length];
 };
 
-export default function EnhancedWasteChart({ trendData, loading, error, dateFilter }) {
+export default function AdminWasteLineChart({ trendData, loading, error, dateFilter }) {
   const { theme } = useTheme();
 
   const [transformedData, setTransformedData] = useState([]);
@@ -122,19 +123,15 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
   const [isZooming, setIsZooming] = useState(false);
   const [hiddenLines, setHiddenLines] = useState({});
 
+  // Update transformation logic based on the new structure:
   useEffect(() => {
     const transformed = trendData.map((record) => {
-      const obj = { time: record.time };
-      record.values.forEach((item) => {
-        obj[item.binType] = item.weight;
-      });
-      return obj;
+      // record should be: { time, data: { binType1: weight1, binType2: weight2, ... } }
+      return { time: record.time, ...record.data };
     });
     console.log('WasteLineChartAdmin transformed data:', transformed);
     setTransformedData(transformed);
   }, [trendData]);
-
-  // Zoom logic can be kept as before.
 
   const handleLegendClick = useCallback((dataKey) => {
     setHiddenLines((prev) => ({
@@ -185,18 +182,13 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
       handleZoomIn();
     }
   };
-  const xAxisDataKey = 'time';
 
+  const xAxisDataKey = 'time';
   const dataToRender = zoomData || transformedData;
-  // console.log(`data to render ${JSON.stringify(dataToRender)}`);
-  loading = false;
+
   return (
     <div className="w-full h-80 relative">
-      {loading ? (
-        <div className="flex justify-center items-center h-full">
-          <p>Loading trend data...</p>
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="flex justify-center items-center h-full">
           <p className="text-red-500">{error}</p>
         </div>
@@ -239,7 +231,11 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
                 stroke={theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'}
                 tickFormatter={(value) => {
                   if (dateFilter === 'today') {
-                    return `${value}:00 hrs`;
+                    // Convert 24-hour format to AM/PM
+                    const hour = Number.parseInt(value, 10);
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const hour12 = hour % 12 || 12; // Convert 0 to 12
+                    return `${hour12} ${ampm}`;
                   } else {
                     const date = new Date(value);
                     const day = date.getDate();
@@ -295,7 +291,6 @@ export default function EnhancedWasteChart({ trendData, loading, error, dateFilt
                 height={36}
               />
               {dataToRender.length > 0 &&
-                // Get unique keys from the first data record (excluding "time").
                 Object.keys(dataToRender[0])
                   .filter((key) => key !== 'time')
                   .map((binType, index) => (
