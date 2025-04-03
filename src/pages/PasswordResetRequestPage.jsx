@@ -55,7 +55,7 @@ export default function PasswordResetRequestPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-2xl font-bold flex items-center">
-              <KeyRound className="mr-2 h-5 w-5 text-primary" /> Forgot your password?
+              <KeyRound className="mr-2 h-5 w-5 text-indigo-600" /> Forgot your password?
             </CardTitle>
             <CardDescription>Enter your email and we'll send you a reset link.</CardDescription>
           </CardHeader>
@@ -82,7 +82,11 @@ export default function PasswordResetRequestPage() {
                   />
                 </div>
                 {errorMessage && <div className="text-red-600 text-sm">{errorMessage}</div>}
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? 'Sending Reset Link...' : 'Send Reset Link'}
                 </Button>
               </form>
@@ -90,7 +94,7 @@ export default function PasswordResetRequestPage() {
           </CardContent>
           {!isSuccess && (
             <CardFooter className="flex flex-col items-center">
-              <Link to="/login" className="mt-4 text-sm text-primary hover:underline">
+              <Link to="/login" className="mt-4 text-sm text-indigo-600 hover:underline">
                 Back to Login
               </Link>
             </CardFooter>

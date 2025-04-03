@@ -415,7 +415,7 @@ import axios from 'axios';
 import { Eye, EyeOff, Package2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../app/userSlice'; // Redux action to store user data
-
+import NetnadaLogo from '@/assets/NetNada_logo.png';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -534,9 +534,11 @@ export default function Login() {
       <Card className="mx-auto max-w-md w-full">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-2">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Package2 className="h-8 w-8 text-primary" />
-            </div>
+            <img
+              src={NetnadaLogo || '/placeholder.svg'}
+              alt="EcoNet Logo"
+              className="h-12 w-auto mt-5"
+            />
           </div>
           <CardTitle className="text-2xl font-bold">Account Login</CardTitle>
           <CardDescription>Welcome back! Please enter your details to sign in.</CardDescription>
@@ -597,25 +599,20 @@ export default function Login() {
               </div>
               <Link
                 to="/password-reset-request"
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-sm font-medium text-indigo-700 hover:underline"
               >
                 Forgot password?
               </Link>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              type="submit"
+              disabled={loading}
+            >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              <button
-                type="button"
-                className="underline hover:text-primary"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              >
-                Toggle theme
-              </button>
-            </div>
           </CardFooter>
         </form>
       </Card>
