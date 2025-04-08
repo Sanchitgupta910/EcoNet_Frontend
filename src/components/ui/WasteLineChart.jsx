@@ -115,9 +115,12 @@ export default function WasteLineChart({ branchId }) {
     const fetchWasteData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`/api/v1/analytics/wasteLast7Days?branchId=${branchId}`, {
-          withCredentials: true,
-        });
+        const response = await axios.get(
+          `/api/v1/binDashboardAnalytics/wasteLast7Days?branchId=${branchId}`,
+          {
+            withCredentials: true,
+          },
+        );
         console.log('Raw API data:', response.data.data);
         if (response.data.success) {
           const binsData = response.data.data.filter((bin) => bin.data && bin.data.length > 0);

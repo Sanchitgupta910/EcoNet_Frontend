@@ -471,16 +471,19 @@ export default function EmployeeBinDisplayDashboard() {
   const fetchBinStatus = useCallback(async () => {
     if (!branchId) return;
     try {
-      const response = await axios.get(`/api/v1/analytics/binStatus?branchId=${branchId}`, {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `/api/v1/binDashboardAnalytics/binStatus?branchId=${branchId}`,
+        {
+          withCredentials: true,
+        },
+      );
       if (response.data.success) {
         const bins = response.data.data;
         const updatedBins = await Promise.all(
           bins.map(async (bin) => {
             try {
               const latestResponse = await axios.get(
-                `/api/v1/analytics/latestBinWeight?binId=${bin._id}`,
+                `/api/v1/binDashboardAnalytics/latestBinWeight?binId=${bin._id}`,
                 { withCredentials: true },
               );
               if (latestResponse.data.success && latestResponse.data.data) {
@@ -510,9 +513,12 @@ export default function EmployeeBinDisplayDashboard() {
   const fetchMinimalOverview = useCallback(async () => {
     if (!branchId) return;
     try {
-      const response = await axios.get(`/api/v1/analytics/minimalOverview?branchId=${branchId}`, {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `/api/v1/binDashboardAnalytics/minimalOverview?branchId=${branchId}`,
+        {
+          withCredentials: true,
+        },
+      );
       if (response.data.success) {
         setTrendData(response.data.data.trendData);
         setBranchContribution(response.data.data.branchContribution);
