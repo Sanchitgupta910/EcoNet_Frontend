@@ -17,6 +17,9 @@ import {
   ArrowDownRight,
   GitBranchIcon,
   Info,
+  Filter,
+  BarChart3,
+  RefreshCw,
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -422,6 +425,11 @@ export default function AdminDashboard() {
     setDateFilter(filter);
     setIsDropdownOpen((prev) => ({ ...prev, date: false }));
   };
+  const clearFilters = () => {
+    setSelectedCompany(null);
+    setSelectedOrgUnit(null);
+    setDateFilter('today'); // Reset date filter to default value
+  };
 
   // ---------------------------
   // Render UI
@@ -434,151 +442,219 @@ export default function AdminDashboard() {
     >
       <div className="container mx-auto px-4 py-6">
         {/* Tabs and Filters */}
-        <div
-          className={`mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 rounded-md border ${
-            theme === 'dark'
-              ? 'backdrop-blur-sm bg-slate-800/30 border-slate-700/50'
-              : 'backdrop-blur-sm bg-white/50 border-slate-200/70'
-          }`}
-          style={{ position: 'relative', zIndex: 10 }}
-        >
-          <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'bg-indigo-600 text-white'
-                  : theme === 'dark'
-                  ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
-                  : 'bg-slate-200/70 hover:bg-slate-300 text-slate-700'
-              }`}
-            >
-              <LayoutGrid />
-            </button>
-            <button
-              onClick={() => setActiveTab('leaderboard')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                activeTab === 'leaderboard'
-                  ? 'bg-indigo-600 text-white'
-                  : theme === 'dark'
-                  ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
-                  : 'bg-slate-200/70 hover:bg-slate-300 text-slate-700'
-              }`}
-            >
-              Leaderboard
-            </button>
-            <button
-              onClick={() => setActiveTab('offices')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                activeTab === 'offices'
-                  ? 'bg-indigo-600 text-white'
-                  : theme === 'dark'
-                  ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300'
-                  : 'bg-slate-200/70 hover:bg-slate-300 text-slate-700'
-              }`}
-            >
-              Offices
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {/* Date Filter */}
-            <div className="relative">
+        <div className="mb-4" style={{ position: 'relative', zIndex: 10 }}>
+          {/* Tabs */}
+          <div
+            className={`flex items-center mb-3 ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+            }`}
+          >
+            <div className="flex items-center border-b w-full pb-1 gap-1">
               <button
-                ref={dateButtonRef}
-                onClick={() => activeTab === 'dashboard' && toggleDropdown('date')}
-                disabled={activeTab !== 'dashboard'}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                  theme === 'dark'
-                    ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white'
-                    : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
-                } ${activeTab !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'dashboard'
+                    ? theme === 'dark'
+                      ? 'text-white'
+                      : 'text-slate-900'
+                    : theme === 'dark'
+                    ? 'text-slate-400 hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
-                <Calendar size={16} />
-                <span>
-                  {dateFilter === 'today'
-                    ? 'Today'
-                    : dateFilter === 'thisWeek'
-                    ? 'This Week'
-                    : dateFilter === 'thisMonth'
-                    ? 'This Month'
-                    : dateFilter === 'lastMonth'
-                    ? 'Last Month'
-                    : 'Filter'}
-                </span>
-                <ChevronDown size={16} />
-              </button>
-              {portalContainer &&
-                isDropdownOpen.date &&
-                activeTab === 'dashboard' &&
-                createPortal(
+                <div className="flex items-center gap-1.5">
+                  <LayoutGrid size={16} />
+                  <span>Dashboard</span>
+                </div>
+                {activeTab === 'dashboard' && (
                   <div
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className={`w-40 rounded-lg shadow-sm ${
-                      theme === 'dark'
-                        ? 'bg-slate-800 border border-slate-700'
-                        : 'bg-white border border-slate-200'
-                    }`}
-                    style={{
-                      position: 'absolute',
-                      top: `${getDropdownPosition(dateButtonRef).top}px`,
-                      left: `${getDropdownPosition(dateButtonRef).left}px`,
-                      width: `${getDropdownPosition(dateButtonRef).width}px`,
-                    }}
-                  >
-                    <button
-                      onClick={() => handleDateFilterChange('today')}
-                      className={`w-full text-left px-4 py-2 rounded-t-lg text-sm ${
-                        theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
-                      }`}
-                    >
-                      Today
-                    </button>
-                    <button
-                      onClick={() => handleDateFilterChange('thisWeek')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                    >
-                      This Week
-                    </button>
-                    <button
-                      onClick={() => handleDateFilterChange('thisMonth')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                    >
-                      This Month
-                    </button>
-                    <button
-                      onClick={() => handleDateFilterChange('lastMonth')}
-                      className={`w-full text-left px-4 py-2 rounded-b-lg text-sm ${
-                        theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
-                      }`}
-                    >
-                      Last Month
-                    </button>
-                  </div>,
-                  portalContainer,
+                    className={`absolute bottom-0 left-0 w-full h-0.5 ${
+                      theme === 'dark' ? 'bg-indigo-500' : 'bg-indigo-600'
+                    } -mb-1.5 rounded-full`}
+                  ></div>
                 )}
+              </button>
+              <button
+                onClick={() => setActiveTab('leaderboard')}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'leaderboard'
+                    ? theme === 'dark'
+                      ? 'text-white'
+                      : 'text-slate-900'
+                    : theme === 'dark'
+                    ? 'text-slate-400 hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Award size={16} />
+                  <span>Leaderboard</span>
+                </div>
+                {activeTab === 'leaderboard' && (
+                  <div
+                    className={`absolute bottom-0 left-0 w-full h-0.5 ${
+                      theme === 'dark' ? 'bg-indigo-500' : 'bg-indigo-600'
+                    } -mb-1.5 rounded-full`}
+                  ></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('offices')}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'offices'
+                    ? theme === 'dark'
+                      ? 'text-white'
+                      : 'text-slate-900'
+                    : theme === 'dark'
+                    ? 'text-slate-400 hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Building size={16} />
+                  <span>Offices</span>
+                </div>
+                {activeTab === 'offices' && (
+                  <div
+                    className={`absolute bottom-0 left-0 w-full h-0.5 ${
+                      theme === 'dark' ? 'bg-indigo-500' : 'bg-indigo-600'
+                    } -mb-1.5 rounded-full`}
+                  ></div>
+                )}
+              </button>
             </div>
+          </div>
+
+          {/* Filters */}
+
+          <div
+            className={`flex flex-wrap items-center justify-end gap-2 py-2 ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+            }`}
+          >
+            <div className="flex items-center mr-auto">
+              <span className="text-xs font-medium mr-2">
+                {selectedCompany ? selectedCompany.CompanyName : 'All Organizations'}
+                {selectedOrgUnit && ` › ${selectedOrgUnit.name}`}
+              </span>
+            </div>
+
+            {/* Clear Filters button - only visible when filters are applied */}
+            {(selectedCompany !== null || selectedOrgUnit !== null) && (
+              <button
+                onClick={clearFilters}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-red-400'
+                    : 'bg-white hover:bg-slate-50 border border-slate-200 shadow-sm text-red-500'
+                }`}
+              >
+                <Trash2 size={14} />
+                <span>Clear Filters</span>
+              </button>
+            )}
+
+            {/* Date Filter - only visible in dashboard tab */}
+            {activeTab === 'dashboard' && (
+              <div className="relative">
+                <button
+                  ref={dateButtonRef}
+                  onClick={() => toggleDropdown('date')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-white hover:bg-slate-50 border border-slate-200 shadow-sm'
+                  }`}
+                >
+                  <Calendar size={14} />
+                  <span>
+                    {dateFilter === 'today'
+                      ? 'Today'
+                      : dateFilter === 'thisWeek'
+                      ? 'This Week'
+                      : dateFilter === 'thisMonth'
+                      ? 'This Month'
+                      : dateFilter === 'lastMonth'
+                      ? 'Last Month'
+                      : 'Filter'}
+                  </span>
+                  <ChevronDown size={14} />
+                </button>
+                {portalContainer &&
+                  isDropdownOpen.date &&
+                  createPortal(
+                    <div
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className={`w-40 rounded-lg shadow-lg ${
+                        theme === 'dark'
+                          ? 'bg-slate-800 border border-slate-700'
+                          : 'bg-white border border-slate-200'
+                      }`}
+                      style={{
+                        position: 'absolute',
+                        top: `${getDropdownPosition(dateButtonRef).top}px`,
+                        left: `${getDropdownPosition(dateButtonRef).left}px`,
+                        width: `${getDropdownPosition(dateButtonRef).width}px`,
+                      }}
+                    >
+                      <button
+                        onClick={() => handleDateFilterChange('today')}
+                        className={`w-full text-left px-4 py-2 rounded-t-lg text-sm ${
+                          theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
+                        }`}
+                      >
+                        Today
+                      </button>
+                      <button
+                        onClick={() => handleDateFilterChange('thisWeek')}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        This Week
+                      </button>
+                      <button
+                        onClick={() => handleDateFilterChange('thisMonth')}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        This Month
+                      </button>
+                      <button
+                        onClick={() => handleDateFilterChange('lastMonth')}
+                        className={`w-full text-left px-4 py-2 rounded-b-lg text-sm ${
+                          theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'
+                        }`}
+                      >
+                        Last Month
+                      </button>
+                    </div>,
+                    portalContainer,
+                  )}
+              </div>
+            )}
+
             {/* Company Dropdown */}
             {userRole === 'SuperAdmin' && (
               <div className="relative">
                 <button
                   ref={companyButtonRef}
                   onClick={() => toggleDropdown('company')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     theme === 'dark'
-                      ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white'
-                      : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
+                      ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-white hover:bg-slate-50 border border-slate-200 shadow-sm'
                   }`}
                 >
-                  <Building size={16} />
-                  <span>{selectedCompany ? selectedCompany.CompanyName : 'All Organizations'}</span>
-                  <ChevronDown size={16} />
+                  <Building size={14} />
+                  <span className="max-w-[120px] truncate">
+                    {selectedCompany ? selectedCompany.CompanyName : 'All Organizations'}
+                  </span>
+                  <ChevronDown size={14} />
                 </button>
                 {portalContainer &&
                   isDropdownOpen.company &&
                   createPortal(
                     <div
                       onMouseDown={(e) => e.stopPropagation()}
-                      className={`w-64 rounded-lg shadow-sm max-h-60 overflow-y-auto ${
+                      className={`w-64 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
                         theme === 'dark'
                           ? 'bg-slate-800 border border-slate-700'
                           : 'bg-white border border-slate-200'
@@ -620,36 +696,36 @@ export default function AdminDashboard() {
                   )}
               </div>
             )}
+
             {/* OrgUnit Dropdown */}
             <div className="relative">
               <button
                 ref={orgUnitButtonRef}
-                onClick={() => activeTab === 'dashboard' && toggleDropdown('orgUnit')}
-                disabled={
-                  activeTab !== 'dashboard' || (userRole === 'SuperAdmin' && !selectedCompany)
-                }
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                onClick={() => toggleDropdown('orgUnit')}
+                disabled={userRole === 'SuperAdmin' && !selectedCompany}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   userRole === 'SuperAdmin' && !selectedCompany
                     ? theme === 'dark'
-                      ? 'bg-slate-700/40 text-slate-400 cursor-not-allowed'
-                      : 'bg-slate-200/40 text-slate-400 cursor-not-allowed'
+                      ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/50'
                     : theme === 'dark'
-                    ? 'bg-slate-700/70 hover:bg-slate-600/70 text-white'
-                    : 'bg-slate-200/70 hover:bg-slate-300/70 text-slate-800'
-                } ${activeTab !== 'dashboard' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700'
+                    : 'bg-white hover:bg-slate-50 border border-slate-200 shadow-sm'
+                }`}
               >
-                <GitBranchIcon size={16} />
-                <span>{selectedOrgUnit ? selectedOrgUnit.name : 'All Organization Units'}</span>
-                <ChevronDown size={16} />
+                <GitBranchIcon size={14} />
+                <span className="max-w-[120px] truncate">
+                  {selectedOrgUnit ? selectedOrgUnit.name : 'All Organization Units'}
+                </span>
+                <ChevronDown size={14} />
               </button>
               {portalContainer &&
                 isDropdownOpen.orgUnit &&
-                activeTab === 'dashboard' &&
                 (userRole !== 'SuperAdmin' || selectedCompany) &&
                 createPortal(
                   <div
                     onMouseDown={(e) => e.stopPropagation()}
-                    className={`w-64 rounded-lg shadow-sm max-h-60 overflow-y-auto ${
+                    className={`w-64 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
                       theme === 'dark'
                         ? 'bg-slate-800 border border-slate-700'
                         : 'bg-white border border-slate-200'

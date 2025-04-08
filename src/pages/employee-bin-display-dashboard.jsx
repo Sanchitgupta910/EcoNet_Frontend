@@ -314,7 +314,7 @@ const BranchContributionCard = ({ percentage, branchName }) => {
       </CardHeader>
       <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
         <div className="relative w-24 h-24 mb-2">
-          <svg className="w-full h-full" viewBox="0 0 100 100">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
             <circle
               className="text-gray-200"
               strokeWidth="8"

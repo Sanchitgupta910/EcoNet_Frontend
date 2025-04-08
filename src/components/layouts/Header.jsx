@@ -61,7 +61,7 @@ export default function Header({ user }) {
 
   const navigation = [
     {
-      name: 'Dashboard',
+      name: 'Home',
       href: '/dashboard',
       icon: PieChart,
       current: location.pathname === '/dashboard',

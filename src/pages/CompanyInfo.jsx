@@ -134,7 +134,7 @@ export default function CompanyInfo() {
   const dustbinTypes = ['General Waste', 'Commingled', 'Organics', 'Paper & Cardboard'];
 
   // Toast functionality integrated directly into the component
-  const addToast = (title, message, type = TOAST_TYPES.INFO, duration = 3000) => {
+  const addToast = (title, message, type = TOAST_TYPES.INFO, duration = 7000) => {
     const id = Date.now();
     setToasts((prevToasts) => [...prevToasts, { id, title, message, type }]);
 
