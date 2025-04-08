@@ -578,7 +578,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
         <div className="p-6 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="companyName" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-primary" />
+              <Building2 className="h-4 w-4 text-indigo-600" />
               Company Name
             </Label>
             <Input
@@ -594,7 +594,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
 
           <div className="space-y-2">
             <Label htmlFor="domain" className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" />
+              <Globe className="h-4 w-4 text-indigo-600" />
               Domain
             </Label>
             <Input
@@ -611,7 +611,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="noofEmployees" className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-indigo-600" />
                 Employee Headcount
               </Label>
               <Select
@@ -621,7 +621,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
               >
                 <SelectTrigger
                   id="noofEmployees"
-                  className="transition-all focus-visible:ring-primary"
+                  className="transition-all focus-visible:ring-indigo-600"
                 >
                   <SelectValue placeholder="Select headcount range" />
                 </SelectTrigger>
@@ -637,7 +637,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
 
             <div className="space-y-2">
               <Label htmlFor="industry" className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-primary" />
+                <Briefcase className="h-4 w-4 text-indigo-600" />
                 Industry
               </Label>
               <Select
@@ -645,7 +645,10 @@ export default function AddCompanyForm({ onCompanyAdded }) {
                 onValueChange={(value) => handleSelectChange('industry', value)}
                 required
               >
-                <SelectTrigger id="industry" className="transition-all focus-visible:ring-primary">
+                <SelectTrigger
+                  id="industry"
+                  className="transition-all focus-visible:ring-indigo-600"
+                >
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent
@@ -669,7 +672,7 @@ export default function AddCompanyForm({ onCompanyAdded }) {
           </Button>
           <Button
             type="submit"
-            className="bg-primary hover:bg-primary/90 transition-all"
+            className="bg-indigo-600 hover:bg-indigo-700 transition-all"
             disabled={isSubmitting}
           >
             {isSubmitting ? (

@@ -348,7 +348,7 @@ export function UserForm({ onSubmit, companyId, initialData }) {
       )}
 
       <div className="pt-2">
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
           {initialData ? 'Update User' : 'Add User'}
         </Button>
       </div>

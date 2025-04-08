@@ -431,7 +431,7 @@ export function AddressForm({ onSubmit, initialData, companyId, companyName }) {
       </div>
 
       <div className="pt-2">
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
           {initialData && initialData._id ? 'Update Address' : 'Add Address'}
         </Button>
       </div>
