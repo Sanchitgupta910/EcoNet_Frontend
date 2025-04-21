@@ -25,120 +25,143 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
    DiversionRateCard Component
    Retrieves and displays today's landfill diversion data.
 ------------------------------------------------------------------------- */
-const DiversionRateCard = () => {
-  const [diversionData, setDiversionData] = useState({ diversionPercentage: 0, trendValue: 0 });
-  const [loading, setLoading] = useState(true);
-  const user = useSelector((state) => state.user.user);
+// const DiversionRateCard = () => {
+//   const [diversionData, setDiversionData] = useState({ diversionPercentage: 0, trendValue: 0 });
+//   const [loading, setLoading] = useState(true);
+//   const user = useSelector((state) => state.user.user);
 
-  // Determine OrgUnit ID from user state
-  const orgUnitId = user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null;
+//   // Determine OrgUnit ID from user state
+//   const orgUnitId = user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null;
 
-  const fetchDiversionData = async () => {
-    if (!orgUnitId) {
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `/api/v1/analytics/adminOverview?filter=today&orgUnitId=${orgUnitId}`,
-        { withCredentials: true },
-      );
-      if (response.data.success) {
-        const { landfillDiversionPercentage, landfillDiversionTrend } = response.data.data;
-        setDiversionData({
-          diversionPercentage: landfillDiversionPercentage || 0,
-          trendValue: landfillDiversionTrend || 0,
-        });
+//   const fetchDiversionData = async () => {
+//     if (!orgUnitId) {
+//       setLoading(false);
+//       return;
+//     }
+//     try {
+//       setLoading(true);
+//       const response = await axios.get(
+//         `/api/v1/binDashboardAnalytics/diversionRate?branchId=${branchId}`,
+//         { withCredentials: true },
+//       );
+//       if (response.data.success) {
+//         const { landfillDiversionPercentage, landfillDiversionTrend } = response.data.data;
+//         setDiversionData({
+//           diversionPercentage: landfillDiversionPercentage || 0,
+//           trendValue: landfillDiversionTrend || 0,
+//         });
+//       }
+//     } catch {
+//       // Silently fail (or add proper error handling if needed)
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (orgUnitId) {
+//       fetchDiversionData();
+//     }
+//   }, [orgUnitId]);
+
+//   return (
+//     <Card className="shadow-sm border bg-white flex flex-col h-full">
+//       <CardHeader className="pb-2 border-b">
+//         <CardTitle className="text-base font-medium text-gray-800">Landfill Diversion</CardTitle>
+//         <CardDescription className="text-xs text-gray-500">
+//           Waste diverted from landfill (Today)
+//         </CardDescription>
+//       </CardHeader>
+//       <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
+//         <div className="relative w-24 h-24 mb-2">
+//           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+//             <circle
+//               className="text-gray-200"
+//               strokeWidth="8"
+//               stroke="currentColor"
+//               fill="transparent"
+//               r="40"
+//               cx="50"
+//               cy="50"
+//             />
+//             <circle
+//               className="text-green-500"
+//               strokeWidth="8"
+//               strokeDasharray={`${diversionData.diversionPercentage * 2.51} 251`}
+//               strokeLinecap="round"
+//               stroke="currentColor"
+//               fill="transparent"
+//               r="40"
+//               cx="50"
+//               cy="50"
+//             />
+//           </svg>
+//           <div className="absolute inset-0 flex items-center justify-center">
+//             <div className="text-center">
+//               <span className="text-sm font-bold text-gray-800">
+//                 {loading ? '...' : `${diversionData.diversionPercentage.toFixed(1)}%`}
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+//         <div
+//           className="flex items-center text-xs font-medium"
+//           style={{
+//             color: loading
+//               ? 'gray'
+//               : diversionData.trendValue > 0
+//               ? 'green'
+//               : diversionData.trendValue < 0
+//               ? 'red'
+//               : 'gray',
+//           }}
+//         >
+//           {loading ? (
+//             <span>Loading trend...</span>
+//           ) : diversionData.trendValue !== 0 ? (
+//             diversionData.trendValue > 0 ? (
+//               <span className="flex items-center">
+//                 <ArrowUpRight className="h-3 w-3 mr-1" /> {diversionData.trendValue.toFixed(2)}%
+//                 increase from yesterday
+//               </span>
+//             ) : (
+//               <span className="flex items-center">
+//                 <ArrowDownRight className="h-3 w-3 mr-1" />{' '}
+//                 {Math.abs(diversionData.trendValue).toFixed(2)}% decrease from yesterday
+//               </span>
+//             )
+//           ) : (
+//             <span>No change</span>
+//           )}
+//         </div>
+//       </CardContent>
+//     </Card>
+//   );
+// };
+
+const transformDataForChart = (bins) => {
+  const dateMap = new Map();
+  bins.forEach((bin) => {
+    bin.data.forEach((reading) => {
+      if (!dateMap.has(reading.date)) {
+        dateMap.set(reading.date, { date: reading.date });
       }
-    } catch {
-      // Silently fail (or add proper error handling if needed)
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (orgUnitId) {
-      fetchDiversionData();
-    }
-  }, [orgUnitId]);
-
-  return (
-    <Card className="shadow-sm border bg-white flex flex-col h-full">
-      <CardHeader className="pb-2 border-b">
-        <CardTitle className="text-base font-medium text-gray-800">Landfill Diversion</CardTitle>
-        <CardDescription className="text-xs text-gray-500">
-          Waste diverted from landfill (Today)
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
-        <div className="relative w-24 h-24 mb-2">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <circle
-              className="text-gray-200"
-              strokeWidth="8"
-              stroke="currentColor"
-              fill="transparent"
-              r="40"
-              cx="50"
-              cy="50"
-            />
-            <circle
-              className="text-green-500"
-              strokeWidth="8"
-              strokeDasharray={`${diversionData.diversionPercentage * 2.51} 251`}
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="transparent"
-              r="40"
-              cx="50"
-              cy="50"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <span className="text-sm font-bold text-gray-800">
-                {loading ? '...' : `${diversionData.diversionPercentage.toFixed(1)}%`}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          className="flex items-center text-xs font-medium"
-          style={{
-            color: loading
-              ? 'gray'
-              : diversionData.trendValue > 0
-              ? 'green'
-              : diversionData.trendValue < 0
-              ? 'red'
-              : 'gray',
-          }}
-        >
-          {loading ? (
-            <span>Loading trend...</span>
-          ) : diversionData.trendValue !== 0 ? (
-            diversionData.trendValue > 0 ? (
-              <span className="flex items-center">
-                <ArrowUpRight className="h-3 w-3 mr-1" /> {diversionData.trendValue.toFixed(2)}%
-                increase from yesterday
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <ArrowDownRight className="h-3 w-3 mr-1" />{' '}
-                {Math.abs(diversionData.trendValue).toFixed(2)}% decrease from yesterday
-              </span>
-            )
-          ) : (
-            <span>No change</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+      dateMap.get(reading.date)[bin.binName] = reading.weight;
+    });
+  });
+  return Array.from(dateMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
 };
 
+const getColorForBin = (binName) => {
+  const name = binName.toLowerCase();
+  if (name.includes('general') || name.includes('waste') || name.includes('landfill'))
+    return '#F43F5E';
+  if (name.includes('commingled')) return '#F59E0B';
+  if (name.includes('organic')) return '#10B981';
+  if (name.includes('paper') || name.includes('cardboard')) return '#3B82F6';
+  if (name.includes('glass')) return '#8B5CF6';
+  return '#0EA5E9';
+};
 /* -------------------------------------------------------------------------
    BinStatusCard Component
    Displays the status of a bin.
@@ -408,12 +431,22 @@ export default function EmployeeBinDisplayDashboard() {
   const [binStatus, setBinStatus] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [branchContribution, setBranchContribution] = useState(0);
-  const [diversionRate, setDiversionRate] = useState(65);
+  const [diversionRate, setDiversionRate] = useState(0);
+  const [diversionTrend, setDiversionTrend] = useState(0);
+  const [loadingDiversion, setLoadingDiversion] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [nextUpdate, setNextUpdate] = useState(new Date(Date.now() + 3600000));
-  const [isLoading, setIsLoading] = useState(true);
+  const [bins, setBins] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [colorConfig, setColorConfig] = useState({});
+  const [trendComparison, setTrendComparison] = useState(null);
+  const [binsLoading, setBinsLoading] = useState(true);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [chartError, setChartError] = useState(null);
   const prevBinStatusRef = useRef([]);
-
+  const branchId = useMemo(
+    () => user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null,
+    [user],
+  );
   // OrgUnit override effect: when navigating from Admin, update user.OrgUnit (and company if provided)
   useEffect(() => {
     if (fromAdmin && officeFromAdmin && user && !orgUnitOverrideDone) {
@@ -460,12 +493,6 @@ export default function EmployeeBinDisplayDashboard() {
     }
     return true;
   };
-
-  // Compute branchId once using useMemo.
-  const branchId = useMemo(
-    () => user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null,
-    [user],
-  );
 
   // Fetch bin status for the branch.
   const fetchBinStatus = useCallback(async () => {
@@ -527,31 +554,82 @@ export default function EmployeeBinDisplayDashboard() {
         }
       }
     } catch {
-      // Use default fallback values
-      setTrendData([
-        { hour: '00:00', weight: 2.1 },
-        { hour: '01:00', weight: 1.5 },
-        { hour: '02:00', weight: 0.8 },
-      ]);
-      setBranchContribution(23);
+      // silent
     }
   }, [branchId]);
 
-  // Combined effect for periodic fetches.
+  // --- Fetch Diversion Rate Today vs Yesterday ---
+  const fetchDiversionRate = useCallback(async () => {
+    if (!branchId) return;
+    setLoadingDiversion(true);
+    try {
+      const { data } = await axios.get(
+        `/api/v1/binDashboardAnalytics/diversionRate?branchId=${branchId}`,
+        { withCredentials: true },
+      );
+      if (data.success) {
+        setDiversionRate(data.data.diversionPercentage);
+        setDiversionTrend(data.data.trendValue);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingDiversion(false);
+    }
+  }, [branchId]);
+
+  // Fetch chart data (last 7 days + trend comparison)
+  const fetchChartData = useCallback(async () => {
+    if (!branchId) return;
+    setLoadingChart(true);
+    try {
+      const last7 = await axios.get(
+        `/api/v1/binDashboardAnalytics/wasteLast7Days?branchId=${branchId}`,
+        { withCredentials: true },
+      );
+      const trendRes = await axios.get(
+        `/api/v1/binDashboardAnalytics/wasteTrendComparison?branchId=${branchId}`,
+        { withCredentials: true },
+      );
+
+      if (last7.data.success && trendRes.data.success) {
+        const binsData = last7.data.data;
+        setBins(binsData);
+        setChartData(transformDataForChart(binsData));
+
+        // Build a single colorConfig for both cards & chart
+        const cfg = {};
+        binsData.forEach((bin) => {
+          cfg[bin.binName] = { color: getColorForBin(bin.binName) };
+        });
+        setColorConfig(cfg);
+
+        setTrendComparison(trendRes.data.data);
+        setChartError(null);
+      } else {
+        throw new Error('API failure');
+      }
+    } catch {
+      setChartError('Error loading chart data');
+    } finally {
+      setLoadingChart(false);
+    }
+  }, [branchId]);
+
   useEffect(() => {
     if (branchId) {
-      Promise.all([fetchBinStatus(), fetchMinimalOverview()]).finally(() => setIsLoading(false));
+      fetchBinStatus().finally(() => setBinsLoading(false));
     }
-    const interval = setInterval(() => {
-      if (branchId) {
-        fetchBinStatus();
-        fetchMinimalOverview();
-        setLastUpdate(new Date());
-        setNextUpdate(new Date(Date.now() + 3600000));
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [fetchBinStatus, fetchMinimalOverview, branchId]);
+  }, [branchId]);
+
+  // Separately for chart:
+  useEffect(() => {
+    if (branchId) {
+      fetchChartData().finally(() => setLoadingChart(false));
+      fetchMinimalOverview();
+      fetchDiversionRate();
+    }
+  }, [branchId]);
 
   // Logout handler.
   const handleLogout = async () => {
@@ -645,7 +723,7 @@ export default function EmployeeBinDisplayDashboard() {
       {/* Main Content */}
       <main className="flex-1 container mx-auto p-4 flex flex-col space-y-4 justify-center md:overflow-hidden overflow-auto">
         {/* Bin Status Cards */}
-        {isLoading ? (
+        {binsLoading ? (
           <div className="flex justify-center items-center h-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
@@ -666,13 +744,84 @@ export default function EmployeeBinDisplayDashboard() {
         {/* Waste Trend Chart */}
         <div className="h-[300px] md:h-[calc(38vh)]">
           <WasteLineChart
-            branchId={user?.OrgUnit?.branchAddress?._id || user?.OrgUnit?._id || null}
+            bins={bins}
+            chartData={chartData}
+            colorConfig={colorConfig}
+            trendComparison={trendComparison}
+            isLoading={loadingChart}
+            error={chartError}
           />
         </div>
 
         {/* Diversion, Branch Contribution, and Tips */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-auto md:h-[220px] mb-4">
-          <DiversionRateCard rate={diversionRate} />
+          <Card className="shadow-sm border bg-white flex flex-col h-full">
+            <CardHeader className="pb-2 border-b">
+              <CardTitle className="text-base font-medium text-gray-800">
+                Landfill Diversion
+              </CardTitle>
+              <CardDescription className="text-xs text-gray-500">
+                Waste diverted from landfill (Today)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 p-4 flex flex-col items-center justify-center">
+              {loadingDiversion ? (
+                <div className="animate-spin h-8 w-8 border-b-2 border-gray-900 rounded-full" />
+              ) : (
+                <>
+                  <div className="relative w-24 h-24 mb-2">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                      <circle
+                        className="text-gray-200"
+                        strokeWidth="8"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="40"
+                        cx="50"
+                        cy="50"
+                      />
+                      <circle
+                        className="text-green-500"
+                        strokeWidth="8"
+                        strokeDasharray={`${diversionRate * 2.51} 251`}
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r="40"
+                        cx="50"
+                        cy="50"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-bold text-gray-800">
+                        {diversionRate.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center text-xs font-medium"
+                    style={{
+                      color: diversionTrend > 0 ? 'green' : diversionTrend < 0 ? 'red' : 'gray',
+                    }}
+                  >
+                    {diversionTrend > 0 ? (
+                      <>
+                        <ArrowUpRight className="h-4 w-4 mr-1 text-green-600" />
+                        {diversionTrend}% increase from yesterday
+                      </>
+                    ) : diversionTrend < 0 ? (
+                      <>
+                        <ArrowDownRight className="h-4 w-4 mr-1 text-red-600" />
+                        {Math.abs(diversionTrend)}% decrease from yesterday
+                      </>
+                    ) : (
+                      <span>No change</span>
+                    )}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           <BranchContributionCard
             percentage={branchContribution}
             branchName={
