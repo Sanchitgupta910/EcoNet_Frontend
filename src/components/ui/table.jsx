@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from '../../lib/Utils';
+import { cn } from '../../utils/Utils';
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   <div className="w-full overflow-auto">

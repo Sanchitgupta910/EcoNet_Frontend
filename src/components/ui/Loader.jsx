@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/Utils.js';
+import { cn } from '@/utils/Utils.js';
 
 export function Loader({ size = 'default', className }) {
   return (

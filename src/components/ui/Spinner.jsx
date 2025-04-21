@@ -1,4 +1,4 @@
-import { cn } from '@/lib/Utils';
+import { cn } from '@/utils/Utils';
 
 export default function LoadingSpinner({ size = 'md', className }) {
   const sizeClasses = {
