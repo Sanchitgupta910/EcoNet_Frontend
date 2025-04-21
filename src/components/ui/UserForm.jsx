@@ -287,8 +287,8 @@ export function UserForm({ onSubmit, companyId, initialData }) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="SuperAdmin">SuperAdmin</SelectItem>
-            <SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
             <SelectItem value="CountryAdmin">Country Admin</SelectItem>
+            <SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
             <SelectItem value="CityAdmin">City Admin</SelectItem>
             <SelectItem value="OfficeAdmin">Office Admin</SelectItem>
             <SelectItem value="EmployeeDashboardUser">Employee Dashboard User</SelectItem>

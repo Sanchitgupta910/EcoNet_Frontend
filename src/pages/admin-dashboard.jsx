@@ -28,11 +28,45 @@ import { createPortal } from 'react-dom';
 import AdminWasteLineChart from '@/components/ui/WasteLineChartAdmin';
 import WasteDispositionChart from '@/components/ui/WasteDispositionChart';
 
+export const AdminOverviewEndpoints = (userRole) => {
+  switch (userRole) {
+    case 'SuperAdmin':
+      return '/api/v1/analytics/adminOverview';
+    case 'CountryAdmin':
+    case 'RegionalAdmin':
+    case 'CityAdmin':
+    case 'OfficeAdmin':
+      return '/api/v1/localAdminAnalytics/adminOverview';
+  }
+};
+export const WasteTrendChartEndpoints = (userRole) => {
+  switch (userRole) {
+    case 'SuperAdmin':
+      return '/api/v1/analytics/wasteTrendChart';
+    case 'CountryAdmin':
+    case 'RegionalAdmin':
+    case 'CityAdmin':
+    case 'OfficeAdmin':
+      return '/api/v1/localAdminAnalytics/wasteTrendChart';
+  }
+};
+export const DispositionChartEndpoints = (userRole) => {
+  switch (userRole) {
+    case 'SuperAdmin':
+      return '/api/v1/analytics/wasteDisposition';
+    case 'CountryAdmin':
+    case 'RegionalAdmin':
+    case 'CityAdmin':
+    case 'OfficeAdmin':
+      return '/api/v1/localAdminAnalytics/wasteDisposition';
+  }
+};
+
 export default function AdminDashboard() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   // Get user role from session storage.
-  const [userRole] = useState(sessionStorage.getItem('userRole') || 'SuperAdmin');
+  const [userRole] = useState(sessionStorage.getItem('userRole'));
   // Tabs state.
   const [activeTab, setActiveTab] = useState('dashboard');
   // Filter sections state.
@@ -230,7 +264,7 @@ export default function AdminDashboard() {
   const fetchOverviewData = async () => {
     try {
       setLoading((prev) => ({ ...prev, overview: true }));
-      let url = '/api/v1/analytics/adminOverview';
+      let url = AdminOverviewEndpoints(userRole);
       const params = [];
       if (selectedCompany) params.push(`companyId=${selectedCompany._id}`);
       if (selectedOrgUnit) params.push(`orgUnitId=${selectedOrgUnit._id}`);
@@ -252,7 +286,7 @@ export default function AdminDashboard() {
   const fetchTrendData = async () => {
     try {
       setLoadingTrend(true);
-      let url = '/api/v1/analytics/wasteTrendChart'; // New endpoint
+      let url = WasteTrendChartEndpoints(userRole); // New endpoint
       const params = { filter: dateFilter };
       if (selectedOrgUnit) params.orgUnitId = selectedOrgUnit._id;
       else if (selectedCompany) params.companyId = selectedCompany._id;
@@ -275,7 +309,7 @@ export default function AdminDashboard() {
   const fetchWasteDispositionData = async () => {
     try {
       setLoadingWasteDisposition(true);
-      let url = '/api/v1/analytics/wasteDisposition';
+      let url = DispositionChartEndpoints(userRole);
       const params = { filter: dateFilter };
       if (selectedOrgUnit) {
         params.orgUnitId = selectedOrgUnit._id;
