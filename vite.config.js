@@ -10,7 +10,15 @@ export default defineConfig({
       strict: false,
     },
     proxy: {
+      // REST API → localhost:3000
       '/api': 'http://localhost:3000',
+
+      // Socket.io HTTP polling & WS upgrade → localhost:3000
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   plugins: [
