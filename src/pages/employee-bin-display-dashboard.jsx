@@ -6,7 +6,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 
 import Header from '../components/ui/binDashboardHeader';
-import BinGrid from '../components/ui/BinGrid';
+import RealTimeBinGrid from '../components/ui/RealTimeBinGrid';
 import WasteChartPanel from '../components/ui/WasteChartPanel';
 import DiversionCard from '../components/ui/DiversionCard';
 import BranchContributionCard from '../components/ui/BranchContributionCard';
@@ -106,7 +106,7 @@ export default function EmployeeBinDisplayDashboard() {
 
       <main className="flex-1 container mx-auto p-4 flex flex-col space-y-6 justify-center">
         {/* Bin Status Cards */}
-        <BinGrid bins={bins} loading={binsLoading} />
+        <RealTimeBinGrid branchId={branchId} />
 
         {/* Dynamic-Height Chart */}
         <div className="h-[300px] md:h-[calc(38vh)]">
