@@ -11,7 +11,7 @@ export default defineConfig({
     },
     proxy: {
       // REST API → localhost:3000
-      '/api': 'http://localhost:3000',
+      '/api': 'http://localhost:3000/NetNada',
 
       // Socket.io HTTP polling & WS upgrade → localhost:3000
       '/socket.io': {
